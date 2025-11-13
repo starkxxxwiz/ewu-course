@@ -976,3 +976,246 @@ img {
     max-width: 100%;
     height: auto;
 }
+
+/* ===== FINAL POLISH - GLOBAL ENHANCEMENTS ===== */
+
+/* Ensure consistent font rendering across browsers */
+body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+}
+
+/* Improve heading readability */
+h1, h2, h3, h4, h5, h6 {
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+}
+
+/* Paragraph spacing */
+p {
+    line-height: 1.7;
+}
+
+/* Link hover transitions */
+a {
+    transition: all 0.3s ease;
+}
+
+/* Navigation improvements */
+nav a {
+    font-weight: 500;
+}
+
+/* Button consistency */
+button, .btn, a[class*='btn'] {
+    font-weight: 600;
+    letter-spacing: 0.01em;
+}
+
+/* ===== RESPONSIVE ENHANCEMENTS ===== */
+
+/* Extra small devices (phones, less than 576px) */
+@media (max-width: 575px) {
+    /* Heading sizes */
+    h1 {
+        font-size: 2.25rem !important;
+        line-height: 1.2 !important;
+    }
+    
+    h2 {
+        font-size: 1.875rem !important;
+    }
+    
+    h3 {
+        font-size: 1.5rem !important;
+    }
+    
+    /* Container padding */
+    .container {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+    
+    /* Navigation text size */
+    nav {
+        font-size: 0.9375rem;
+    }
+    
+    /* Feature cards mobile spacing */
+    .feature-card {
+        padding: 1.5rem !important;
+    }
+    
+    /* Glass card mobile */
+    .glass-card {
+        padding: 1.25rem !important;
+    }
+}
+
+/* Small devices (landscape phones, 576px and up) */
+@media (min-width: 576px) and (max-width: 767px) {
+    h1 {
+        font-size: 3rem !important;
+    }
+    
+    h2 {
+        font-size: 2.25rem !important;
+    }
+}
+
+/* Medium devices (tablets, 768px and up) */
+@media (min-width: 768px) and (max-width: 991px) {
+    .container {
+        max-width: 720px;
+    }
+}
+
+/* Large devices (desktops, 992px and up) */
+@media (min-width: 992px) and (max-width: 1199px) {
+    .container {
+        max-width: 960px;
+    }
+}
+
+/* Extra large devices (large desktops, 1200px and up) */
+@media (min-width: 1200px) {
+    .container {
+        max-width: 1140px;
+    }
+}
+
+/* ===== TABLE RESPONSIVENESS ===== */
+@media (max-width: 768px) {
+    /* Make tables scrollable on mobile */
+    .table-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    table {
+        min-width: 600px;
+    }
+    
+    /* Adjust table text size */
+    table {
+        font-size: 0.875rem;
+    }
+    
+    th, td {
+        padding: 0.5rem !important;
+    }
+}
+
+/* ===== NAVIGATION RESPONSIVE FIXES ===== */
+@media (max-width: 768px) {
+    /* Mobile menu styling */
+    #mobileMenu {
+        background: rgba(0, 0, 0, 0.95);
+        border-radius: 12px;
+        padding: 0.5rem;
+        margin-top: 1rem;
+    }
+    
+    #mobileMenu a {
+        border-radius: 8px;
+        padding: 0.75rem 1rem;
+        display: block;
+    }
+    
+    #mobileMenu a:hover {
+        background: rgba(216, 108, 90, 0.1);
+    }
+    
+    /* Logo size on mobile */
+    nav img {
+        height: 2rem;
+    }
+    
+    nav .text-xl {
+        font-size: 1rem;
+    }
+}
+
+/* ===== FORM IMPROVEMENTS ===== */
+input, textarea, select {
+    font-size: 16px !important; /* Prevents zoom on iOS */
+}
+
+/* Focus states */
+input:focus, textarea:focus, select:focus {
+    outline: none;
+    border-color: #D86C5A;
+    box-shadow: 0 0 0 3px rgba(216, 108, 90, 0.1);
+}
+
+/* ===== ACCESSIBILITY IMPROVEMENTS ===== */
+
+/* Skip to content link */
+.skip-to-content {
+    position: absolute;
+    top: -40px;
+    left: 0;
+    background: #D86C5A;
+    color: white;
+    padding: 8px;
+    text-decoration: none;
+    z-index: 100;
+}
+
+.skip-to-content:focus {
+    top: 0;
+}
+
+/* Better focus visibility */
+*:focus-visible {
+    outline: 2px solid #D86C5A;
+    outline-offset: 2px;
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+    .feature-card,
+    .glass-card,
+    .retry-widget {
+        border-width: 2px !important;
+        border-color: #D86C5A !important;
+    }
+    
+    button, .btn, a[class*='btn'] {
+        border: 2px solid currentColor !important;
+    }
+}
+
+/* ===== PRINT STYLES ===== */
+@media print {
+    .retry-widget,
+    nav,
+    button:not(.no-print),
+    .no-print {
+        display: none !important;
+    }
+    
+    body {
+        background: white;
+        color: black;
+    }
+    
+    a {
+        text-decoration: underline;
+    }
+}
+

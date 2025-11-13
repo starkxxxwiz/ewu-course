@@ -670,3 +670,309 @@ select.glass-input option {
     z-index: 1;
 }
 
+/* ===== RETRY WIDGET STYLES ===== */
+.retry-widget {
+    position: fixed !important;
+    top: 20px !important;
+    right: 20px !important;
+    width: 320px !important;
+    background: rgba(20, 20, 20, 0.95) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    border: 2px solid rgba(216, 108, 90, 0.5) !important;
+    border-radius: 16px !important;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(216, 108, 90, 0.2) inset !important;
+    z-index: 10000 !important;
+    opacity: 0 !important;
+    transform: translateX(400px) scale(0.9) !important;
+    transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) !important;
+}
+
+.retry-widget.show {
+    opacity: 1 !important;
+    transform: translateX(0) scale(1) !important;
+}
+
+.retry-widget-content {
+    padding: 1.25rem !important;
+}
+
+.retry-widget-header {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    margin-bottom: 1rem !important;
+}
+
+.status-indicator {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.75rem !important;
+}
+
+.status-icon {
+    font-size: 1.25rem !important;
+}
+
+.status-icon.status-connecting {
+    color: #D86C5A !important;
+}
+
+.status-icon.status-timeout {
+    color: #f59e0b !important;
+}
+
+.status-icon.status-success {
+    color: #10b981 !important;
+}
+
+.status-text {
+    font-weight: 600 !important;
+    font-size: 0.9rem !important;
+    color: white !important;
+}
+
+.retry-widget-actions {
+    display: flex !important;
+    gap: 0.5rem !important;
+}
+
+.widget-btn {
+    width: 32px !important;
+    height: 32px !important;
+    border-radius: 8px !important;
+    background: rgba(255, 255, 255, 0.1) !important;
+    border: 1px solid rgba(216, 108, 90, 0.3) !important;
+    color: white !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+    font-size: 0.875rem !important;
+}
+
+.widget-btn:hover {
+    background: rgba(216, 108, 90, 0.2) !important;
+    border-color: rgba(216, 108, 90, 0.7) !important;
+    transform: scale(1.1) !important;
+}
+
+.widget-btn.stop-btn:hover {
+    background: rgba(239, 68, 68, 0.3) !important;
+    border-color: rgba(239, 68, 68, 0.7) !important;
+    color: #fca5a5 !important;
+}
+
+.retry-widget-body {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.75rem !important;
+}
+
+.retry-stat {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.75rem !important;
+    padding: 0.875rem !important;
+    background: rgba(216, 108, 90, 0.1) !important;
+    border-radius: 10px !important;
+    border: 1px solid rgba(216, 108, 90, 0.3) !important;
+}
+
+.retry-stat i {
+    color: #D86C5A !important;
+    font-size: 1.125rem !important;
+}
+
+.stat-label {
+    color: #d1d5db !important;
+    font-size: 0.875rem !important;
+    font-weight: 500 !important;
+}
+
+.stat-value {
+    margin-left: auto !important;
+    color: white !important;
+    font-weight: 700 !important;
+    font-size: 0.9375rem !important;
+}
+
+/* Minimized state */
+.retry-widget.minimized .retry-widget-content {
+    display: none;
+}
+
+.retry-widget-minimized {
+    display: none;
+    padding: 1rem;
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.retry-widget.minimized .retry-widget-minimized {
+    display: flex;
+}
+
+.retry-widget.minimized {
+    width: 60px;
+    height: 60px;
+}
+
+.mini-badge {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: #D86C5A;
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 700;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Success state animation */
+.retry-widget.status-success {
+    border-color: rgba(16, 185, 129, 0.5);
+    background: rgba(16, 185, 129, 0.1);
+}
+
+.retry-widget.status-success .retry-widget-content {
+    animation: successPulse 0.5s ease;
+}
+
+@keyframes successPulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+}
+
+/* Timeout state */
+.retry-widget.status-timeout {
+    border-color: rgba(245, 158, 11, 0.5);
+}
+
+/* Responsive adjustments */
+@media (max-width: 767px) {
+    .retry-widget {
+        top: 10px;
+        right: 10px;
+        left: 10px;
+        width: auto;
+    }
+    
+    .retry-widget.minimized {
+        width: 50px;
+        height: 50px;
+        left: auto;
+        right: 10px;
+    }
+}
+
+/* High contrast mode support for retry widget */
+@media (prefers-contrast: high) {
+    .retry-widget {
+        border: 3px solid #D86C5A !important;
+    }
+}
+
+/* Reduced motion for retry widget */
+@media (prefers-reduced-motion: reduce) {
+    .retry-widget {
+        transition-duration: 0.01ms !important;
+    }
+    
+    .status-icon {
+        animation: none !important;
+    }
+}
+
+/* ===== MOBILE RESPONSIVE IMPROVEMENTS ===== */
+@media (max-width: 640px) {
+    /* Buttons on mobile */
+    .btn-get-started span,
+    .btn-login-inner,
+    .btn-glossy-inner,
+    .btn-learn-more span {
+        padding: 0.75rem 1.5rem !important;
+        font-size: 1rem !important;
+    }
+
+    /* Retry widget on mobile */
+    .retry-widget {
+        left: 10px !important;
+        right: 10px !important;
+        width: calc(100% - 20px) !important;
+    }
+
+    /* Feature cards spacing */
+    .feature-card {
+        padding: 1.5rem !important;
+    }
+
+    .feature-icon {
+        width: 50px !important;
+        height: 50px !important;
+        margin-bottom: 1rem !important;
+    }
+
+    /* Step numbers */
+    .step-number {
+        width: 40px !important;
+        height: 40px !important;
+        font-size: 1rem !important;
+    }
+
+    /* Text sizing on mobile */
+    h1 {
+        font-size: 2.5rem !important;
+        line-height: 1.2 !important;
+    }
+
+    h2 {
+        font-size: 2rem !important;
+    }
+
+    h3 {
+        font-size: 1.25rem !important;
+    }
+}
+
+/* ===== ENHANCED GLOBAL STYLES ===== */
+body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Ensure smooth scrolling */
+html {
+    scroll-behavior: smooth;
+}
+
+/* Focus styles for accessibility */
+button:focus-visible,
+a:focus-visible {
+    outline: 2px solid #D86C5A;
+    outline-offset: 2px;
+}
+
+/* Loading states */
+.loading {
+    pointer-events: none;
+    opacity: 0.6;
+}
+
+/* Better image rendering */
+img {
+    max-width: 100%;
+    height: auto;
+}

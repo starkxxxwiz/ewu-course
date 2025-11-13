@@ -230,16 +230,20 @@
         }
     }
     
-    /* Button container mobile adjustments */
+    /* Button container mobile adjustments - FIXED */
     @media (max-width: 640px) {
-        section .flex.flex-col {
+        .cta-button-container {
+            display: flex;
+            flex-direction: column;
             align-items: center;
-            padding: 0 1rem;
-        }
-        
-        section .flex.flex-col > a {
+            gap: 1rem;
             width: 100%;
             max-width: 340px;
+            margin: 0 auto;
+        }
+        
+        .cta-button-container > a {
+            width: 100%;
         }
     }
 
@@ -410,14 +414,14 @@
         </div>
     </section>
 
-    <!-- CTA Section -->
+    <!-- CTA Section - FIXED BUTTON CONTAINER -->
     <section class="py-20 px-6">
         <div class="container mx-auto max-w-4xl text-center">
             <h2 class="text-4xl md:text-5xl font-bold mb-6">Ready to Get Started?</h2>
             <p class="text-gray-300 text-lg mb-10">
                 Access your courses, anytime, anywhere.
             </p>
-            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+            <div class="cta-button-container flex flex-col sm:flex-row gap-4 justify-center">
                 <a href="login.html" class="btn-get-started">
                     <span>
                         Login Now
@@ -441,8 +445,13 @@
         </div>
     </footer>
 
-    <script src="assets/js/main.js"></script>
+    <script>
+        // Mobile menu toggle
+        document.getElementById('mobileMenuBtn').addEventListener('click', function() {
+            const mobileMenu = document.getElementById('mobileMenu');
+            mobileMenu.classList.toggle('hidden');
+        });
+    </script>
 </body>
 
 </html>
-

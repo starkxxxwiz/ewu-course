@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EWU Course Schedule</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/styles.css">
+    
+    <script>
+    tailwind.config = {
+        darkMode: 'class',
+        theme: {
+            extend: {
+                colors: {
+                    dark: {
+                        950: '#0a0a0f',
+                        900: '#0f0f1a',
+                        800: '#1a1a2e',
+                        700: '#16213e',
+                        600: '#0f3460',
+                    }
+                },
+                fontFamily: {
+                    'inter': ['Inter', 'sans-serif'],
+                }
+            }
+        }
+    }
+    </script>
+</head>
+
+<body class="text-white min-h-screen">
+    <!-- Navigation -->
+    <nav class="glass-card sticky top-0 z-50 mb-8" style="background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(216, 108, 90, 0.1);">
+        <div class="container mx-auto px-6 py-4">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center gap-3">
+                    <img src="assets/images/ewu.png" alt="EWU Logo" class="h-10 w-auto object-contain">
+                    <span class="text-xl font-bold">EWU Course Fetching</span>
+                </div>
+                <!-- Desktop Navigation -->
+                <div class="hidden md:flex gap-6 items-center">
+                    <a href="index.html" class="text-gray-300 hover:text-white transition-colors">Home</a>
+                    <a href="documentation.html" class="text-gray-300 hover:text-white transition-colors">Documentation</a>
+                    <a href="advise.html" class="text-[#D86C5A] font-medium">Dashboard</a>
+                    <a href="#" onclick="handleLogout(event)" class="text-red-400 hover:text-red-300 transition-colors">
+                        <i class="fas fa-sign-out-alt mr-1"></i>Logout
+                    </a>
+                </div>
+                <!-- Mobile Menu Button -->
+                <button id="mobileMenuBtn" class="md:hidden text-white text-2xl focus:outline-none">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+            <!-- Mobile Menu -->
+            <div id="mobileMenu" class="hidden md:hidden mt-4 pb-4 space-y-3">
+                <a href="index.html" class="block text-gray-300 hover:text-white transition-colors py-2">Home</a>
+                <a href="documentation.html" class="block text-gray-300 hover:text-white transition-colors py-2">Documentation</a>
+                <a href="advise.html" class="block text-[#D86C5A] font-medium py-2">Dashboard</a>
+                <a href="#" onclick="handleLogout(event)" class="block text-red-400 hover:text-red-300 transition-colors py-2">
+                    <i class="fas fa-sign-out-alt mr-1"></i>Logout
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mx-auto px-4 py-8 max-w-[1600px]">
+        
+        <!-- Header -->
+        <div class="glass-card rounded-2xl p-6 mb-8 fade-in">
+            <div class="flex flex-col lg:flex-row justify-between items-center gap-6">
+                <div class="text-center lg:text-left">
+                    <h1 class="text-4xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent mb-2">
+                        EWU Course Schedule
+                    </h1>
+                    <p class="text-gray-400 text-sm">
+                        <i class="fas fa-user mr-2"></i>Welcome, <span class="text-blue-400 font-semibold" id="userId">User</span>
+                        <span class="mx-3">•</span>
+                        <i class="fas fa-clock mr-2"></i><span id="currentTime">Loading...</span>
+                    </p>
+                </div>
+                <div class="flex flex-wrap gap-3 justify-center">
+                    <button onclick="exportToPDF()" style="position: relative; display: inline-flex; align-items: center; justify-content: center; padding: 0.125rem; overflow: hidden; font-weight: 600; border-radius: 12px; background: linear-gradient(135deg, #D86C5A 0%, #c5584a 50%, #D86C5A 100%); background-size: 200% auto; transition: all 0.3s ease; border: none; cursor: pointer; box-shadow: 0 4px 20px rgba(216, 108, 90, 0.5);">
+                        <span style="position: relative; padding: 0.625rem 1.5rem; transition: all 0.3s ease; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(10px); border-radius: 11px; color: white; display: flex; align-items: center; gap: 0.5rem;">
+                            <i class="fas fa-file-pdf"></i>
+                            Export PDF
+                        </span>
+                    </button>
+                    <button onclick="handleLogout(event)" style="position: relative; display: inline-flex; align-items: center; justify-content: center; padding: 0.625rem 1.5rem; overflow: hidden; font-weight: 600; border-radius: 12px; background: rgba(239, 68, 68, 0.1); backdrop-filter: blur(20px); border: 2px solid rgba(239, 68, 68, 0.4); transition: all 0.3s ease; cursor: pointer; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.2); color: #ef4444;">
+                        <i class="fas fa-sign-out-alt mr-2"></i>
+                        Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filters Section -->
+        <div class="glass-card rounded-2xl p-6 mb-8 fade-in filters-section">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                
+                <!-- Enhanced Search -->
+                <div class="lg:col-span-2 relative">
+                    <label class="block text-sm font-medium text-blue-300 mb-3">
+                        <i class="fas fa-search mr-2"></i>Search Courses
+                    </label>
+                    <div class="relative">
+                        <input 
+                            type="text" 
+                            id="searchInput" 
+                            placeholder="Search by course code, faculty, room, or time..." 
+                            class="glass-input w-full px-5 py-3.5 rounded-xl text-white placeholder-gray-500 outline-none text-base"
+                            autocomplete="off"
+                        >
+                        <div id="searchSuggestions" class="absolute w-full mt-2 glass-card rounded-xl shadow-2xl hidden search-suggestions" style="z-index: 100;">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Course Filter & Sort -->
+                <div class="grid grid-cols-2 gap-4">
+                    <!-- Course Filter -->
+                <div>
+                        <label class="block text-sm font-medium text-blue-300 mb-3">
+                            <i class="fas fa-filter mr-2"></i>Course
+                    </label>
+                        <div class="relative">
+                            <button type="button" id="courseFilterBtn" class="glass-input w-full px-4 py-3.5 rounded-xl text-white outline-none text-sm flex items-center justify-between">
+                                <span id="courseFilterText">All</span>
+                                <i class="fas fa-chevron-down text-xs"></i>
+                            </button>
+                            <div id="courseFilterDropdown" class="absolute w-full mt-2 glass-card rounded-xl shadow-2xl hidden" style="min-width: 250px; z-index: 95;">
+                                <div class="p-3 border-b border-blue-500/20">
+                                    <input type="text" id="courseFilterSearch" placeholder="Search..." 
+                                        class="glass-input w-full px-3 py-2 rounded-lg text-white text-sm outline-none">
+                            </div>
+                                <div id="courseFilterOptions" class="max-h-64 overflow-y-auto p-2">
+                                    <!-- Will be populated dynamically -->
+                        </div>
+                </div>
+            </div>
+        </div>
+
+                    <!-- Sort By -->
+                    <div>
+                        <label class="block text-sm font-medium text-blue-300 mb-3">
+                            <i class="fas fa-sort mr-2"></i>Sort By
+                        </label>
+                        <select id="sortSelect" class="glass-input w-full px-4 py-3.5 rounded-xl text-white outline-none text-sm cursor-pointer">
+                            <option value="default">Default</option>
+                            <option value="az">A → Z (Faculty)</option>
+                            <option value="za">Z → A (Faculty)</option>
+                            <option value="seats">Seat Availability (High → Low)</option>
+                        </select>
+            </div>
+                </div>
+            </div>
+
+            <!-- Toggle Options -->
+            <div class="flex flex-wrap gap-6 mt-6 pt-6 border-t border-blue-500/20">
+                <label class="flex items-center gap-3 cursor-pointer group">
+                    <div class="relative">
+                        <input type="checkbox" id="availableOnly" class="sr-only">
+                        <div class="w-12 h-6 bg-gray-700 rounded-full transition-all duration-300" id="toggleBg1"></div>
+                        <div class="absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform duration-300" id="toggleKnob1"></div>
+                </div>
+                    <span class="text-sm font-medium text-gray-300 group-hover:text-white transition-colors">
+                        <i class="fas fa-check-circle mr-2 text-green-400"></i>Show Available Only
+                    </span>
+                </label>
+            </div>
+        </div>
+
+        <!-- Course Table -->
+        <div class="glass-card rounded-2xl p-6 fade-in table-section">
+            <div class="overflow-x-auto table-container">
+                <table class="w-full" id="courseTable">
+                    <thead>
+                        <tr class="border-b border-blue-500/20">
+                            <th class="py-4 px-4 text-left font-semibold text-blue-300 text-sm">Course Code</th>
+                            <th class="py-4 px-4 text-left font-semibold text-blue-300 text-sm">Section</th>
+                            <th class="py-4 px-4 text-left font-semibold text-blue-300 text-sm">Faculty</th>
+                            <th class="py-4 px-4 text-center font-semibold text-blue-300 text-sm">Capacity</th>
+                            <th class="py-4 px-4 text-center font-semibold text-blue-300 text-sm">Taken</th>
+                            <th class="py-4 px-4 text-center font-semibold text-blue-300 text-sm">Available</th>
+                            <th class="py-4 px-4 text-left font-semibold text-blue-300 text-sm">Day</th>
+                            <th class="py-4 px-4 text-left font-semibold text-blue-300 text-sm">Time</th>
+                            <th class="py-4 px-4 text-left font-semibold text-blue-300 text-sm">Room</th>
+                        </tr>
+                    </thead>
+                    <tbody id="courseTableBody">
+                        <!-- Loading skeleton -->
+                        <tr class="table-row">
+                            <td colspan="9" class="py-8 text-center">
+                                <i class="fas fa-spinner fa-spin text-3xl text-blue-400"></i>
+                                <p class="text-gray-400 mt-3">Loading courses...</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Fixed Refresh Button -->
+    <div class="refresh-btn" id="refreshBtn" title="Refresh courses">
+        <i class="fas fa-sync-alt text-white text-xl refresh-icon"></i>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast-notification" id="toastNotification">
+        <i class="fas fa-check-circle toast-icon"></i>
+        <span class="toast-message" id="toastMessage">Refreshed Successfully</span>
+    </div>
+
+    <script src="assets/js/retry-handler.js"></script>
+    <script src="assets/js/advise.js"></script>
+    <script src="assets/js/main.js"></script>
+</body>
+</html>
+

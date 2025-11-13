@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EWU Course Fetching - Fast. Reliable. Smart Portal Access.</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script>
+    tailwind.config = {
+        theme: {
+            extend: {
+                colors: {
+                    ewu: {
+                        primary: '#D86C5A',
+                        dark: '#000000',
+                    }
+                }
+            }
+        }
+    }
+    </script>
+
+    <style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        overflow-x: hidden;
+    }
+
+    /* Animated gradient background with noise texture */
+    .hero-background {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, #000000 0%, #1a0a0a 25%, #0a0a0a 50%, #000000 100%);
+        z-index: -2;
+    }
+
+    .hero-background::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: 
+            radial-gradient(ellipse at 20% 30%, rgba(216, 108, 90, 0.15) 0%, transparent 50%),
+            radial-gradient(ellipse at 80% 70%, rgba(216, 108, 90, 0.1) 0%, transparent 50%);
+        animation: gradientShift 15s ease infinite;
+    }
+
+    .hero-background::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' /%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.03'/%3E%3C/svg%3E");
+        opacity: 0.4;
+    }
+
+    @keyframes gradientShift {
+        0%, 100% {
+            opacity: 1;
+        }
+        50% {
+            opacity: 0.8;
+        }
+    }
+
+    /* Navigation bar */
+    .nav-glass {
+        background: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border-bottom: 1px solid rgba(216, 108, 90, 0.1);
+    }
+
+    /* Fade-in animation */
+    .fade-in-up {
+        opacity: 0;
+        transform: translateY(30px);
+        animation: fadeInUp 1s ease forwards;
+    }
+
+    @keyframes fadeInUp {
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .fade-in-up.delay-1 { animation-delay: 0.2s; }
+    .fade-in-up.delay-2 { animation-delay: 0.4s; }
+    .fade-in-up.delay-3 { animation-delay: 0.6s; }
+
+    /* Glossy button system - matches dark + #D86C5A theme */
+    .btn-get-started {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.125rem;
+        overflow: hidden;
+        font-weight: 600;
+        font-size: 1.125rem;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #D86C5A 0%, #c5584a 50%, #D86C5A 100%);
+        background-size: 200% auto;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        border: none;
+        cursor: pointer;
+        box-shadow: 0 8px 30px rgba(216, 108, 90, 0.5);
+        animation: shimmerBtn 3s ease-in-out infinite;
+    }
+
+    @keyframes shimmerBtn {
+        0%, 100% { background-position: 0% center; }
+        50% { background-position: 100% center; }
+    }
+
+    .btn-get-started:hover {
+        transform: translateY(-3px) scale(1.02);
+        box-shadow: 0 12px 45px rgba(216, 108, 90, 0.7);
+    }
+
+    .btn-get-started span {
+        position: relative;
+        padding: 0.875rem 2.5rem;
+        transition: all 0.3s ease;
+        background: rgba(0, 0, 0, 0.85);
+        backdrop-filter: blur(10px);
+        border-radius: 11px;
+        color: white;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .btn-get-started:hover span {
+        background: rgba(0, 0, 0, 0.3);
+    }
+
+    /* Secondary button - translucent style */
+    .btn-learn-more {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.875rem 2.5rem;
+        overflow: hidden;
+        font-weight: 600;
+        font-size: 1.125rem;
+        border-radius: 12px;
+        background: rgba(216, 108, 90, 0.1);
+        backdrop-filter: blur(20px);
+        border: 2px solid rgba(216, 108, 90, 0.4);
+        transition: all 0.3s ease;
+        cursor: pointer;
+        box-shadow: 0 4px 20px rgba(216, 108, 90, 0.2);
+        color: #D86C5A;
+    }
+
+    .btn-learn-more:hover {
+        transform: translateY(-3px);
+        background: rgba(216, 108, 90, 0.2);
+        border-color: #D86C5A;
+        box-shadow: 0 8px 30px rgba(216, 108, 90, 0.4);
+        color: white;
+    }
+
+    .btn-learn-more span {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    /* Title gradient */
+    .title-gradient {
+        background: linear-gradient(135deg, #ffffff 0%, #D86C5A 50%, #ffffff 100%);
+        background-size: 200% auto;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        animation: shimmer 3s ease-in-out infinite;
+    }
+
+    @keyframes shimmer {
+        0%, 100% {
+            background-position: 0% center;
+        }
+        50% {
+            background-position: 100% center;
+        }
+    }
+
+    /* Floating animation */
+    .floating {
+        animation: floating 6s ease-in-out infinite;
+    }
+
+    @keyframes floating {
+        0%, 100% {
+            transform: translateY(0px);
+        }
+        50% {
+            transform: translateY(-20px);
+        }
+    }
+
+    /* Feature cards */
+    .feature-card {
+        background: rgba(255, 255, 255, 0.03);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(216, 108, 90, 0.1);
+        border-radius: 16px;
+        padding: 2rem;
+        transition: all 0.4s ease;
+    }
+
+    .feature-card:hover {
+        background: rgba(255, 255, 255, 0.05);
+        border-color: rgba(216, 108, 90, 0.3);
+        transform: translateY(-8px);
+        box-shadow: 0 16px 40px rgba(216, 108, 90, 0.2);
+    }
+
+    .feature-icon {
+        width: 60px;
+        height: 60px;
+        background: linear-gradient(135deg, rgba(216, 108, 90, 0.2), rgba(216, 108, 90, 0.1));
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 1.5rem;
+        transition: all 0.3s ease;
+    }
+
+    .feature-card:hover .feature-icon {
+        background: linear-gradient(135deg, rgba(216, 108, 90, 0.3), rgba(216, 108, 90, 0.15));
+        transform: rotate(5deg) scale(1.1);
+    }
+    </style>
+</head>
+
+<body class="min-h-screen text-white">
+    <!-- Animated background -->
+    <div class="hero-background"></div>
+
+    <!-- Navigation -->
+    <nav class="nav-glass sticky top-0 z-50">
+        <div class="container mx-auto px-6 py-4">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center gap-3">
+                    <img src="assets/images/ewu.png" alt="EWU Logo" class="h-10 w-auto object-contain">
+                    <span class="text-xl font-bold">EWU Course Fetching</span>
+                </div>
+                <!-- Desktop Navigation -->
+                <div class="hidden md:flex gap-6 items-center">
+                    <a href="index.html" class="text-[#D86C5A] font-medium hover:text-white transition-colors">Home</a>
+                    <a href="documentation.html" class="text-gray-300 hover:text-white transition-colors">Documentation</a>
+                    <a href="login.html" class="px-4 py-2 rounded-lg bg-[#D86C5A]/10 border border-[#D86C5A]/30 text-[#D86C5A] hover:bg-[#D86C5A]/20 transition-all">Login</a>
+                </div>
+                <!-- Mobile Menu Button -->
+                <button id="mobileMenuBtn" class="md:hidden text-white text-2xl focus:outline-none">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+            <!-- Mobile Menu -->
+            <div id="mobileMenu" class="hidden md:hidden mt-4 pb-4 space-y-3">
+                <a href="index.html" class="block text-[#D86C5A] font-medium hover:text-white transition-colors py-2">Home</a>
+                <a href="documentation.html" class="block text-gray-300 hover:text-white transition-colors py-2">Documentation</a>
+                <a href="login.html" class="block text-gray-300 hover:text-white transition-colors py-2">Login</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="min-h-[calc(100vh-80px)] flex items-center justify-center px-6 py-20">
+        <div class="container mx-auto max-w-5xl text-center">
+            <div class="fade-in-up">
+                <h1 class="text-5xl md:text-7xl lg:text-8xl font-bold mb-6 leading-tight title-gradient">
+                    EWU Course Fetching
+                </h1>
+            </div>
+            <div class="fade-in-up delay-1">
+                <p class="text-gray-300 text-xl md:text-2xl mb-12 max-w-2xl mx-auto">
+                    Your courses, your schedule — always available.
+                </p>
+            </div>
+            <div class="fade-in-up delay-2">
+                <a href="login.html" class="btn-get-started">
+                    <span>
+                        Get Started
+                        <i class="fas fa-arrow-right ml-2"></i>
+                    </span>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="py-20 px-6">
+        <div class="container mx-auto max-w-6xl">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl md:text-5xl font-bold mb-4">Why Choose Us?</h2>
+                <p class="text-gray-400 text-lg">Built for students, powered by reliability</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-filter text-[#D86C5A] text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">Smart Filters</h3>
+                    <p class="text-gray-400 leading-relaxed">
+                        Filter by faculty, time, room, and seats.
+                    </p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-sync-alt text-[#D86C5A] text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">Auto Retry</h3>
+                    <p class="text-gray-400 leading-relaxed">
+                        Never lose connection during registration rush.
+                    </p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-bolt text-[#D86C5A] text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">Lightning Fast</h3>
+                    <p class="text-gray-400 leading-relaxed">
+                        Real-time updates and instant PDF export.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="py-20 px-6">
+        <div class="container mx-auto max-w-4xl text-center">
+            <h2 class="text-4xl md:text-5xl font-bold mb-6">Ready to Get Started?</h2>
+            <p class="text-gray-300 text-lg mb-10">
+                Access your courses, anytime, anywhere.
+            </p>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <a href="login.html" class="btn-get-started">
+                    <span>
+                        Login Now
+                        <i class="fas fa-sign-in-alt ml-2"></i>
+                    </span>
+                </a>
+                <a href="documentation.html" class="btn-learn-more">
+                    <span>
+                        Learn More
+                        <i class="fas fa-info-circle ml-2"></i>
+                    </span>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="border-t border-[#D86C5A]/20 py-8 mt-20">
+        <div class="container mx-auto px-6 text-center text-gray-400 text-sm">
+            <p>&copy; 2025 East West University. Educational use only.</p>
+        </div>
+    </footer>
+
+    <script src="assets/js/main.js"></script>
+</body>
+
+</html>
+

@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - EWU Course Fetching</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        ewu: {
+                            primary: '#D86C5A',
+                            dark: '#000000',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            overflow-x: hidden;
+        }
+
+        /* Animated gradient background with noise texture */
+        .login-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #000000 0%, #1a0a0a 25%, #0a0a0a 50%, #000000 100%);
+            z-index: -2;
+        }
+
+        .login-background::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(ellipse at 30% 40%, rgba(216, 108, 90, 0.15) 0%, transparent 50%),
+                radial-gradient(ellipse at 70% 60%, rgba(216, 108, 90, 0.1) 0%, transparent 50%);
+            animation: gradientShift 15s ease infinite;
+        }
+
+        .login-background::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' /%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.03'/%3E%3C/svg%3E");
+            opacity: 0.4;
+        }
+
+        @keyframes gradientShift {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.8;
+            }
+        }
+
+        /* Navigation bar */
+        .nav-glass {
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(216, 108, 90, 0.1);
+        }
+
+        /* Animated background particles */
+        .login-background::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' /%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.03'/%3E%3C/svg%3E");
+            opacity: 0.4;
+            animation: particleFloat 20s ease-in-out infinite;
+        }
+
+        @keyframes particleFloat {
+            0%, 100% {
+                transform: translateY(0) scale(1);
+                opacity: 0.4;
+            }
+            50% {
+                transform: translateY(-20px) scale(1.05);
+                opacity: 0.6;
+            }
+        }
+
+        /* 3D Login Card */
+        .login-card-3d {
+            position: relative;
+            background: rgba(20, 20, 20, 0.7);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border-radius: 24px;
+            padding: 3rem;
+            box-shadow: 
+                0 20px 60px rgba(0, 0, 0, 0.5),
+                0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 2px solid transparent;
+        }
+
+        /* Animated border stroke on hover */
+        .login-card-3d::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(
+                90deg,
+                #D86C5A,
+                #c5584a,
+                #D86C5A,
+                #c5584a
+            );
+            background-size: 300% 100%;
+            border-radius: 24px;
+            opacity: 0;
+            transition: opacity 0.4s;
+            z-index: -1;
+            animation: borderStroke 3s linear infinite;
+            padding: 2px;
+            -webkit-mask: 
+                linear-gradient(#fff 0 0) content-box, 
+                linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+        }
+
+        .login-card-3d:hover::before {
+            opacity: 1;
+        }
+
+        @keyframes borderStroke {
+            0% {
+                background-position: 0% 50%;
+            }
+            100% {
+                background-position: 300% 50%;
+            }
+        }
+
+        .login-card-3d:hover {
+            box-shadow: 
+                0 30px 80px rgba(216, 108, 90, 0.3),
+                0 0 0 1px rgba(216, 108, 90, 0.2) inset;
+        }
+
+        /* Input fields */
+        .input-modern {
+            background: rgba(255, 255, 255, 0.03);
+            border: 2px solid rgba(216, 108, 90, 0.2);
+            border-radius: 12px;
+            padding: 1rem 1.25rem;
+            color: white;
+            transition: all 0.3s ease;
+            outline: none;
+        }
+
+        .input-modern::placeholder {
+            color: rgba(255, 255, 255, 0.3);
+        }
+
+        .input-modern:focus {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: #D86C5A;
+            box-shadow: 0 0 20px rgba(216, 108, 90, 0.2);
+        }
+
+        /* Glossy button - matches site theme */
+        .btn-login {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.125rem;
+            overflow: hidden;
+            font-weight: 600;
+            font-size: 1rem;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #D86C5A 0%, #c5584a 50%, #D86C5A 100%);
+            background-size: 200% auto;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 6px 25px rgba(216, 108, 90, 0.5);
+            animation: shimmerLogin 3s ease-in-out infinite;
+        }
+
+        @keyframes shimmerLogin {
+            0%, 100% { background-position: 0% center; }
+            50% { background-position: 100% center; }
+        }
+
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 35px rgba(216, 108, 90, 0.7);
+        }
+
+        .btn-login:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            animation: none;
+        }
+
+        .btn-login-inner {
+            position: relative;
+            padding: 0.875rem 2rem;
+            transition: all 0.3s ease;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(10px);
+            border-radius: 11px;
+            color: white;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .btn-login:hover .btn-login-inner {
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        /* Fade in animation */
+        .fade-in {
+            opacity: 0;
+            animation: fadeIn 1s ease forwards;
+        }
+
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+            }
+        }
+
+        .fade-in.delay-1 { animation-delay: 0.2s; }
+        .fade-in.delay-2 { animation-delay: 0.4s; }
+
+        /* Alert box */
+        .alert-box {
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            transition: all 0.3s ease;
+        }
+
+        .alert-error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #fca5a5;
+        }
+
+        .alert-success {
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            color: #86efac;
+        }
+
+        .alert-info {
+            background: rgba(216, 108, 90, 0.1);
+            border: 1px solid rgba(216, 108, 90, 0.3);
+            color: #D86C5A;
+        }
+
+        /* Pulse animation */
+        .pulse-effect {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+    </style>
+</head>
+
+<body class="min-h-screen text-white">
+    <!-- Animated background -->
+    <div class="login-background"></div>
+
+    <!-- Navigation -->
+    <nav class="nav-glass sticky top-0 z-50">
+        <div class="container mx-auto px-6 py-4">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center gap-3">
+                    <img src="assets/images/ewu.png" alt="EWU Logo" class="h-10 w-auto object-contain">
+                    <span class="text-xl font-bold">EWU Course Fetching</span>
+                </div>
+                <!-- Desktop Navigation -->
+                <div class="hidden md:flex gap-6 items-center">
+                    <a href="index.html" class="text-gray-300 hover:text-white transition-colors">Home</a>
+                    <a href="documentation.html" class="text-gray-300 hover:text-white transition-colors">Documentation</a>
+                    <a href="login.html" class="text-[#D86C5A] font-medium">Login</a>
+                </div>
+                <!-- Mobile Menu Button -->
+                <button id="mobileMenuBtn" class="md:hidden text-white text-2xl focus:outline-none">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+            <!-- Mobile Menu -->
+            <div id="mobileMenu" class="hidden md:hidden mt-4 pb-4 space-y-3">
+                <a href="index.html" class="block text-gray-300 hover:text-white transition-colors py-2">Home</a>
+                <a href="documentation.html" class="block text-gray-300 hover:text-white transition-colors py-2">Documentation</a>
+                <a href="login.html" class="block text-[#D86C5A] font-medium py-2">Login</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Login Section -->
+    <div class="min-h-[calc(100vh-80px)] flex items-center justify-center px-6 py-12">
+        <div class="w-full max-w-md">
+            <!-- Logo/Header -->
+            <div class="text-center mb-8 fade-in">
+                <div class="inline-block mb-6">
+                    <img src="assets/images/ewu.png" alt="EWU Logo" class="h-20 w-auto object-contain mx-auto">
+                </div>
+                <h1 class="text-4xl font-bold mb-2">Welcome Back</h1>
+                <p class="text-gray-400">Access your courses</p>
+            </div>
+
+            <!-- Login Card -->
+            <div class="login-card-3d fade-in delay-1">
+                <form id="loginForm" class="space-y-6">
+                    <!-- Alert Messages -->
+                    <div id="alertBox" class="hidden alert-box">
+                        <i id="alertIcon" class="text-xl"></i>
+                        <p id="alertMessage" class="text-sm font-medium"></p>
+                    </div>
+
+                    <!-- Student ID -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">
+                            <i class="fas fa-user mr-2 text-[#D86C5A]"></i>Student ID
+                        </label>
+                        <input 
+                            type="text" 
+                            id="username" 
+                            name="username" 
+                            required
+                            placeholder="Enter your student ID"
+                            class="input-modern w-full"
+                        >
+                    </div>
+
+                    <!-- Password -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">
+                            <i class="fas fa-lock mr-2 text-[#D86C5A]"></i>Password
+                        </label>
+                        <div class="relative">
+                            <input 
+                                type="password" 
+                                id="password" 
+                                name="password" 
+                                required
+                                placeholder="Enter your password"
+                                class="input-modern w-full pr-12"
+                            >
+                            <button 
+                                type="button" 
+                                onclick="togglePassword()"
+                                class="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-[#D86C5A] transition-colors"
+                            >
+                                <i id="passwordIcon" class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button 
+                        type="submit" 
+                        id="loginBtn"
+                        class="btn-login w-full"
+                    >
+                        <span class="btn-login-inner">
+                            <i class="fas fa-sign-in-alt mr-2"></i>
+                            <span id="btnText">Sign In</span>
+                        </span>
+                    </button>
+
+                    <!-- Info -->
+                    <div class="text-center text-sm text-gray-400 mt-4">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        Use your EWU portal credentials
+                    </div>
+                </form>
+            </div>
+
+            <!-- Footer Text -->
+            <div class="text-center mt-8 text-gray-500 text-sm fade-in delay-2">
+                <p>Protected by intelligent retry system</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="assets/js/retry-handler.js"></script>
+    <script src="assets/js/auth.js"></script>
+    <script src="assets/js/main.js"></script>
+</body>
+</html>

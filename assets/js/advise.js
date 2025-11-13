@@ -1,9 +1,12 @@
 // ========================================
-// Advise Page JavaScript
+// Advise Page JavaScript with Intelligent Retry
 // ========================================
 
 // **IMPORTANT:** Update this to your actual Worker API domain
 const API_BASE_URL = 'https://api.aftabkabir.me';
+
+// Initialize retry handler
+const courseRetryHandler = new RetryHandler();
 
 let allCourses = [];
 let filteredCourses = [];
@@ -20,7 +23,8 @@ const dayMapping = {
     'M': 'MONDAY',
     'T': 'TUESDAY',
     'W': 'WEDNESDAY',
-    'R': 'THURSDAY'
+    'R': 'THURSDAY',
+    'F': 'FRIDAY'
 };
 
 // Parse day and time from TimeSlotName
@@ -102,40 +106,85 @@ async function handleLogout(event) {
     window.location.href = 'login.html';
 }
 
-// Load courses via API
-async function loadCourses(maintainScroll = false) {
+// Course fetch attempt function (will be wrapped with retry logic)
+async function attemptFetchCourses() {
+    const response = await fetch(`${API_BASE_URL}/api/courses`, {
+        credentials: 'include'
+    });
+    
+    if (response.status === 401) {
+        return { 
+            status: 'invalid_credentials',
+            message: 'Session expired. Please login again.'
+        };
+    }
+
+    const data = await response.json();
+    
+    if (data.error) {
+        throw new Error(data.error);
+    }
+
+    return {
+        status: 'success',
+        data: data
+    };
+}
+
+// Load courses via API with retry support
+async function loadCourses(maintainScroll = false, useRetry = false) {
     if (maintainScroll) {
         scrollPosition = window.pageYOffset;
     }
 
-    try {
-        const response = await fetch(`${API_BASE_URL}/api/courses`, {
-            credentials: 'include'
-        });
-        
-        if (response.status === 401) {
-            window.location.href = 'login.html';
-            return;
+    if (!useRetry) {
+        // Normal load without retry (for initial page load)
+        try {
+            const result = await attemptFetchCourses();
+            
+            if (result.status === 'invalid_credentials') {
+                window.location.href = 'login.html';
+                return;
+            }
+            
+            if (result.status === 'success') {
+                allCourses = result.data;
+                populateCourseFilter();
+                applyFilters();
+                
+                if (maintainScroll) {
+                    setTimeout(() => window.scrollTo(0, scrollPosition), 50);
+                }
+            }
+        } catch (error) {
+            console.error('Error loading courses:', error);
+            showErrorMessage('Failed to load courses. Please check your connection.');
         }
-
-        const data = await response.json();
-        
-        if (data.error) {
-            console.error('Error loading courses:', data.error);
-            showErrorMessage('Failed to load courses. Please try again.');
-            return;
-        }
-
-        allCourses = data;
-        populateCourseFilter();
-        applyFilters();
-
-        if (maintainScroll) {
-            setTimeout(() => window.scrollTo(0, scrollPosition), 50);
-        }
-    } catch (error) {
-        console.error('Error loading courses:', error);
-        showErrorMessage('Failed to load courses. Please check your connection.');
+    } else {
+        // Use retry handler for refresh button
+        await courseRetryHandler.executeWithRetry(
+            () => attemptFetchCourses(),
+            {
+                operationName: 'Fetching Courses',
+                onSuccess: (result) => {
+                    allCourses = result.data;
+                    populateCourseFilter();
+                    applyFilters();
+                    
+                    if (maintainScroll) {
+                        setTimeout(() => window.scrollTo(0, scrollPosition), 50);
+                    }
+                    
+                    showToast('Courses refreshed successfully', 2000);
+                },
+                onInvalidCredentials: (result) => {
+                    window.location.href = 'login.html';
+                },
+                onRetryAttempt: (attemptNum, elapsedTime) => {
+                    console.log(`Course fetch attempt ${attemptNum} failed. Elapsed time: ${elapsedTime}s`);
+                }
+            }
+        );
     }
 }
 
@@ -423,18 +472,17 @@ function showToast(message, duration = 3000) {
     }, duration);
 }
 
-// Refresh button with AJAX and toast notification
+// Refresh button with AJAX, retry logic and toast notification
 document.getElementById('refreshBtn')?.addEventListener('click', async function() {
     const btn = this;
     const icon = this.querySelector('.refresh-icon');
     
     btn.classList.add('refreshing');
     
-    await loadCourses(true);
+    await loadCourses(true, true); // Enable retry for manual refresh
     
     setTimeout(() => {
         btn.classList.remove('refreshing');
-        showToast('Refreshed Successfully', 3000);
     }, 600);
 });
 

@@ -1,9 +1,12 @@
 // ========================================
-// Authentication JavaScript
+// Authentication JavaScript with Intelligent Retry
 // ========================================
 
 // **IMPORTANT:** Update this to your actual Worker API domain
 const API_BASE_URL = 'https://api.aftabkabir.me';
+
+// Initialize retry handler
+const retryHandler = new RetryHandler();
 
 // Toggle password visibility
 function togglePassword() {
@@ -41,6 +44,46 @@ function showAlert(message, type = 'error') {
     alertMessage.textContent = message;
 }
 
+// Login attempt function (will be wrapped with retry logic)
+async function attemptLogin(username, password) {
+    const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+            username: username,
+            password: password
+        })
+    });
+
+    const data = await response.json();
+
+    // Check for invalid credentials (don't retry these)
+    if (data.status === 'error' && (
+        data.message?.toLowerCase().includes('invalid') || 
+        data.message?.toLowerCase().includes('incorrect') ||
+        data.message?.toLowerCase().includes('wrong')
+    )) {
+        return { 
+            status: 'invalid_credentials', 
+            message: data.message 
+        };
+    }
+
+    // Check for success
+    if (data.status === 'success') {
+        return { 
+            status: 'success', 
+            data: data 
+        };
+    }
+
+    // Any other error should trigger retry
+    throw new Error(data.message || 'Login failed');
+}
+
 // Handle form submission
 document.getElementById('loginForm')?.addEventListener('submit', async function(e) {
     e.preventDefault();
@@ -59,42 +102,31 @@ document.getElementById('loginForm')?.addEventListener('submit', async function(
     // Disable button and show loading
     loginBtn.disabled = true;
     loginBtn.classList.add('opacity-75', 'cursor-not-allowed');
-    btnText.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Signing in...';
+    btnText.innerHTML = 'Signing in...';
 
-    try {
-        // Call Worker API login endpoint
-        const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
+    // Use retry handler for login
+    await retryHandler.executeWithRetry(
+        () => attemptLogin(username, password),
+        {
+            operationName: 'Login',
+            onSuccess: (result) => {
+                showAlert('Login successful! Redirecting...', 'success');
+                setTimeout(() => {
+                    window.location.href = 'advise.html';
+                }, 1000);
             },
-            credentials: 'include', // Important: send cookies
-            body: JSON.stringify({
-                username: username,
-                password: password
-            })
-        });
-
-        const data = await response.json();
-
-        if (data.status === 'success') {
-            showAlert('Login successful! Redirecting...', 'success');
-            setTimeout(() => {
-                window.location.href = 'advise.html';
-            }, 1000);
-        } else {
-            showAlert(data.message || 'Login failed. Please try again.', 'error');
-            loginBtn.disabled = false;
-            loginBtn.classList.remove('opacity-75', 'cursor-not-allowed');
-            btnText.innerHTML = '<i class="fas fa-sign-in-alt mr-2"></i>Sign In';
+            onInvalidCredentials: (result) => {
+                showAlert(result.message || 'Invalid credentials. Please check your student ID and password.', 'error');
+                loginBtn.disabled = false;
+                loginBtn.classList.remove('opacity-75', 'cursor-not-allowed');
+                btnText.textContent = 'Sign In';
+            },
+            onRetryAttempt: (attemptNum, elapsedTime) => {
+                console.log(`Login attempt ${attemptNum} failed. Elapsed time: ${elapsedTime}s`);
+                showAlert(`Connection timeout. Retrying automatically... (Attempt ${attemptNum})`, 'info');
+            }
         }
-    } catch (error) {
-        console.error('Login error:', error);
-        showAlert('Connection error. Please check your internet connection.', 'error');
-        loginBtn.disabled = false;
-        loginBtn.classList.remove('opacity-75', 'cursor-not-allowed');
-        btnText.innerHTML = '<i class="fas fa-sign-in-alt mr-2"></i>Sign In';
-    }
+    );
 });
 
 // Auto-focus username field

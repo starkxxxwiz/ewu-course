@@ -123,6 +123,7 @@
         cursor: pointer;
         box-shadow: 0 8px 30px rgba(216, 108, 90, 0.5);
         animation: shimmerBtn 3s ease-in-out infinite;
+        text-decoration: none;
     }
 
     @keyframes shimmerBtn {
@@ -145,11 +146,34 @@
         color: white;
         display: flex;
         align-items: center;
+        justify-content: center;
         gap: 0.5rem;
+        width: 100%;
     }
 
     .btn-get-started:hover span {
         background: rgba(0, 0, 0, 0.3);
+    }
+
+    /* Mobile button adjustments */
+    @media (max-width: 640px) {
+        .btn-get-started {
+            width: 100%;
+            max-width: 100%;
+            min-width: 280px;
+        }
+        
+        .btn-get-started span {
+            padding: 0.875rem 2rem;
+            font-size: 1rem;
+        }
+    }
+    
+    /* Tablet button adjustments */
+    @media (min-width: 641px) and (max-width: 767px) {
+        .btn-get-started {
+            min-width: 200px;
+        }
     }
 
     /* Secondary button - translucent style */
@@ -170,6 +194,7 @@
         cursor: pointer;
         box-shadow: 0 4px 20px rgba(216, 108, 90, 0.2);
         color: #D86C5A;
+        text-decoration: none;
     }
 
     .btn-learn-more:hover {
@@ -183,7 +208,39 @@
     .btn-learn-more span {
         display: flex;
         align-items: center;
+        justify-content: center;
         gap: 0.5rem;
+    }
+    
+    /* Mobile adjustments for secondary button */
+    @media (max-width: 640px) {
+        .btn-learn-more {
+            width: 100%;
+            max-width: 100%;
+            min-width: 280px;
+            padding: 0.875rem 2rem;
+            font-size: 1rem;
+        }
+    }
+    
+    /* Tablet adjustments for secondary button */
+    @media (min-width: 641px) and (max-width: 767px) {
+        .btn-learn-more {
+            min-width: 200px;
+        }
+    }
+    
+    /* Button container mobile adjustments */
+    @media (max-width: 640px) {
+        section .flex.flex-col {
+            align-items: center;
+            padding: 0 1rem;
+        }
+        
+        section .flex.flex-col > a {
+            width: 100%;
+            max-width: 340px;
+        }
     }
 
     /* Title gradient */

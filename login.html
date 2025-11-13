@@ -6,6 +6,7 @@
     <title>Login - EWU Course Fetching</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="assets/css/styles.css">
     
     <script>
         tailwind.config = {
@@ -372,7 +373,8 @@
                             id="username" 
                             name="username" 
                             required
-                            placeholder="Enter your student ID"
+                            placeholder="2050-1-50-100"
+                            maxlength="13"
                             class="input-modern w-full"
                         >
                     </div>
@@ -431,5 +433,52 @@
     <script src="assets/js/retry-handler.js"></script>
     <script src="assets/js/auth.js"></script>
     <script src="assets/js/main.js"></script>
+    
+    <script>
+        // Student ID Auto-Formatting (YYYY-S-XX-XXX)
+        document.addEventListener('DOMContentLoaded', function() {
+            const usernameInput = document.getElementById('username');
+            
+            if (usernameInput) {
+                usernameInput.addEventListener('input', function(e) {
+                    let value = e.target.value;
+                    
+                    // Remove all non-digit characters
+                    let digits = value.replace(/\D/g, '');
+                    
+                    // Limit to 10 digits max
+                    if (digits.length > 10) {
+                        digits = digits.substring(0, 10);
+                    }
+                    
+                    // Format: YYYY-S-XX-XXX
+                    let formatted = '';
+                    
+                    if (digits.length > 0) {
+                        formatted = digits.substring(0, 4); // YYYY
+                    }
+                    if (digits.length >= 5) {
+                        formatted += '-' + digits.substring(4, 5); // -S
+                    }
+                    if (digits.length >= 6) {
+                        formatted += '-' + digits.substring(5, 7); // -XX
+                    }
+                    if (digits.length >= 8) {
+                        formatted += '-' + digits.substring(7, 10); // -XXX
+                    }
+                    
+                    // Update the input value
+                    e.target.value = formatted;
+                });
+                
+                // Handle paste events
+                usernameInput.addEventListener('paste', function(e) {
+                    setTimeout(function() {
+                        usernameInput.dispatchEvent(new Event('input'));
+                    }, 10);
+                });
+            }
+        });
+    </script>
 </body>
 </html>

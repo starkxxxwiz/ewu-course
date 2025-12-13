@@ -4,14 +4,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EWU Course Schedule</title>
+    <meta name="description" content="EWU Course Schedule Dashboard - View and manage your course schedule with advanced search and filtering capabilities.">
+    <title>EWU Course Schedule Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="assets/css/styles.css">
     
     <script>
@@ -21,197 +22,830 @@
             extend: {
                 colors: {
                     dark: {
-                        950: '#0a0a0f',
-                        900: '#0f0f1a',
-                        800: '#1a1a2e',
-                        700: '#16213e',
-                        600: '#0f3460',
+                        950: '#050508',
+                        900: '#0a0a0f',
+                        850: '#0e0e14',
+                        800: '#12121a',
+                        700: '#1a1a24',
+                        600: '#22222e',
+                    },
+                    accent: {
+                        primary: '#D86C5A',
+                        secondary: '#5a8fd8',
+                        cyan: '#06b6d4',
+                        emerald: '#10b981',
                     }
                 },
                 fontFamily: {
                     'inter': ['Inter', 'sans-serif'],
+                    'mono': ['JetBrains Mono', 'monospace'],
                 }
             }
         }
     }
     </script>
+    
+    <style>
+        /* ===== ENHANCED ADVISE PAGE STYLES ===== */
+        
+        /* Premium Glass Morphism */
+        .glass-premium {
+            background: linear-gradient(135deg, rgba(18, 18, 26, 0.85) 0%, rgba(10, 10, 15, 0.92) 100%);
+            backdrop-filter: blur(40px) saturate(180%);
+            -webkit-backdrop-filter: blur(40px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            box-shadow: 
+                0 8px 32px rgba(0, 0, 0, 0.5),
+                0 0 0 1px rgba(255, 255, 255, 0.03) inset,
+                0 1px 0 rgba(255, 255, 255, 0.05) inset;
+        }
+        
+        .glass-subtle {
+            background: rgba(18, 18, 26, 0.6);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+        }
+        
+        /* Enhanced Input Styles */
+        .search-input-premium {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(90, 143, 216, 0.2);
+            border-radius: 16px;
+            padding: 16px 20px 16px 52px;
+            font-size: 15px;
+            color: #fff;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            width: 100%;
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .search-input-premium:focus {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(90, 143, 216, 0.5);
+            box-shadow: 
+                0 0 0 4px rgba(90, 143, 216, 0.1),
+                0 4px 20px rgba(90, 143, 216, 0.15);
+            outline: none;
+        }
+        
+        .search-input-premium::placeholder {
+            color: rgba(156, 163, 175, 0.5);
+        }
+        
+        .search-icon-wrapper {
+            position: absolute;
+            left: 18px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: rgba(90, 143, 216, 0.6);
+            transition: color 0.3s ease;
+            z-index: 10;
+        }
+        
+        .search-container:focus-within .search-icon-wrapper {
+            color: rgba(90, 143, 216, 0.9);
+        }
+        
+        /* Search Suggestions Premium */
+        .search-suggestions-premium {
+            position: absolute;
+            width: 100%;
+            margin-top: 8px;
+            background: linear-gradient(180deg, rgba(18, 18, 26, 0.98) 0%, rgba(10, 10, 15, 0.98) 100%);
+            backdrop-filter: blur(40px);
+            -webkit-backdrop-filter: blur(40px);
+            border: 1px solid rgba(90, 143, 216, 0.15);
+            border-radius: 16px;
+            box-shadow: 
+                0 20px 60px rgba(0, 0, 0, 0.6),
+                0 0 0 1px rgba(90, 143, 216, 0.1) inset;
+            z-index: 100;
+            max-height: 400px;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+        
+        .suggestion-item-premium {
+            padding: 14px 18px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .suggestion-item-premium:hover,
+        .suggestion-item-premium.active {
+            background: linear-gradient(90deg, rgba(90, 143, 216, 0.15) 0%, rgba(90, 143, 216, 0.05) 100%);
+            border-left: 3px solid rgba(90, 143, 216, 0.7);
+        }
+        
+        .suggestion-item-premium:last-child {
+            border-bottom: none;
+        }
+        
+        /* Enhanced Table Styles */
+        .table-premium {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+        
+        .table-premium thead {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        
+        .table-premium thead tr {
+            background: linear-gradient(90deg, rgba(90, 143, 216, 0.1) 0%, rgba(90, 143, 216, 0.05) 100%);
+        }
+        
+        .table-premium th {
+            padding: 16px 14px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: rgba(90, 143, 216, 0.9);
+            border-bottom: 1px solid rgba(90, 143, 216, 0.2);
+            white-space: nowrap;
+        }
+        
+        .table-premium tbody tr {
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+        }
+        
+        .table-premium tbody tr:hover {
+            background: linear-gradient(90deg, rgba(90, 143, 216, 0.08) 0%, rgba(90, 143, 216, 0.02) 100%);
+            transform: translateX(4px);
+        }
+        
+        .table-premium td {
+            padding: 14px 14px;
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.85);
+            vertical-align: middle;
+        }
+        
+        /* Course Code Badge */
+        .badge-course {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            background: linear-gradient(135deg, rgba(90, 143, 216, 0.2) 0%, rgba(90, 143, 216, 0.1) 100%);
+            border: 1px solid rgba(90, 143, 216, 0.3);
+            border-radius: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+            font-size: 12px;
+            color: #5a8fd8;
+            letter-spacing: 0.02em;
+        }
+        
+        /* Section Badge */
+        .badge-section {
+            display: inline-flex;
+            align-items: center;
+            padding: 5px 10px;
+            background: rgba(6, 182, 212, 0.1);
+            border: 1px solid rgba(6, 182, 212, 0.25);
+            border-radius: 6px;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 500;
+            font-size: 11px;
+            color: #06b6d4;
+        }
+        
+        /* Room Badge */
+        .badge-room {
+            display: inline-flex;
+            align-items: center;
+            padding: 5px 10px;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.25);
+            border-radius: 6px;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 500;
+            font-size: 11px;
+            color: #10b981;
+            max-width: 120px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        /* Availability Status */
+        .status-available {
+            color: #10b981;
+            font-weight: 700;
+        }
+        
+        .status-limited {
+            color: #f59e0b;
+            font-weight: 700;
+        }
+        
+        .status-full {
+            color: #ef4444;
+            font-weight: 700;
+        }
+        
+        /* Capacity Indicator */
+        .capacity-bar {
+            width: 50px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+            overflow: hidden;
+            margin-top: 4px;
+        }
+        
+        .capacity-fill {
+            height: 100%;
+            border-radius: 2px;
+            transition: width 0.3s ease;
+        }
+        
+        /* Filter Dropdown Premium */
+        .filter-dropdown-premium {
+            background: linear-gradient(180deg, rgba(18, 18, 26, 0.98) 0%, rgba(10, 10, 15, 0.98) 100%);
+            backdrop-filter: blur(40px);
+            -webkit-backdrop-filter: blur(40px);
+            border: 1px solid rgba(90, 143, 216, 0.15);
+            border-radius: 14px;
+            box-shadow: 
+                0 20px 60px rgba(0, 0, 0, 0.6),
+                0 0 0 1px rgba(90, 143, 216, 0.1) inset;
+            overflow: hidden;
+        }
+        
+        .filter-option {
+            padding: 12px 16px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.8);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+        }
+        
+        .filter-option:hover {
+            background: linear-gradient(90deg, rgba(90, 143, 216, 0.12) 0%, rgba(90, 143, 216, 0.04) 100%);
+            color: #fff;
+            padding-left: 20px;
+        }
+        
+        .filter-option:last-child {
+            border-bottom: none;
+        }
+        
+        /* Premium Button Styles */
+        .btn-premium-primary {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 2px;
+            background: linear-gradient(135deg, #D86C5A 0%, #c5584a 50%, #D86C5A 100%);
+            background-size: 200% auto;
+            border: none;
+            border-radius: 14px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 20px rgba(216, 108, 90, 0.4);
+            overflow: hidden;
+        }
+        
+        .btn-premium-primary:hover {
+            background-position: right center;
+            box-shadow: 0 8px 30px rgba(216, 108, 90, 0.5);
+            transform: translateY(-2px);
+        }
+        
+        .btn-premium-primary-inner {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 22px;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            color: #fff;
+            font-size: 14px;
+            transition: background 0.3s ease;
+        }
+        
+        .btn-premium-primary:hover .btn-premium-primary-inner {
+            background: rgba(0, 0, 0, 0.75);
+        }
+        
+        .btn-premium-secondary {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 22px;
+            background: rgba(239, 68, 68, 0.08);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(239, 68, 68, 0.25);
+            border-radius: 14px;
+            color: #ef4444;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-premium-secondary:hover {
+            background: rgba(239, 68, 68, 0.15);
+            border-color: rgba(239, 68, 68, 0.5);
+            box-shadow: 0 4px 20px rgba(239, 68, 68, 0.2);
+            transform: translateY(-2px);
+        }
+        
+        /* Toggle Switch Premium */
+        .toggle-premium {
+            position: relative;
+            width: 52px;
+            height: 28px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 14px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .toggle-premium.active {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            border-color: transparent;
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+        }
+        
+        .toggle-knob {
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 20px;
+            height: 20px;
+            background: #fff;
+            border-radius: 50%;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+        
+        .toggle-premium.active .toggle-knob {
+            transform: translateX(24px);
+        }
+        
+        /* Stats Cards */
+        .stat-card {
+            background: linear-gradient(135deg, rgba(90, 143, 216, 0.08) 0%, rgba(90, 143, 216, 0.02) 100%);
+            border: 1px solid rgba(90, 143, 216, 0.15);
+            border-radius: 14px;
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        
+        .stat-icon {
+            width: 42px;
+            height: 42px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, rgba(90, 143, 216, 0.2) 0%, rgba(90, 143, 216, 0.1) 100%);
+            border-radius: 12px;
+            color: #5a8fd8;
+            font-size: 18px;
+        }
+        
+        /* Empty State */
+        .empty-state {
+            padding: 60px 20px;
+            text-align: center;
+        }
+        
+        .empty-state-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, rgba(90, 143, 216, 0.1) 0%, rgba(90, 143, 216, 0.05) 100%);
+            border-radius: 20px;
+            font-size: 32px;
+            color: rgba(90, 143, 216, 0.5);
+        }
+        
+        /* Scrollbar Premium */
+        .scroll-premium::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        
+        .scroll-premium::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 3px;
+        }
+        
+        .scroll-premium::-webkit-scrollbar-thumb {
+            background: rgba(90, 143, 216, 0.3);
+            border-radius: 3px;
+        }
+        
+        .scroll-premium::-webkit-scrollbar-thumb:hover {
+            background: rgba(90, 143, 216, 0.5);
+        }
+        
+        /* Keyboard Shortcut Hints */
+        .kbd-hint {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 3px 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            color: rgba(255, 255, 255, 0.4);
+            margin-left: 8px;
+        }
+        
+        /* Loading Animation */
+        .loading-premium {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .loading-dot {
+            width: 8px;
+            height: 8px;
+            background: #5a8fd8;
+            border-radius: 50%;
+            animation: loadingBounce 1.4s ease-in-out infinite;
+        }
+        
+        .loading-dot:nth-child(1) { animation-delay: 0s; }
+        .loading-dot:nth-child(2) { animation-delay: 0.16s; }
+        .loading-dot:nth-child(3) { animation-delay: 0.32s; }
+        
+        @keyframes loadingBounce {
+            0%, 80%, 100% {
+                transform: scale(0.6);
+                opacity: 0.4;
+            }
+            40% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+        
+        /* Shimmer Effect for Loading */
+        .shimmer {
+            background: linear-gradient(
+                90deg,
+                rgba(255, 255, 255, 0.02) 0%,
+                rgba(255, 255, 255, 0.06) 50%,
+                rgba(255, 255, 255, 0.02) 100%
+            );
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+        }
+        
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        
+        /* Result Counter */
+        .result-counter {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 14px;
+            background: rgba(90, 143, 216, 0.1);
+            border: 1px solid rgba(90, 143, 216, 0.2);
+            border-radius: 20px;
+            font-size: 13px;
+            color: rgba(90, 143, 216, 0.9);
+        }
+        
+        /* Animation Classes */
+        .fade-in-up {
+            animation: fadeInUp 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .stagger-1 { animation-delay: 0.1s; }
+        .stagger-2 { animation-delay: 0.2s; }
+        .stagger-3 { animation-delay: 0.3s; }
+        
+        /* Table Container */
+        .table-wrapper {
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid rgba(90, 143, 216, 0.1);
+        }
+        
+        .table-scroll-container {
+            max-height: calc(100vh - 400px);
+            min-height: 300px;
+            overflow-y: auto;
+            overflow-x: auto;
+        }
+        
+        /* Day/Time Columns */
+        .day-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            background: rgba(168, 85, 247, 0.1);
+            border: 1px solid rgba(168, 85, 247, 0.2);
+            border-radius: 5px;
+            font-size: 11px;
+            font-weight: 500;
+            color: #a855f7;
+        }
+        
+        .time-text {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            color: #06b6d4;
+        }
+        
+        /* Faculty Name */
+        .faculty-name {
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.9);
+            max-width: 150px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .search-input-premium {
+                padding: 14px 16px 14px 46px;
+                font-size: 14px;
+                border-radius: 12px;
+            }
+            
+            .table-premium td,
+            .table-premium th {
+                padding: 10px 8px;
+                font-size: 12px;
+            }
+            
+            .badge-course,
+            .badge-section,
+            .badge-room {
+                padding: 4px 8px;
+                font-size: 10px;
+            }
+            
+            .stat-card {
+                padding: 12px 16px;
+            }
+            
+            .btn-premium-primary-inner,
+            .btn-premium-secondary {
+                padding: 10px 18px;
+                font-size: 13px;
+            }
+        }
+        
+        @media (max-width: 640px) {
+            .table-scroll-container {
+                max-height: calc(100vh - 350px);
+            }
+        }
+    </style>
 </head>
 
-<body class="text-white min-h-screen">
+<body class="text-white min-h-screen" style="background: linear-gradient(135deg, #050508 0%, #0a0a0f 25%, #0e0e14 50%, #0a0a0f 75%, #050508 100%); background-attachment: fixed;">
     <!-- Navigation -->
-    <nav class="glass-card sticky top-0 z-50 mb-8" style="background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(216, 108, 90, 0.1);">
-        <div class="container mx-auto px-6 py-4">
+    <nav class="glass-premium sticky top-0 z-50 mb-6" style="border-bottom: 1px solid rgba(90, 143, 216, 0.08);">
+        <div class="container mx-auto px-4 sm:px-6 py-4">
             <div class="flex justify-between items-center">
                 <div class="flex items-center gap-3">
-                    <img src="assets/images/ewu.png" alt="EWU Logo" class="h-10 w-auto object-contain">
-                    <span class="text-xl font-bold">EWU Course Fetching</span>
+                    <img src="assets/images/ewu.png" alt="EWU Logo" class="h-9 w-auto object-contain">
+                    <span class="text-lg font-bold text-white">EWU Courses</span>
                 </div>
                 <!-- Desktop Navigation -->
                 <div class="hidden md:flex gap-6 items-center">
-                    <a href="index.html" class="text-gray-300 hover:text-white transition-colors">Home</a>
-                    <a href="documentation.html" class="text-gray-300 hover:text-white transition-colors">Documentation</a>
-                    <a href="advise.html" class="text-[#D86C5A] font-medium">Dashboard</a>
-                    <a href="#" onclick="handleLogout(event)" class="text-red-400 hover:text-red-300 transition-colors">
+                    <a href="index.html" class="text-gray-400 hover:text-white transition-colors text-sm font-medium">Home</a>
+                    <a href="documentation.html" class="text-gray-400 hover:text-white transition-colors text-sm font-medium">Documentation</a>
+                    <a href="advise.html" class="text-[#5a8fd8] font-semibold text-sm">Dashboard</a>
+                    <a href="#" onclick="handleLogout(event)" class="text-red-400/80 hover:text-red-400 transition-colors text-sm font-medium">
                         <i class="fas fa-sign-out-alt mr-1"></i>Logout
                     </a>
                 </div>
                 <!-- Mobile Menu Button -->
-                <button id="mobileMenuBtn" class="md:hidden text-white text-2xl focus:outline-none">
+                <button id="mobileMenuBtn" class="md:hidden text-white text-xl focus:outline-none">
                     <i class="fas fa-bars"></i>
                 </button>
             </div>
             <!-- Mobile Menu -->
-            <div id="mobileMenu" class="hidden md:hidden mt-4 pb-4 space-y-3">
-                <a href="index.html" class="block text-gray-300 hover:text-white transition-colors py-2">Home</a>
-                <a href="documentation.html" class="block text-gray-300 hover:text-white transition-colors py-2">Documentation</a>
-                <a href="advise.html" class="block text-[#D86C5A] font-medium py-2">Dashboard</a>
-                <a href="#" onclick="handleLogout(event)" class="block text-red-400 hover:text-red-300 transition-colors py-2">
+            <div id="mobileMenu" class="hidden md:hidden mt-4 pb-4 space-y-2">
+                <a href="index.html" class="block text-gray-400 hover:text-white transition-colors py-2 px-3 rounded-lg hover:bg-white/5">Home</a>
+                <a href="documentation.html" class="block text-gray-400 hover:text-white transition-colors py-2 px-3 rounded-lg hover:bg-white/5">Documentation</a>
+                <a href="advise.html" class="block text-[#5a8fd8] font-medium py-2 px-3 rounded-lg bg-[#5a8fd8]/10">Dashboard</a>
+                <a href="#" onclick="handleLogout(event)" class="block text-red-400 hover:text-red-300 transition-colors py-2 px-3 rounded-lg hover:bg-red-500/10">
                     <i class="fas fa-sign-out-alt mr-1"></i>Logout
                 </a>
             </div>
         </div>
     </nav>
 
-    <div class="container mx-auto px-4 py-8 max-w-[1600px]">
+    <div class="container mx-auto px-4 pb-8 max-w-[1600px]">
         
-        <!-- Header -->
-        <div class="glass-card rounded-2xl p-6 mb-8 fade-in">
-            <div class="flex flex-col lg:flex-row justify-between items-center gap-6">
-                <div class="text-center lg:text-left">
-                    <h1 class="text-4xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent mb-2">
-                        EWU Course Schedule
+        <!-- Header Section -->
+        <div class="glass-premium rounded-2xl p-5 sm:p-6 mb-6 fade-in-up">
+            <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-5">
+                <div>
+                    <h1 class="text-2xl sm:text-3xl font-bold mb-2" style="background: linear-gradient(135deg, #5a8fd8 0%, #06b6d4 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
+                        Course Schedule Dashboard
                     </h1>
-                    <p class="text-gray-400 text-sm">
-                        <i class="fas fa-user mr-2"></i>Welcome, <span class="text-blue-400 font-semibold" id="userId">User</span>
-                        <span class="mx-3">•</span>
-                        <i class="fas fa-clock mr-2"></i><span id="currentTime">Loading...</span>
-                    </p>
+                    <div class="flex flex-wrap items-center gap-3 text-sm text-gray-400">
+                        <span class="flex items-center gap-2">
+                            <i class="fas fa-user text-[#5a8fd8]/60"></i>
+                            <span id="userId" class="text-[#5a8fd8] font-medium">User</span>
+                        </span>
+                        <span class="text-gray-600">•</span>
+                        <span class="flex items-center gap-2">
+                            <i class="fas fa-clock text-gray-500"></i>
+                            <span id="currentTime">Loading...</span>
+                        </span>
+                    </div>
                 </div>
-                <div class="flex flex-wrap gap-3 justify-center">
-                    <button onclick="exportToPDF()" style="position: relative; display: inline-flex; align-items: center; justify-content: center; padding: 0.125rem; overflow: hidden; font-weight: 600; border-radius: 12px; background: linear-gradient(135deg, #D86C5A 0%, #c5584a 50%, #D86C5A 100%); background-size: 200% auto; transition: all 0.3s ease; border: none; cursor: pointer; box-shadow: 0 4px 20px rgba(216, 108, 90, 0.5);">
-                        <span style="position: relative; padding: 0.625rem 1.5rem; transition: all 0.3s ease; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(10px); border-radius: 11px; color: white; display: flex; align-items: center; gap: 0.5rem;">
+                <div class="flex flex-wrap gap-3">
+                    <button onclick="exportToPDF()" class="btn-premium-primary">
+                        <span class="btn-premium-primary-inner">
                             <i class="fas fa-file-pdf"></i>
                             Export PDF
                         </span>
                     </button>
-                    <button onclick="handleLogout(event)" style="position: relative; display: inline-flex; align-items: center; justify-content: center; padding: 0.625rem 1.5rem; overflow: hidden; font-weight: 600; border-radius: 12px; background: rgba(239, 68, 68, 0.1); backdrop-filter: blur(20px); border: 2px solid rgba(239, 68, 68, 0.4); transition: all 0.3s ease; cursor: pointer; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.2); color: #ef4444;">
-                        <i class="fas fa-sign-out-alt mr-2"></i>
+                    <button onclick="handleLogout(event)" class="btn-premium-secondary">
+                        <i class="fas fa-sign-out-alt"></i>
                         Logout
                     </button>
                 </div>
             </div>
         </div>
 
-        <!-- Filters Section -->
-        <div class="glass-card rounded-2xl p-6 mb-8 fade-in filters-section">
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Search & Filters Section -->
+        <div class="glass-premium rounded-2xl p-5 sm:p-6 mb-6 fade-in-up stagger-1 filters-section">
+            
+            <!-- Advanced Search -->
+            <div class="mb-6">
+                <label class="block text-xs font-semibold text-[#5a8fd8]/80 uppercase tracking-wider mb-3">
+                    <i class="fas fa-search mr-2"></i>Search Courses
+                    <span class="kbd-hint hidden sm:inline-flex">Ctrl+K</span>
+                </label>
+                <div class="search-container relative">
+                    <div class="search-icon-wrapper">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    <input 
+                        type="text" 
+                        id="searchInput" 
+                        placeholder="Search by course code, faculty, room, or time..." 
+                        class="search-input-premium"
+                        autocomplete="off"
+                        spellcheck="false"
+                    >
+                    <div class="absolute right-4 top-1/2 transform -translate-y-1/2 flex items-center gap-2">
+                        <span id="searchClear" class="hidden text-gray-500 hover:text-white cursor-pointer transition-colors">
+                            <i class="fas fa-times"></i>
+                        </span>
+                    </div>
+                    <div id="searchSuggestions" class="search-suggestions-premium hidden scroll-premium"></div>
+                </div>
+            </div>
+            
+            <!-- Filters Row -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
                 
-                <!-- Enhanced Search -->
-                <div class="lg:col-span-2 relative">
-                    <label class="block text-sm font-medium text-blue-300 mb-3">
-                        <i class="fas fa-search mr-2"></i>Search Courses
+                <!-- Course Filter -->
+                <div class="relative">
+                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                        <i class="fas fa-book mr-1"></i> Course
                     </label>
-                    <div class="relative">
-                        <input 
-                            type="text" 
-                            id="searchInput" 
-                            placeholder="Search by course code, faculty, room, or time..." 
-                            class="glass-input w-full px-5 py-3.5 rounded-xl text-white placeholder-gray-500 outline-none text-base"
-                            autocomplete="off"
-                        >
-                        <div id="searchSuggestions" class="absolute w-full mt-2 glass-card rounded-xl shadow-2xl hidden search-suggestions" style="z-index: 100;">
+                    <button type="button" id="courseFilterBtn" class="w-full px-4 py-3 rounded-xl text-left flex items-center justify-between transition-all"
+                        style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(90, 143, 216, 0.2);">
+                        <span id="courseFilterText" class="text-white text-sm">All Courses</span>
+                        <i class="fas fa-chevron-down text-xs text-gray-500"></i>
+                    </button>
+                    <div id="courseFilterDropdown" class="absolute w-full mt-2 filter-dropdown-premium hidden" style="z-index: 95; min-width: 200px;">
+                        <div class="p-3 border-b border-white/5">
+                            <input type="text" id="courseFilterSearch" placeholder="Search courses..." 
+                                class="w-full px-3 py-2 rounded-lg text-white text-sm outline-none"
+                                style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(90, 143, 216, 0.15);">
+                        </div>
+                        <div id="courseFilterOptions" class="max-h-64 overflow-y-auto scroll-premium">
+                            <!-- Will be populated dynamically -->
                         </div>
                     </div>
                 </div>
-
-                <!-- Course Filter & Sort -->
-                <div class="grid grid-cols-2 gap-4">
-                    <!-- Course Filter -->
+                
+                <!-- Sort By -->
                 <div>
-                        <label class="block text-sm font-medium text-blue-300 mb-3">
-                            <i class="fas fa-filter mr-2"></i>Course
+                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                        <i class="fas fa-sort mr-1"></i> Sort By
                     </label>
-                        <div class="relative">
-                            <button type="button" id="courseFilterBtn" class="glass-input w-full px-4 py-3.5 rounded-xl text-white outline-none text-sm flex items-center justify-between">
-                                <span id="courseFilterText">All</span>
-                                <i class="fas fa-chevron-down text-xs"></i>
-                            </button>
-                            <div id="courseFilterDropdown" class="absolute w-full mt-2 glass-card rounded-xl shadow-2xl hidden" style="min-width: 250px; z-index: 95;">
-                                <div class="p-3 border-b border-blue-500/20">
-                                    <input type="text" id="courseFilterSearch" placeholder="Search..." 
-                                        class="glass-input w-full px-3 py-2 rounded-lg text-white text-sm outline-none">
-                            </div>
-                                <div id="courseFilterOptions" class="max-h-64 overflow-y-auto p-2">
-                                    <!-- Will be populated dynamically -->
+                    <select id="sortSelect" class="w-full px-4 py-3 rounded-xl text-white text-sm outline-none cursor-pointer transition-all"
+                        style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(90, 143, 216, 0.2);">
+                        <option value="default">Default Order</option>
+                        <option value="az">Faculty (A → Z)</option>
+                        <option value="za">Faculty (Z → A)</option>
+                        <option value="seats">Available Seats</option>
+                    </select>
+                </div>
+                
+                <!-- Results Counter -->
+                <div class="flex items-end">
+                    <div class="result-counter">
+                        <i class="fas fa-list-ul"></i>
+                        <span id="resultCount">0 courses</span>
+                    </div>
+                </div>
+                
+                <!-- Available Only Toggle -->
+                <div class="flex items-end">
+                    <label class="flex items-center gap-3 cursor-pointer group">
+                        <div class="toggle-premium" id="availableToggle">
+                            <div class="toggle-knob"></div>
                         </div>
-                </div>
-            </div>
-        </div>
-
-                    <!-- Sort By -->
-                    <div>
-                        <label class="block text-sm font-medium text-blue-300 mb-3">
-                            <i class="fas fa-sort mr-2"></i>Sort By
-                        </label>
-                        <select id="sortSelect" class="glass-input w-full px-4 py-3.5 rounded-xl text-white outline-none text-sm cursor-pointer">
-                            <option value="default">Default</option>
-                            <option value="az">A → Z (Faculty)</option>
-                            <option value="za">Z → A (Faculty)</option>
-                            <option value="seats">Seat Availability (High → Low)</option>
-                        </select>
-            </div>
-                </div>
-            </div>
-
-            <!-- Toggle Options -->
-            <div class="flex flex-wrap gap-6 mt-6 pt-6 border-t border-blue-500/20">
-                <label class="flex items-center gap-3 cursor-pointer group">
-                    <div class="relative">
                         <input type="checkbox" id="availableOnly" class="sr-only">
-                        <div class="w-12 h-6 bg-gray-700 rounded-full transition-all duration-300" id="toggleBg1"></div>
-                        <div class="absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform duration-300" id="toggleKnob1"></div>
+                        <span class="text-sm text-gray-400 group-hover:text-white transition-colors">
+                            <i class="fas fa-check-circle mr-1 text-emerald-500/60"></i>Available Only
+                        </span>
+                    </label>
                 </div>
-                    <span class="text-sm font-medium text-gray-300 group-hover:text-white transition-colors">
-                        <i class="fas fa-check-circle mr-2 text-green-400"></i>Show Available Only
-                    </span>
-                </label>
             </div>
         </div>
 
-        <!-- Course Table -->
-        <div class="glass-card rounded-2xl p-6 fade-in table-section">
-            <div class="overflow-x-auto table-container">
-                <table class="w-full" id="courseTable">
-                    <thead>
-                        <tr class="border-b border-blue-500/20">
-                            <th class="py-4 px-4 text-left font-semibold text-blue-300 text-sm">Course Code</th>
-                            <th class="py-4 px-4 text-left font-semibold text-blue-300 text-sm">Section</th>
-                            <th class="py-4 px-4 text-left font-semibold text-blue-300 text-sm">Faculty</th>
-                            <th class="py-4 px-4 text-center font-semibold text-blue-300 text-sm">Capacity</th>
-                            <th class="py-4 px-4 text-center font-semibold text-blue-300 text-sm">Taken</th>
-                            <th class="py-4 px-4 text-center font-semibold text-blue-300 text-sm">Available</th>
-                            <th class="py-4 px-4 text-left font-semibold text-blue-300 text-sm">Day</th>
-                            <th class="py-4 px-4 text-left font-semibold text-blue-300 text-sm">Time</th>
-                            <th class="py-4 px-4 text-left font-semibold text-blue-300 text-sm">Room</th>
-                        </tr>
-                    </thead>
-                    <tbody id="courseTableBody">
-                        <!-- Loading skeleton -->
-                        <tr class="table-row">
-                            <td colspan="9" class="py-8 text-center">
-                                <i class="fas fa-spinner fa-spin text-3xl text-blue-400"></i>
-                                <p class="text-gray-400 mt-3">Loading courses...</p>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+        <!-- Course Table Section -->
+        <div class="glass-premium rounded-2xl p-4 sm:p-6 fade-in-up stagger-2 table-section">
+            <div class="table-wrapper">
+                <div class="table-scroll-container scroll-premium" id="tableScrollContainer">
+                    <table class="table-premium" id="courseTable">
+                        <thead>
+                            <tr>
+                                <th class="text-center" style="width: 50px;">#</th>
+                                <th>Course Code</th>
+                                <th>Section</th>
+                                <th>Faculty</th>
+                                <th class="text-center">Cap</th>
+                                <th class="text-center">Taken</th>
+                                <th class="text-center">Avail</th>
+                                <th>Day</th>
+                                <th>Time</th>
+                                <th>Room</th>
+                            </tr>
+                        </thead>
+                        <tbody id="courseTableBody">
+                            <!-- Loading skeleton -->
+                            <tr>
+                                <td colspan="10">
+                                    <div class="empty-state">
+                                        <div class="loading-premium">
+                                            <div class="loading-dot"></div>
+                                            <div class="loading-dot"></div>
+                                            <div class="loading-dot"></div>
+                                        </div>
+                                        <p class="text-gray-500 mt-4">Loading courses...</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
 
     <!-- Fixed Refresh Button -->
-    <div class="refresh-btn" id="refreshBtn" title="Refresh courses">
-        <i class="fas fa-sync-alt text-white text-xl refresh-icon"></i>
+    <div class="refresh-btn" id="refreshBtn" title="Refresh courses (R)">
+        <i class="fas fa-sync-alt text-white text-lg refresh-icon"></i>
     </div>
 
     <!-- Toast Notification -->
@@ -225,4 +859,3 @@
     <script src="assets/js/main.js"></script>
 </body>
 </html>
-

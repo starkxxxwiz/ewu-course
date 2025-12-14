@@ -796,7 +796,7 @@ function exportToPDF() {
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(10);
     doc.setTextColor(grayText[0], grayText[1], grayText[2]);
-    doc.text('East West University Course Dashboard', margin, 26);
+    doc.text('East West University Course List', margin, 26);
 
     // User Info (right side)
     doc.setFont('helvetica', 'bold');
@@ -941,7 +941,7 @@ function exportToPDF() {
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(8);
         doc.setTextColor(grayText[0], grayText[1], grayText[2]);
-        doc.text('EWU Course Dashboard • aftabkabir.me', margin, pageHeight - 5);
+        doc.text('EWU Courses Details', margin, pageHeight - 5);
 
         doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
         doc.text(`Page ${i} of ${pageCount}`, pageWidth - margin, pageHeight - 5, { align: 'right' });

@@ -225,16 +225,18 @@ function updateResultCount(count) {
 function populateCourseFilter() {
     const courseCodes = [...new Set(allCourses.map(c => c.CourseCode))].sort();
     const container = document.getElementById('courseFilterOptions');
+    
+    if (!container) return;
 
     container.innerHTML = `
-        <div class="filter-option" onclick="selectCourseFilter(null)">
+        <div class="filter-option" data-course="" onclick="selectCourseFilter(null, event)">
             <span class="text-white">All Courses</span>
             <span class="text-gray-500 text-xs ml-2">(${allCourses.length})</span>
         </div>
     ` + courseCodes.map(code => {
         const count = allCourses.filter(c => c.CourseCode === code).length;
         return `
-            <div class="filter-option" onclick="selectCourseFilter('${code}')">
+            <div class="filter-option" data-course="${code}" onclick="selectCourseFilter('${code.replace(/'/g, "\\'")}', event)">
                 <span class="text-white">${code}</span>
                 <span class="text-gray-500 text-xs ml-2">(${count})</span>
             </div>
@@ -242,12 +244,30 @@ function populateCourseFilter() {
     }).join('');
 }
 
-// Select course filter
-function selectCourseFilter(course) {
+// Select course filter - FIXED
+function selectCourseFilter(course, event) {
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+    
     selectedCourseFilter = course;
-    document.getElementById('courseFilterText').textContent = course || 'All Courses';
-    document.getElementById('courseFilterDropdown').classList.add('hidden');
+    
+    const filterText = document.getElementById('courseFilterText');
+    const dropdown = document.getElementById('courseFilterDropdown');
+    
+    if (filterText) {
+        filterText.textContent = course || 'All Courses';
+    }
+    
+    if (dropdown) {
+        dropdown.classList.add('hidden');
+    }
+    
     applyFilters();
+    
+    // Show confirmation
+    showToast(course ? `Filtered by: ${course}` : 'Showing all courses', 1500);
 }
 
 // Apply all filters and sorting
@@ -389,31 +409,37 @@ function initializeSearch() {
         return;
     }
 
-    // Input handler with optimized debounce
+    // Input handler - INSTANT suggestions with minimal debounce
     searchInput.addEventListener('input', function (e) {
         clearTimeout(searchTimeout);
         const query = e.target.value.trim();
 
-        // Toggle clear button
+        // Toggle clear button visibility
         if (searchClear) {
             searchClear.classList.toggle('hidden', query.length === 0);
         }
 
-        // Immediate search for better UX
+        // Show suggestions INSTANTLY (no debounce for suggestions)
+        if (query.length >= 1 && allCourses.length > 0) {
+            showSearchSuggestions(query);
+        } else if (searchSuggestions) {
+            searchSuggestions.classList.add('hidden');
+            suggestionIndex = -1;
+        }
+
+        // Debounce only the table filter for performance
         searchTimeout = setTimeout(() => {
             currentSearch = query.toLowerCase();
             applyFilters();
+        }, 80);
+    });
 
-            // Show suggestions instantly for single character
-            if (query.length >= 1) {
-                showSearchSuggestions(query);
-            } else {
-                if (searchSuggestions) {
-                    searchSuggestions.classList.add('hidden');
-                }
-                suggestionIndex = -1;
-            }
-        }, 100); // Faster debounce for more responsive feel
+    // Focus handler - show suggestions if there's a query
+    searchInput.addEventListener('focus', function () {
+        const query = this.value.trim();
+        if (query.length >= 1 && allCourses.length > 0) {
+            showSearchSuggestions(query);
+        }
     });
 
     // Keyboard navigation for suggestions
@@ -434,6 +460,11 @@ function initializeSearch() {
             e.preventDefault();
             if (suggestionIndex >= 0 && suggestions[suggestionIndex]) {
                 suggestions[suggestionIndex].click();
+            } else if (this.value.trim().length > 0) {
+                // Apply search filter directly on Enter
+                currentSearch = this.value.trim().toLowerCase();
+                searchSuggestions.classList.add('hidden');
+                applyFilters();
             }
         } else if (e.key === 'Escape') {
             searchSuggestions.classList.add('hidden');
@@ -443,7 +474,9 @@ function initializeSearch() {
 
     // Clear button handler
     if (searchClear) {
-        searchClear.addEventListener('click', function () {
+        searchClear.addEventListener('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
             searchInput.value = '';
             currentSearch = '';
             searchClear.classList.add('hidden');
@@ -464,7 +497,7 @@ function initializeSearch() {
             searchInput.select();
         }
 
-        // R for refresh
+        // R for refresh (only when not in input)
         if (e.key === 'r' && !e.ctrlKey && !e.metaKey && document.activeElement !== searchInput) {
             if (document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
                 e.preventDefault();
@@ -584,21 +617,32 @@ function showSearchSuggestions(query) {
     }
 }
 
-// Select search suggestion
+// Select search suggestion - filter and show only that course
 function selectSearchSuggestion(courseCode) {
-    document.getElementById('searchInput').value = courseCode;
+    const searchInput = document.getElementById('searchInput');
+    const searchSuggestions = document.getElementById('searchSuggestions');
+    const searchClear = document.getElementById('searchClear');
+    
+    if (searchInput) {
+        searchInput.value = courseCode;
+    }
+    
     currentSearch = courseCode.toLowerCase();
-    document.getElementById('searchSuggestions').classList.add('hidden');
-    document.getElementById('searchClear')?.classList.remove('hidden');
+    
+    if (searchSuggestions) {
+        searchSuggestions.classList.add('hidden');
+    }
+    
+    if (searchClear) {
+        searchClear.classList.remove('hidden');
+    }
+    
     suggestionIndex = -1;
     applyFilters();
+    
+    // Show confirmation toast
+    showToast(`Showing results for "${courseCode}"`, 1500);
 }
-
-// Sort change handler
-document.getElementById('sortSelect')?.addEventListener('change', function (e) {
-    currentSort = e.target.value;
-    applyFilters();
-});
 
 // Available only toggle with enhanced UI
 function initializeToggle() {
@@ -633,30 +677,54 @@ function initializeToggle() {
     }
 }
 
-// Course filter dropdown toggle
-document.getElementById('courseFilterBtn')?.addEventListener('click', function () {
-    document.getElementById('courseFilterDropdown').classList.toggle('hidden');
-});
+// Course filter dropdown toggle - FIXED
+function initializeCourseFilterDropdown() {
+    const filterBtn = document.getElementById('courseFilterBtn');
+    const dropdown = document.getElementById('courseFilterDropdown');
+    
+    if (!filterBtn || !dropdown) return;
+    
+    filterBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        dropdown.classList.toggle('hidden');
+    });
+}
 
 // Course filter search
-document.getElementById('courseFilterSearch')?.addEventListener('input', function (e) {
-    const query = e.target.value.toLowerCase();
-    const options = document.querySelectorAll('#courseFilterOptions .filter-option');
+function initializeCourseFilterSearch() {
+    const filterSearch = document.getElementById('courseFilterSearch');
+    if (!filterSearch) return;
+    
+    filterSearch.addEventListener('input', function (e) {
+        const query = e.target.value.toLowerCase();
+        const options = document.querySelectorAll('#courseFilterOptions .filter-option');
 
-    options.forEach(option => {
-        const text = option.textContent.toLowerCase();
-        option.style.display = text.includes(query) ? '' : 'none';
+        options.forEach(option => {
+            const text = option.textContent.toLowerCase();
+            option.style.display = text.includes(query) ? '' : 'none';
+        });
     });
-});
+}
 
 // Close dropdowns when clicking outside
 document.addEventListener('click', function (e) {
-    if (!e.target.closest('#courseFilterBtn') && !e.target.closest('#courseFilterDropdown')) {
-        document.getElementById('courseFilterDropdown')?.classList.add('hidden');
+    const dropdown = document.getElementById('courseFilterDropdown');
+    const searchSuggestions = document.getElementById('searchSuggestions');
+    
+    // Close course filter dropdown
+    if (dropdown && !dropdown.classList.contains('hidden')) {
+        if (!e.target.closest('#courseFilterBtn') && !e.target.closest('#courseFilterDropdown')) {
+            dropdown.classList.add('hidden');
+        }
     }
-    if (!e.target.closest('#searchInput') && !e.target.closest('#searchSuggestions')) {
-        document.getElementById('searchSuggestions')?.classList.add('hidden');
-        suggestionIndex = -1;
+    
+    // Close search suggestions
+    if (searchSuggestions && !searchSuggestions.classList.contains('hidden')) {
+        if (!e.target.closest('#searchInput') && !e.target.closest('#searchSuggestions') && !e.target.closest('#searchClear')) {
+            searchSuggestions.classList.add('hidden');
+            suggestionIndex = -1;
+        }
     }
 });
 
@@ -763,10 +831,10 @@ function exportToPDF() {
         const { day, time } = parseDayTime(course.TimeSlotName);
 
         // Truncate long text to prevent overlap
-        const truncatedFaculty = truncateForPDF(course.ShortName, 25);
-        const truncatedRoom = truncateForPDF(course.RoomName, 15);
-        const truncatedDay = truncateForPDF(day, 15);
-        const truncatedTime = truncateForPDF(time, 18);
+        const truncatedFaculty = truncateForPDF(course.ShortName, 22);  // Reduced for 40mm column
+        const truncatedRoom = truncateForPDF(course.RoomName, 14);
+        const truncatedDay = truncateForPDF(day, 14);
+        const truncatedTime = truncateForPDF(time, 16);
 
         return [
             course.CourseCode,
@@ -781,23 +849,30 @@ function exportToPDF() {
         ];
     });
 
-    // Add table with professional styling
+    // Calculate table width for centering
+    const totalTableWidth = 28 + 16 + 40 + 14 + 14 + 14 + 28 + 34 + 28; // Sum of all column widths = 216mm
+    const tableMargin = (pageWidth - totalTableWidth) / 2; // Center the table
+
+    // Add table with professional styling - CENTER ALIGNED
     doc.autoTable({
         head: [['Course', 'Sec', 'Faculty', 'Cap', 'Taken', 'Avail', 'Day', 'Time', 'Room']],
         body: tableData,
         startY: 46,
-        margin: { left: margin, right: margin },
+        margin: { left: tableMargin, right: tableMargin },
+        tableWidth: totalTableWidth,
         theme: 'plain',
         styles: {
-            fontSize: 8.5,
-            cellPadding: { top: 5, right: 4, bottom: 5, left: 4 },
+            fontSize: 9,
+            cellPadding: { top: 5, right: 5, bottom: 5, left: 5 },
             lineColor: [30, 30, 40],
             lineWidth: 0.1,
             textColor: [60, 60, 70],
             font: 'helvetica',
             overflow: 'ellipsize',
             cellWidth: 'wrap',
-            minCellHeight: 8
+            minCellHeight: 8,
+            halign: 'center',
+            valign: 'middle'
         },
         headStyles: {
             fillColor: [25, 25, 35],
@@ -805,18 +880,18 @@ function exportToPDF() {
             fontStyle: 'bold',
             fontSize: 9,
             halign: 'center',
-            cellPadding: { top: 6, right: 4, bottom: 6, left: 4 }
+            cellPadding: { top: 6, right: 5, bottom: 6, left: 5 }
         },
         columnStyles: {
-            0: { cellWidth: 28, halign: 'left', fontStyle: 'bold', textColor: [90, 143, 216] },  // Course
+            0: { cellWidth: 28, halign: 'center', fontStyle: 'bold', textColor: [90, 143, 216] },  // Course
             1: { cellWidth: 16, halign: 'center' },  // Section
-            2: { cellWidth: 48, halign: 'left' },    // Faculty (wider for proper spacing)
-            3: { cellWidth: 16, halign: 'center' },  // Capacity
-            4: { cellWidth: 16, halign: 'center' },  // Taken
-            5: { cellWidth: 16, halign: 'center' },  // Available
-            6: { cellWidth: 30, halign: 'left' },    // Day
-            7: { cellWidth: 36, halign: 'left' },    // Time
-            8: { cellWidth: 30, halign: 'left' }     // Room
+            2: { cellWidth: 40, halign: 'left' },    // Faculty (reduced for balance)
+            3: { cellWidth: 14, halign: 'center' },  // Capacity
+            4: { cellWidth: 14, halign: 'center' },  // Taken
+            5: { cellWidth: 14, halign: 'center' },  // Available
+            6: { cellWidth: 28, halign: 'center' },  // Day
+            7: { cellWidth: 34, halign: 'center' },  // Time
+            8: { cellWidth: 28, halign: 'center' }   // Room
         },
         alternateRowStyles: {
             fillColor: [248, 249, 252]
@@ -825,7 +900,7 @@ function exportToPDF() {
             fillColor: [255, 255, 255]
         },
         didParseCell: function (data) {
-            // Color code availability column (now column index 5)
+            // Color code availability column (column index 5)
             if (data.section === 'body' && data.column.index === 5) {
                 const available = parseInt(data.cell.raw);
                 if (available <= 0) {
@@ -889,9 +964,12 @@ function truncateForPDF(text, maxLength) {
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', async function () {
-    // Initialize UI components
+    // Initialize all UI components
     initializeSearch();
     initializeToggle();
+    initializeCourseFilterDropdown();
+    initializeCourseFilterSearch();
+    initializeSortSelect();
 
     // Check authentication first
     const isAuthenticated = await checkAuth();
@@ -901,3 +979,14 @@ document.addEventListener('DOMContentLoaded', async function () {
         loadCourses();
     }
 });
+
+// Initialize sort select
+function initializeSortSelect() {
+    const sortSelect = document.getElementById('sortSelect');
+    if (!sortSelect) return;
+    
+    sortSelect.addEventListener('change', function (e) {
+        currentSort = e.target.value;
+        applyFilters();
+    });
+}

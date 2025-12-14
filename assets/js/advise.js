@@ -348,7 +348,7 @@ function renderCourseTable() {
                     <span class="badge-section">${course.SectionName}</span>
                 </td>
                 <td>
-                    <span class="faculty-name" title="${course.ShortName}">${truncateText(course.ShortName, 18)}</span>
+                    <span class="faculty-name" title="${course.ShortName}">${truncateText(course.ShortName, 30)}</span>
                 </td>
                 <td class="text-center">
                     <span class="text-gray-400 font-medium text-sm">${course.SeatCapacity}</span>
@@ -384,9 +384,12 @@ function initializeSearch() {
     const searchSuggestions = document.getElementById('searchSuggestions');
     const searchClear = document.getElementById('searchClear');
 
-    if (!searchInput) return;
+    if (!searchInput) {
+        console.warn('Search input not found');
+        return;
+    }
 
-    // Input handler with debounce
+    // Input handler with optimized debounce
     searchInput.addEventListener('input', function (e) {
         clearTimeout(searchTimeout);
         const query = e.target.value.trim();
@@ -396,22 +399,27 @@ function initializeSearch() {
             searchClear.classList.toggle('hidden', query.length === 0);
         }
 
+        // Immediate search for better UX
         searchTimeout = setTimeout(() => {
             currentSearch = query.toLowerCase();
             applyFilters();
 
-            // Show advanced suggestions
+            // Show suggestions instantly for single character
             if (query.length >= 1) {
                 showSearchSuggestions(query);
             } else {
-                searchSuggestions.classList.add('hidden');
+                if (searchSuggestions) {
+                    searchSuggestions.classList.add('hidden');
+                }
                 suggestionIndex = -1;
             }
-        }, 150); // Fast debounce for responsive feel
+        }, 100); // Faster debounce for more responsive feel
     });
 
     // Keyboard navigation for suggestions
     searchInput.addEventListener('keydown', function (e) {
+        if (!searchSuggestions) return;
+        
         const suggestions = searchSuggestions.querySelectorAll('.suggestion-item-premium');
 
         if (e.key === 'ArrowDown') {
@@ -439,7 +447,9 @@ function initializeSearch() {
             searchInput.value = '';
             currentSearch = '';
             searchClear.classList.add('hidden');
-            searchSuggestions.classList.add('hidden');
+            if (searchSuggestions) {
+                searchSuggestions.classList.add('hidden');
+            }
             suggestionIndex = -1;
             applyFilters();
             searchInput.focus();
@@ -479,6 +489,8 @@ function updateSuggestionHighlight(suggestions) {
 // Show search suggestions with intelligent matching
 function showSearchSuggestions(query) {
     const searchSuggestions = document.getElementById('searchSuggestions');
+    if (!searchSuggestions) return;
+    
     const queryLower = query.toLowerCase();
 
     // Intelligent matching with priority scoring
@@ -512,7 +524,7 @@ function showSearchSuggestions(query) {
         return { course: c, score };
     }).filter(m => m.score > 0)
         .sort((a, b) => b.score - a.score)
-        .slice(0, 8);
+        .slice(0, 10); // Increased to 10 suggestions
 
     if (scoredMatches.length > 0) {
         // Group by course code for better organization
@@ -537,19 +549,20 @@ function showSearchSuggestions(query) {
             const { day, time } = parseDayTime(course.TimeSlotName);
 
             return `
-                <div class="suggestion-item-premium" onclick="selectSearchSuggestion('${code}')">
+                <div class="suggestion-item-premium" onclick="selectSearchSuggestion('${code.replace(/'/g, "\\'")}')"
+                    style="animation: fadeInUp 0.2s ease forwards;">
                     <div class="flex justify-between items-start gap-3">
                         <div class="flex-1 min-w-0">
                             <div class="font-semibold text-[#5a8fd8] text-sm mb-1">${code}</div>
-                            <div class="text-xs text-gray-400 truncate">${truncateText(course.ShortName, 25)}</div>
+                            <div class="text-xs text-gray-400 truncate">${truncateText(course.ShortName, 28)}</div>
                         </div>
                         <div class="text-right flex-shrink-0">
                             <span class="text-sm font-semibold" style="color: ${availInfo.color};">${available} seats</span>
                             <div class="text-xs text-gray-500 mt-0.5">${data.courses.length} section${data.courses.length > 1 ? 's' : ''}</div>
                         </div>
                     </div>
-                    <div class="flex gap-4 mt-2 text-xs text-gray-500">
-                        <span><i class="fas fa-door-open mr-1"></i>${truncateText(course.RoomName, 10)}</span>
+                    <div class="flex flex-wrap gap-3 mt-2 text-xs text-gray-500">
+                        <span><i class="fas fa-door-open mr-1"></i>${truncateText(course.RoomName, 12)}</span>
                         <span><i class="fas fa-clock mr-1"></i>${time || 'TBA'}</span>
                         <span><i class="fas fa-calendar mr-1"></i>${day || 'TBA'}</span>
                     </div>
@@ -561,9 +574,10 @@ function showSearchSuggestions(query) {
         suggestionIndex = -1;
     } else {
         searchSuggestions.innerHTML = `
-            <div class="p-4 text-center text-gray-500 text-sm">
-                <i class="fas fa-search mb-2 text-lg opacity-50"></i>
-                <p>No matches found for "${query}"</p>
+            <div class="p-6 text-center text-gray-500 text-sm">
+                <i class="fas fa-search mb-2 text-2xl opacity-30"></i>
+                <p class="font-medium">No matches found</p>
+                <p class="text-xs mt-1 text-gray-600">Try searching by course code or faculty name</p>
             </div>
         `;
         searchSuggestions.classList.remove('hidden');
@@ -591,17 +605,31 @@ function initializeToggle() {
     const toggle = document.getElementById('availableToggle');
     const checkbox = document.getElementById('availableOnly');
 
-    if (toggle && checkbox) {
-        toggle.addEventListener('click', function () {
-            checkbox.checked = !checkbox.checked;
-            toggle.classList.toggle('active', checkbox.checked);
-            applyFilters();
-        });
+    if (!toggle || !checkbox) {
+        console.warn('Toggle elements not found');
+        return;
+    }
 
-        checkbox.addEventListener('change', function () {
-            toggle.classList.toggle('active', this.checked);
-            applyFilters();
-        });
+    // Handle toggle click
+    toggle.addEventListener('click', function (e) {
+        e.preventDefault();
+        checkbox.checked = !checkbox.checked;
+        toggle.classList.toggle('active', checkbox.checked);
+        applyFilters();
+        
+        // Visual feedback
+        showToast(checkbox.checked ? 'Showing available seats only' : 'Showing all courses', 1500);
+    });
+
+    // Handle checkbox change (for programmatic changes)
+    checkbox.addEventListener('change', function () {
+        toggle.classList.toggle('active', this.checked);
+        applyFilters();
+    });
+    
+    // Initialize visual state
+    if (checkbox.checked) {
+        toggle.classList.add('active');
     }
 }
 
@@ -729,19 +757,18 @@ function exportToPDF() {
     doc.setTextColor(lightText[0], lightText[1], lightText[2]);
     doc.text(String(filteredCourses.length), pageWidth - margin - 30, 30);
 
-    // Prepare table data with proper text truncation
-    const tableData = filteredCourses.map((course, index) => {
+    // Prepare table data with proper text truncation (without counting column)
+    const tableData = filteredCourses.map((course) => {
         const available = course.SeatCapacity - course.SeatTaken;
         const { day, time } = parseDayTime(course.TimeSlotName);
 
-        // Truncate long text to prevent overflow
-        const truncatedFaculty = truncateForPDF(course.ShortName, 20);
-        const truncatedRoom = truncateForPDF(course.RoomName, 12);
-        const truncatedDay = truncateForPDF(day, 12);
-        const truncatedTime = truncateForPDF(time, 14);
+        // Truncate long text to prevent overlap
+        const truncatedFaculty = truncateForPDF(course.ShortName, 25);
+        const truncatedRoom = truncateForPDF(course.RoomName, 15);
+        const truncatedDay = truncateForPDF(day, 15);
+        const truncatedTime = truncateForPDF(time, 18);
 
         return [
-            String(index + 1),
             course.CourseCode,
             course.SectionName,
             truncatedFaculty,
@@ -756,40 +783,40 @@ function exportToPDF() {
 
     // Add table with professional styling
     doc.autoTable({
-        head: [['#', 'Course', 'Sec', 'Faculty', 'Cap', 'Taken', 'Avail', 'Day', 'Time', 'Room']],
+        head: [['Course', 'Sec', 'Faculty', 'Cap', 'Taken', 'Avail', 'Day', 'Time', 'Room']],
         body: tableData,
         startY: 46,
         margin: { left: margin, right: margin },
         theme: 'plain',
         styles: {
-            fontSize: 8,
-            cellPadding: { top: 4, right: 3, bottom: 4, left: 3 },
+            fontSize: 8.5,
+            cellPadding: { top: 5, right: 4, bottom: 5, left: 4 },
             lineColor: [30, 30, 40],
             lineWidth: 0.1,
             textColor: [60, 60, 70],
             font: 'helvetica',
-            overflow: 'ellipsize', // Prevent text overflow
-            cellWidth: 'wrap'
+            overflow: 'ellipsize',
+            cellWidth: 'wrap',
+            minCellHeight: 8
         },
         headStyles: {
             fillColor: [25, 25, 35],
             textColor: [90, 143, 216],
             fontStyle: 'bold',
-            fontSize: 8,
+            fontSize: 9,
             halign: 'center',
-            cellPadding: { top: 5, right: 3, bottom: 5, left: 3 }
+            cellPadding: { top: 6, right: 4, bottom: 6, left: 4 }
         },
         columnStyles: {
-            0: { cellWidth: 10, halign: 'center' },  // #
-            1: { cellWidth: 24, halign: 'left', fontStyle: 'bold', textColor: [90, 143, 216] },  // Course
-            2: { cellWidth: 14, halign: 'center' },  // Section
-            3: { cellWidth: 42, halign: 'left' },    // Faculty (wider)
-            4: { cellWidth: 14, halign: 'center' },  // Capacity
-            5: { cellWidth: 14, halign: 'center' },  // Taken
-            6: { cellWidth: 14, halign: 'center' },  // Available
-            7: { cellWidth: 26, halign: 'left' },    // Day
-            8: { cellWidth: 32, halign: 'left' },    // Time (wider)
-            9: { cellWidth: 26, halign: 'left' }     // Room
+            0: { cellWidth: 28, halign: 'left', fontStyle: 'bold', textColor: [90, 143, 216] },  // Course
+            1: { cellWidth: 16, halign: 'center' },  // Section
+            2: { cellWidth: 48, halign: 'left' },    // Faculty (wider for proper spacing)
+            3: { cellWidth: 16, halign: 'center' },  // Capacity
+            4: { cellWidth: 16, halign: 'center' },  // Taken
+            5: { cellWidth: 16, halign: 'center' },  // Available
+            6: { cellWidth: 30, halign: 'left' },    // Day
+            7: { cellWidth: 36, halign: 'left' },    // Time
+            8: { cellWidth: 30, halign: 'left' }     // Room
         },
         alternateRowStyles: {
             fillColor: [248, 249, 252]
@@ -798,8 +825,8 @@ function exportToPDF() {
             fillColor: [255, 255, 255]
         },
         didParseCell: function (data) {
-            // Color code availability column
-            if (data.section === 'body' && data.column.index === 6) {
+            // Color code availability column (now column index 5)
+            if (data.section === 'body' && data.column.index === 5) {
                 const available = parseInt(data.cell.raw);
                 if (available <= 0) {
                     data.cell.styles.textColor = [239, 68, 68]; // Red

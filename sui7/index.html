@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SUI7 Admin Panel</title>
+    <meta name="description" content="View and plan your East West University (EWU) course schedule efficiently. Find available classes, empty seats, and organize your academic routine.">
+    <meta name="keywords" content="EWU course schedule, university schedule, East West University, EWU routine, class booking, portal, seat availability">
+    <meta property="og:title" content="EWU Course Fetching - Smart Portal Access">
+    <meta property="og:description" content="Easily view and plan your East West University class schedules.">
+    <meta property="og:type" content="website">
+    <link rel="icon" href="../assets/images/ewu.png" type="image/png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #0d1117; color: #c9d1d9; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; }
+        .glass-panel { background: rgba(22, 27, 34, 0.8); backdrop-filter: blur(10px); border: 1px solid #30363d; border-radius: 12px; }
+        .input-dark { background: #010409; border: 1px solid #30363d; color: #c9d1d9; border-radius: 6px; padding: 8px 12px; outline: none; width: 100%; transition: border-color 0.2s; }
+        .input-dark:focus { border-color: #58a6ff; }
+        .btn-primary { background: #238636; color: white; border: 1px solid rgba(240, 246, 252, 0.1); border-radius: 6px; padding: 8px 16px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
+        .btn-primary:hover { background: #2ea043; }
+        .btn-danger { background: #da3633; color: white; border: 1px solid rgba(240, 246, 252, 0.1); border-radius: 6px; padding: 8px 16px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
+        .btn-danger:hover { background: #f85149; }
+        
+        .toggle-checkbox:checked { right: 0; border-color: #238636; }
+        .toggle-checkbox:checked + .toggle-label { background-color: #238636; }
+        .toggle-checkbox:checked + .toggle-label:after { transform: translateX(100%); border-color: white; }
+        .toggle-label { width: 50px; height: 26px; background-color: #30363d; border-radius: 9999px; position: relative; cursor: pointer; transition: background-color 0.3s; }
+        .toggle-label:after { content: ''; position: absolute; top: 2px; left: 2px; width: 22px; height: 22px; background-color: white; border-radius: 50%; transition: transform 0.3s; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+
+    <!-- Login View -->
+    <div id="loginView" class="glass-panel p-8 w-full max-w-md">
+        <div class="text-center mb-6">
+            <h1 class="text-2xl font-bold text-white mb-2">SUI7 Admin</h1>
+            <p class="text-sm text-gray-400">Sign in to manage the portal</p>
+        </div>
+        <form id="loginForm" class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium mb-1">Username</label>
+                <input type="text" id="username" class="input-dark" required>
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-1">Password</label>
+                <input type="password" id="password" class="input-dark" required>
+            </div>
+            <div id="loginError" class="text-red-400 text-sm hidden">Invalid credentials.</div>
+            <button type="submit" class="btn-primary w-full">Sign In</button>
+        </form>
+    </div>
+
+    <!-- Dashboard View -->
+    <div id="dashboardView" class="w-full max-w-6xl hidden space-y-6">
+        <div class="flex justify-between items-center bg-[#161b22] p-4 rounded-xl border border-[#30363d]">
+            <h1 class="text-xl font-bold text-white">Dashboard Overview</h1>
+            <button onclick="logout()" class="btn-danger text-sm">Logout</button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Site Control -->
+            <div class="glass-panel p-6">
+                <h2 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                    Site Closure Mode
+                </h2>
+                <div class="flex items-center justify-between mb-4">
+                    <span class="text-sm text-gray-400">Lock entire site for maintenance.</span>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="closureToggle" class="sr-only toggle-checkbox">
+                        <div class="toggle-label"></div>
+                    </label>
+                </div>
+                <div id="closureStatus" class="text-xs text-green-400 bg-green-400/10 p-2 rounded">Site is currently ONLINE.</div>
+            </div>
+
+            <!-- Analytics -->
+            <div class="glass-panel p-6 lg:col-span-2">
+                <h2 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                    Traffic (7 Days)
+                </h2>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm text-gray-400">
+                        <thead class="text-xs uppercase bg-[#010409] text-gray-500">
+                            <tr>
+                                <th class="px-4 py-2 border-b border-[#30363d]">Date</th>
+                                <th class="px-4 py-2 border-b border-[#30363d]">Visits</th>
+                                <th class="px-4 py-2 border-b border-[#30363d]">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="analyticsTable">
+                            <tr><td colspan="3" class="px-4 py-4 text-center">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- IP Blocklist -->
+            <div class="glass-panel p-6">
+                <h2 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                    IP Blocklist
+                </h2>
+                <div class="flex gap-2 mb-4">
+                    <input type="text" id="ipToBlock" placeholder="Enter IP address" class="input-dark flex-1">
+                    <button onclick="modifyBlocklist('block')" class="btn-primary text-sm whitespace-nowrap">Block IP</button>
+                </div>
+                <div class="overflow-y-auto max-h-40">
+                    <table class="w-full text-left text-sm text-gray-400">
+                        <tbody id="blockedIpsTable">
+                            <tr><td class="py-2 text-center">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Recent Logs -->
+            <div class="glass-panel p-6 lg:col-span-3">
+                <h2 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                    Recent Activity Logs
+                </h2>
+                <div class="overflow-x-auto max-h-64">
+                    <table class="w-full text-left text-sm text-gray-400">
+                        <thead class="text-xs uppercase bg-[#010409] text-gray-500 sticky top-0">
+                            <tr>
+                                <th class="px-4 py-2 border-b border-[#30363d]">Time</th>
+                                <th class="px-4 py-2 border-b border-[#30363d]">Type</th>
+                                <th class="px-4 py-2 border-b border-[#30363d]">Path</th>
+                                <th class="px-4 py-2 border-b border-[#30363d]">IP Address</th>
+                            </tr>
+                        </thead>
+                        <tbody id="logsTable">
+                            <tr><td colspan="4" class="px-4 py-4 text-center">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'https://api.aftabkabir.me/api';
+
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const user = document.getElementById('username').value;
+            const pass = document.getElementById('password').value;
+            try {
+                const res = await fetch(`${API_URL}/admin/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: user, password: pass })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    localStorage.setItem('adminToken', data.token);
+                    loadDashboard();
+                } else {
+                    document.getElementById('loginError').classList.remove('hidden');
+                }
+            } catch(err) {
+                alert('Connection error');
+            }
+        });
+
+        async function loadDashboard() {
+            const token = localStorage.getItem('adminToken');
+            if (!token) return;
+
+            try {
+                const res = await fetch(`${API_URL}/admin/dashboard`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.status === 401) {
+                    logout();
+                    return;
+                }
+                const data = await res.json();
+                
+                document.getElementById('loginView').classList.add('hidden');
+                document.getElementById('dashboardView').classList.remove('hidden');
+
+                // Set initial toggle state
+                const toggle = document.getElementById('closureToggle');
+                toggle.checked = data.siteClosureMode;
+                updateClosureUI(data.siteClosureMode);
+
+                // Setup toggle listener
+                toggle.onchange = async (e) => {
+                    const active = e.target.checked;
+                    await fetch(`${API_URL}/admin/config`, {
+                        method: 'POST',
+                        headers: { 
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({ siteClosureMode: active })
+                    });
+                    updateClosureUI(active);
+                };
+
+                // Populate Analytics
+                const tbody = document.getElementById('analyticsTable');
+                tbody.innerHTML = '';
+                const dates = Object.keys(data.analytics).sort().reverse();
+                if(dates.length === 0) {
+                     tbody.innerHTML = '<tr><td colspan="3" class="px-4 py-4 text-center">No data</td></tr>';
+                } else {
+                     dates.forEach(d => {
+                         const stats = data.analytics[d];
+                         tbody.innerHTML += `<tr class="border-b border-[#30363d]/50 hover:bg-[#010409]">
+                             <td class="px-4 py-2">${d}</td>
+                             <td class="px-4 py-2">${stats.visits}</td>
+                             <td class="px-4 py-2">${stats.actions}</td>
+                         </tr>`;
+                     });
+                }
+
+                // Populate Logs
+                const logsTbody = document.getElementById('logsTable');
+                logsTbody.innerHTML = '';
+                if(!data.recentLogs || data.recentLogs.length === 0) {
+                    logsTbody.innerHTML = '<tr><td colspan="4" class="px-4 py-4 text-center">No logs found</td></tr>';
+                } else {
+                    data.recentLogs.forEach(log => {
+                        const date = new Date(log.time).toLocaleString();
+                        logsTbody.innerHTML += `<tr class="border-b border-[#30363d]/50 hover:bg-[#010409]">
+                            <td class="px-4 py-2">${date}</td>
+                            <td class="px-4 py-2">
+                                <span class="px-2 py-1 bg-[#30363d]/50 rounded text-xs">${log.type}</span>
+                            </td>
+                            <td class="px-4 py-2">${log.path}</td>
+                            <td class="px-4 py-2 font-mono text-xs text-blue-400">${log.ip}</td>
+                        </tr>`;
+                    });
+                }
+
+                renderBlocklist(data.blockedIPs || []);
+            } catch(e) {}
+        }
+
+        function renderBlocklist(ips) {
+            const tbody = document.getElementById('blockedIpsTable');
+            tbody.innerHTML = '';
+            if(ips.length === 0) {
+                tbody.innerHTML = '<tr><td class="py-2 text-center">No IPs blocked</td></tr>';
+            } else {
+                ips.forEach(ip => {
+                    tbody.innerHTML += `<tr class="border-b border-[#30363d]/50">
+                        <td class="py-2 font-mono text-xs flex justify-between items-center text-red-400">
+                            ${ip}
+                            <button onclick="modifyBlocklist('unblock', '${ip}')" class="btn-danger p-1 text-xs px-2">Unblock</button>
+                        </td>
+                    </tr>`;
+                });
+            }
+        }
+
+        async function modifyBlocklist(action, explicitIp = null) {
+            const token = localStorage.getItem('adminToken');
+            const ip = explicitIp || document.getElementById('ipToBlock').value.trim();
+            if(!ip) return;
+            
+            try {
+                const res = await fetch(`${API_URL}/admin/ip`, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ ip, action })
+                });
+                const data = await res.json();
+                if(data.success) {
+                    document.getElementById('ipToBlock').value = '';
+                    renderBlocklist(data.blockedIPs);
+                }
+            } catch(e) {
+                alert('Failed to modify blocklist');
+            }
+        }
+
+        function updateClosureUI(active) {
+            const el = document.getElementById('closureStatus');
+            if(active) {
+                el.className = 'text-xs text-red-400 bg-red-400/10 p-2 rounded mt-2';
+                el.textContent = 'Site is currently CLOSED (Maintenance).';
+            } else {
+                el.className = 'text-xs text-green-400 bg-green-400/10 p-2 rounded mt-2';
+                el.textContent = 'Site is currently ONLINE.';
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('adminToken');
+            document.getElementById('loginView').classList.remove('hidden');
+            document.getElementById('dashboardView').classList.add('hidden');
+            document.getElementById('loginError').classList.add('hidden');
+            document.getElementById('password').value = '';
+        }
+
+        // Auto-login check
+        if (localStorage.getItem('adminToken')) {
+            loadDashboard();
+        }
+    </script>
+</body>
+</html>

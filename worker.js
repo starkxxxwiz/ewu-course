@@ -390,6 +390,21 @@ async function handleAnalyticsEvent(request, env) {
 }
 
 async function handleAdminLogin(request, env) {
+  const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+  const blockKey = `brute_${ip}`;
+
+  if (env.ADMIN_KV) {
+    const attemptsStr = await env.ADMIN_KV.get(blockKey);
+    if (attemptsStr) {
+      try {
+        const attempts = JSON.parse(attemptsStr);
+        if (attempts.count >= 5 && (Date.now() - attempts.timestamp) < 15 * 60 * 1000) {
+          return jsonResponse({ success: false, message: 'Too many failed attempts. Try again in 15 minutes.' }, 429, request);
+        }
+      } catch(e) {}
+    }
+  }
+
   try {
     const { username, password } = await request.json();
     if (username === env.ADMIN_USERNAME) {
@@ -397,8 +412,26 @@ async function handleAdminLogin(request, env) {
       if (hash === env.ADMIN_PASSWORD_HASH) {
         const token = crypto.randomUUID();
         await env.ADMIN_KV.put(`session_${token}`, 'true', { expirationTtl: 86400 });
+        if (env.ADMIN_KV) await env.ADMIN_KV.delete(blockKey); // Reset on success
         return jsonResponse({ success: true, token }, 200, request);
       }
+    }
+
+    // Record failed attempt
+    if (env.ADMIN_KV) {
+      let attempts = { count: 0, timestamp: Date.now() };
+      const attemptsStr = await env.ADMIN_KV.get(blockKey);
+      if (attemptsStr) {
+        try {
+          const parsed = JSON.parse(attemptsStr);
+          if (Date.now() - parsed.timestamp < 15 * 60 * 1000) {
+            attempts = parsed;
+          }
+        } catch(e) {}
+      }
+      attempts.count += 1;
+      attempts.timestamp = Date.now();
+      await env.ADMIN_KV.put(blockKey, JSON.stringify(attempts), { expirationTtl: 900 });
     }
     return jsonResponse({ success: false, message: 'Invalid credentials' }, 401, request);
   } catch(e) {

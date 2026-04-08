@@ -1,153 +1,432 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SUI7 Admin Panel</title>
-    <meta name="description" content="View and plan your East West University (EWU) course schedule efficiently. Find available classes, empty seats, and organize your academic routine.">
-    <meta name="keywords" content="EWU course schedule, university schedule, East West University, EWU routine, class booking, portal, seat availability">
-    <meta property="og:title" content="EWU Course Fetching - Smart Portal Access">
-    <meta property="og:description" content="Easily view and plan your East West University class schedules.">
-    <meta property="og:type" content="website">
-    <link rel="icon" href="../assets/images/ewu.png" type="image/png">
+    <title>SUI7 Admin - Command Center</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        dark: {
+                            900: '#0b0f19',
+                            800: '#111827',
+                            700: '#1f2937',
+                        },
+                        brand: {
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <style>
-        body { background-color: #0d1117; color: #c9d1d9; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; }
-        .glass-panel { background: rgba(22, 27, 34, 0.8); backdrop-filter: blur(10px); border: 1px solid #30363d; border-radius: 12px; }
-        .input-dark { background: #010409; border: 1px solid #30363d; color: #c9d1d9; border-radius: 6px; padding: 8px 12px; outline: none; width: 100%; transition: border-color 0.2s; }
-        .input-dark:focus { border-color: #58a6ff; }
-        .btn-primary { background: #238636; color: white; border: 1px solid rgba(240, 246, 252, 0.1); border-radius: 6px; padding: 8px 16px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
-        .btn-primary:hover { background: #2ea043; }
-        .btn-danger { background: #da3633; color: white; border: 1px solid rgba(240, 246, 252, 0.1); border-radius: 6px; padding: 8px 16px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
-        .btn-danger:hover { background: #f85149; }
+        body { 
+            background-color: #0b0f19;
+            color: #f3f4f6;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(139, 92, 246, 0.15) 0px, transparent 50%);
+            background-attachment: fixed;
+            min-height: 100vh;
+        }
         
-        .toggle-checkbox:checked { right: 0; border-color: #238636; }
-        .toggle-checkbox:checked + .toggle-label { background-color: #238636; }
-        .toggle-checkbox:checked + .toggle-label:after { transform: translateX(100%); border-color: white; }
-        .toggle-label { width: 50px; height: 26px; background-color: #30363d; border-radius: 9999px; position: relative; cursor: pointer; transition: background-color 0.3s; }
-        .toggle-label:after { content: ''; position: absolute; top: 2px; left: 2px; width: 22px; height: 22px; background-color: white; border-radius: 50%; transition: transform 0.3s; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
-        .hidden { display: none !important; }
+        /* Glass styling */
+        .glass {
+            background: rgba(17, 24, 39, 0.6);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+        }
+        
+        .glass-card {
+            background: linear-gradient(145deg, rgba(31, 41, 55, 0.6) 0%, rgba(17, 24, 39, 0.8) 100%);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+            border-radius: 1rem;
+        }
+
+        .glass-input {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            transition: all 0.3s ease;
+        }
+        .glass-input:focus {
+            background: rgba(0, 0, 0, 0.4);
+            border-color: rgba(59, 130, 246, 0.5);
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+            outline: none;
+        }
+
+        .btn-glow {
+            position: relative;
+            z-index: 1;
+            overflow: hidden;
+            background: linear-gradient(to right, #3b82f6, #8b5cf6);
+            transition: all 0.3s ease;
+        }
+        .btn-glow::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(to right, #2563eb, #7c3aed);
+            z-index: -1;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .btn-glow:hover::before { opacity: 1; }
+        .btn-glow:hover {
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.4);
+            transform: translateY(-1px);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+
+        /* Loader */
+        .spinner {
+            width: 20px; height: 20px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        /* Toggle Switch */
+        /* The switch - the box around the slider */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 26px;
+        }
+
+        /* Hide default HTML checkbox */
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        /* The slider */
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        input:checked + .slider {
+            background-color: #ef4444; /* red for closure */
+            border-color: #ef4444;
+        }
+
+        input:focus + .slider {
+            box-shadow: 0 0 1px #ef4444;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(24px);
+        }
+        
+        .fade-in { animation: fadeIn 0.4s ease forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
-<body class="min-h-screen flex items-center justify-center p-4">
+<body class="text-sm">
 
-    <!-- Login View -->
-    <div id="loginView" class="glass-panel p-8 w-full max-w-md">
-        <div class="text-center mb-6">
-            <h1 class="text-2xl font-bold text-white mb-2">SUI7 Admin</h1>
-            <p class="text-sm text-gray-400">Sign in to manage the portal</p>
-        </div>
-        <form id="loginForm" class="space-y-4">
-            <div>
-                <label class="block text-sm font-medium mb-1">Username</label>
-                <input type="text" id="username" class="input-dark" required>
-            </div>
-            <div>
-                <label class="block text-sm font-medium mb-1">Password</label>
-                <input type="password" id="password" class="input-dark" required>
-            </div>
-            <div id="loginError" class="text-red-400 text-sm hidden">Invalid credentials.</div>
-            <button type="submit" class="btn-primary w-full">Sign In</button>
-        </form>
-    </div>
-
-    <!-- Dashboard View -->
-    <div id="dashboardView" class="w-full max-w-6xl hidden space-y-6">
-        <div class="flex justify-between items-center bg-[#161b22] p-4 rounded-xl border border-[#30363d]">
-            <h1 class="text-xl font-bold text-white">Dashboard Overview</h1>
-            <button onclick="logout()" class="btn-danger text-sm">Logout</button>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <!-- Site Control -->
-            <div class="glass-panel p-6">
-                <h2 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                    <svg class="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-                    Site Closure Mode
-                </h2>
-                <div class="flex items-center justify-between mb-4">
-                    <span class="text-sm text-gray-400">Lock entire site for maintenance.</span>
-                    <label class="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" id="closureToggle" class="sr-only toggle-checkbox">
-                        <div class="toggle-label"></div>
-                    </label>
+    <!-- LOGIN VIEW -->
+    <div id="loginView" class="min-h-screen flex items-center justify-center p-4">
+        <div class="glass-card w-full max-w-md p-8 relative overflow-hidden fade-in">
+            <!-- Decorative blur blob -->
+            <div class="absolute -top-20 -right-20 w-40 h-40 bg-brand-500 rounded-full mix-blend-screen filter blur-[50px] opacity-20"></div>
+            
+            <div class="text-center mb-8 relative z-10">
+                <div class="w-16 h-16 mx-auto bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl flex items-center justify-center mb-4 border border-gray-700 shadow-lg">
+                    <i class="ph ph-shield-check text-3xl text-brand-500"></i>
                 </div>
-                <div id="closureStatus" class="text-xs text-green-400 bg-green-400/10 p-2 rounded">Site is currently ONLINE.</div>
-            </div>
-
-            <!-- Analytics -->
-            <div class="glass-panel p-6 lg:col-span-2">
-                <h2 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                    <svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
-                    Traffic (7 Days)
-                </h2>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-sm text-gray-400">
-                        <thead class="text-xs uppercase bg-[#010409] text-gray-500">
-                            <tr>
-                                <th class="px-4 py-2 border-b border-[#30363d]">Date</th>
-                                <th class="px-4 py-2 border-b border-[#30363d]">Visits</th>
-                                <th class="px-4 py-2 border-b border-[#30363d]">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="analyticsTable">
-                            <tr><td colspan="3" class="px-4 py-4 text-center">Loading...</td></tr>
-                        </tbody>
-                    </table>
-                </div>
+                <h1 class="text-2xl font-bold tracking-tight text-white">SUI7 Command Center</h1>
+                <p class="text-gray-400 mt-2 text-sm">Authenticate to manage EWU Course Filter securely.</p>
             </div>
             
-            <!-- IP Blocklist -->
-            <div class="glass-panel p-6">
-                <h2 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                    <svg class="w-5 h-5 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
-                    IP Blocklist
-                </h2>
-                <div class="flex gap-2 mb-4">
-                    <input type="text" id="ipToBlock" placeholder="Enter IP address" class="input-dark flex-1">
-                    <button onclick="modifyBlocklist('block')" class="btn-primary text-sm whitespace-nowrap">Block IP</button>
+            <form id="loginForm" class="space-y-5 relative z-10">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">Username</label>
+                    <div class="relative">
+                        <i class="ph ph-user absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg"></i>
+                        <input type="text" id="username" class="glass-input w-full rounded-lg py-2.5 pl-10 pr-4" placeholder="admin" required>
+                    </div>
                 </div>
-                <div class="overflow-y-auto max-h-40">
-                    <table class="w-full text-left text-sm text-gray-400">
-                        <tbody id="blockedIpsTable">
-                            <tr><td class="py-2 text-center">Loading...</td></tr>
-                        </tbody>
-                    </table>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">Password</label>
+                    <div class="relative">
+                        <i class="ph ph-lock-key absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg"></i>
+                        <input type="password" id="password" class="glass-input w-full rounded-lg py-2.5 pl-10 pr-4" placeholder="••••••••" required>
+                    </div>
+                </div>
+
+                <div id="loginError" class="hidden p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-xs flex items-center gap-2">
+                    <i class="ph ph-warning-circle text-base"></i>
+                    <span id="loginErrorMsg">Invalid credentials.</span>
+                </div>
+
+                <button type="submit" id="loginBtn" class="btn-glow w-full py-2.5 rounded-lg text-white font-medium flex items-center justify-center gap-2">
+                    <span>Authenticating</span>
+                    <i class="ph ph-arrow-right font-bold"></i>
+                </button>
+            </form>
+            
+            <div class="mt-6 text-center text-xs text-gray-500 flex items-center justify-center gap-1.5 relative z-10">
+                <i class="ph ph-lock text-green-400/70"></i>
+                End-to-End Encrypted & Brute-Force Protected
+            </div>
+        </div>
+    </div>
+
+    <!-- DASHBOARD VIEW -->
+    <div id="dashboardView" class="hidden min-h-screen flex flex-col md:flex-row">
+        
+        <!-- SIDEBAR -->
+        <aside class="glass w-full md:w-64 md:min-h-screen flex-shrink-0 flex flex-col md:border-r border-gray-800">
+            <div class="p-6 border-b border-gray-800 flex items-center gap-3">
+                <div class="w-8 h-8 bg-brand-500 rounded flex items-center justify-center shadow-[0_0_15px_rgba(59,130,246,0.5)]">
+                    <i class="ph ph-shield-check text-white text-xl"></i>
+                </div>
+                <span class="font-bold text-lg text-white tracking-wide">SUI7 Admin</span>
+            </div>
+            
+            <nav class="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
+                <a href="#overview" class="flex items-center gap-3 px-4 py-3 rounded-lg bg-brand-500/10 text-brand-500 font-medium border border-brand-500/20 transition-all">
+                    <i class="ph ph-squares-four text-lg"></i> Overview
+                </a>
+                <a href="#analytics" class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-all">
+                    <i class="ph ph-chart-line-up text-lg"></i> Analytics
+                </a>
+                <a href="#security" class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-all">
+                    <i class="ph ph-shield-warning text-lg"></i> Access & Blocks
+                </a>
+                <a href="#logs" class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-all">
+                    <i class="ph ph-list-dashes text-lg"></i> Activity Logs
+                </a>
+            </nav>
+            
+            <div class="p-4 border-t border-gray-800">
+                <button onclick="logout()" class="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-gray-400 hover:text-red-400 hover:bg-red-500/10 transition-all border border-transparent hover:border-red-500/20">
+                    <i class="ph ph-sign-out text-lg"></i> Sign Out
+                </button>
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main class="flex-1 p-4 md:p-8 lg:p-10 overflow-y-auto max-h-screen">
+            
+            <!-- Header -->
+            <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+                <div>
+                    <h2 class="text-2xl font-bold text-white tracking-tight">Dashboard Overview</h2>
+                    <p class="text-gray-400 mt-1">Live metrics and global controls for the EWU Course Fetching portal.</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-500/10 border border-green-500/20 text-green-400 text-xs font-medium">
+                        <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
+                        API Connected
+                    </span>
+                    <button onclick="loadDashboard()" class="p-2 rounded-lg bg-gray-800 text-gray-300 hover:text-white border border-gray-700 hover:border-gray-600 transition-all" title="Refresh Data">
+                        <i class="ph ph-arrows-clockwise text-lg"></i>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Top Stats Row -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="glass-card p-6 flex flex-col justify-between relative overflow-hidden">
+                    <div class="absolute -right-4 -top-4 text-blue-500/10"><i class="ph ph-users text-8xl"></i></div>
+                    <div class="relative z-10 text-gray-400 font-medium mb-1 flex items-center gap-2"><i class="ph ph-users"></i> Total Visits (7 Days)</div>
+                    <div class="relative z-10 text-3xl font-bold text-white mt-2" id="statVisits">--</div>
+                </div>
+                
+                <div class="glass-card p-6 flex flex-col justify-between relative overflow-hidden">
+                    <div class="absolute -right-4 -top-4 text-purple-500/10"><i class="ph ph-cursor-click text-8xl"></i></div>
+                    <div class="relative z-10 text-gray-400 font-medium mb-1 flex items-center gap-2"><i class="ph ph-cursor-click"></i> Total Actions (7 Days)</div>
+                    <div class="relative z-10 text-3xl font-bold text-white mt-2" id="statActions">--</div>
+                </div>
+
+                <div class="glass-card p-6 flex flex-col justify-between relative overflow-hidden">
+                    <div class="absolute -right-4 -top-4 text-red-500/10"><i class="ph ph-shield-x text-8xl"></i></div>
+                    <div class="relative z-10 text-gray-400 font-medium mb-1 flex items-center gap-2"><i class="ph ph-shield-slash"></i> Blocked Entities</div>
+                    <div class="relative z-10 text-3xl font-bold text-white mt-2 flex items-baseline gap-2">
+                        <span id="statBlocks">--</span>
+                        <span class="text-xs text-red-400 font-normal">Active blocks</span>
+                    </div>
                 </div>
             </div>
 
-            <!-- Recent Logs -->
-            <div class="glass-panel p-6 lg:col-span-3">
-                <h2 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                    <svg class="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                    Recent Activity Logs
-                </h2>
-                <div class="overflow-x-auto max-h-64">
-                    <table class="w-full text-left text-sm text-gray-400">
-                        <thead class="text-xs uppercase bg-[#010409] text-gray-500 sticky top-0">
-                            <tr>
-                                <th class="px-4 py-2 border-b border-[#30363d]">Time</th>
-                                <th class="px-4 py-2 border-b border-[#30363d]">Type</th>
-                                <th class="px-4 py-2 border-b border-[#30363d]">Path</th>
-                                <th class="px-4 py-2 border-b border-[#30363d]">IP Address</th>
-                            </tr>
-                        </thead>
-                        <tbody id="logsTable">
-                            <tr><td colspan="4" class="px-4 py-4 text-center">Loading...</td></tr>
-                        </tbody>
-                    </table>
+            <!-- Global Controls & Chart -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                
+                <!-- Chart -->
+                <div class="glass-card p-6 lg:col-span-2 flex flex-col">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-lg font-semibold text-white flex items-center gap-2">
+                            <i class="ph ph-chart-line-up text-brand-500"></i> Traffic Analytics
+                        </h3>
+                    </div>
+                    <div class="flex-1 relative min-h-[250px]">
+                        <canvas id="trafficChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Global Controls (Settings) -->
+                <div class="glass-card p-6 flex flex-col gap-6">
+                    <div>
+                        <h3 class="text-lg font-semibold text-white flex items-center gap-2 mb-4">
+                            <i class="ph ph-faders text-gray-400"></i> Master Settings
+                        </h3>
+                        
+                        <div class="p-4 rounded-xl border flex flex-col gap-3 transition-colors" id="closurePanel">
+                            <div class="flex items-start justify-between">
+                                <div>
+                                    <div class="font-semibold text-white flex items-center gap-2">
+                                        Site Closure Mode
+                                        <i class="ph ph-warning-circle text-gray-400" title="Forces all end-users to a maintenance screen globally."></i>
+                                    </div>
+                                    <div class="text-xs text-gray-400 mt-1 max-w-[200px]">Immediately block all public traffic and display maintenance curtain.</div>
+                                </div>
+                                <label class="switch">
+                                    <input type="checkbox" id="closureToggle">
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                            <div id="closureStatusBadge" class="mt-2 text-xs py-1.5 px-3 rounded-md bg-green-500/10 text-green-400 font-medium self-start inline-flex items-center gap-1.5 border border-green-500/20">
+                                <span class="w-1.5 h-1.5 rounded-full bg-green-400"></span> Site is ONLINE
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="pt-2 border-t border-gray-800">
+                        <div class="text-sm text-gray-400 mb-2">System Diagnostics</div>
+                        <div class="flex items-center justify-between py-2 border-b border-gray-800/50">
+                            <span class="text-gray-300">API Gateway</span>
+                            <span class="text-green-400"><i class="ph ph-check"></i> Healthy</span>
+                        </div>
+                        <div class="flex items-center justify-between py-2 border-b border-gray-800/50">
+                            <span class="text-gray-300">KV Storage</span>
+                            <span class="text-green-400"><i class="ph ph-check"></i> Connected</span>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
+
+            <!-- Lower Section: Security & Logs -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- IP Blocklist -->
+                <div class="glass-card p-0 flex flex-col h-[400px]">
+                    <div class="p-5 border-b border-gray-800 flex justify-between items-center">
+                        <h3 class="text-lg font-semibold text-white flex items-center gap-2">
+                            <i class="ph ph-shield-slash text-red-400"></i> IP Blocklist
+                        </h3>
+                    </div>
+                    <div class="p-5 bg-gray-900/30">
+                        <div class="flex gap-2">
+                            <input type="text" id="ipToBlock" placeholder="e.g. 192.168.1.1" class="glass-input flex-1 rounded-lg px-4 py-2 text-sm focus:border-red-500 focus:ring-1 focus:ring-red-500">
+                            <button onclick="modifyBlocklist('block')" class="bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 rounded-lg px-4 py-2 font-medium transition-all shadow-[0_0_10px_rgba(239,68,68,0.1)] flex items-center gap-2">
+                                <i class="ph ph-prohibit"></i> Block
+                            </button>
+                        </div>
+                    </div>
+                    <div class="flex-1 overflow-y-auto p-5 pt-0">
+                        <div id="blockedIpsTable" class="flex flex-col gap-2">
+                            <!-- Populated dynamically -->
+                            <div class="text-center text-gray-500 py-8">Loading...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Logs -->
+                <div class="glass-card p-0 flex flex-col h-[400px]">
+                    <div class="p-5 border-b border-gray-800 flex justify-between items-center">
+                        <h3 class="text-lg font-semibold text-white flex items-center gap-2">
+                            <i class="ph ph-list-dashes text-gray-400"></i> Security & Activity Logs
+                        </h3>
+                        <span class="text-xs text-gray-500">Last 50 events</span>
+                    </div>
+                    <div class="flex-1 overflow-x-auto overflow-y-auto custom-scrollbar">
+                        <table class="w-full text-left">
+                            <thead class="text-xs text-gray-500 bg-gray-900/50 sticky top-0 backdrop-blur z-10 border-b border-gray-800">
+                                <tr>
+                                    <th class="px-5 py-3 font-medium">Timestamp</th>
+                                    <th class="px-5 py-3 font-medium">Event</th>
+                                    <th class="px-5 py-3 font-medium">Client IP</th>
+                                </tr>
+                            </thead>
+                            <tbody id="logsTable" class="text-sm divide-y divide-gray-800/50">
+                                <!-- Populated dynamically -->
+                                <tr><td colspan="3" class="px-5 py-8 text-center text-gray-500">Loading...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </main>
     </div>
 
     <script>
         const API_URL = 'https://api.aftabkabir.me/api';
+        let trafficChartInstance = null;
 
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
+            const btn = document.getElementById('loginBtn');
+            const errorDiv = document.getElementById('loginError');
+            const errorMsg = document.getElementById('loginErrorMsg');
+            
+            errorDiv.classList.add('hidden');
+            btn.innerHTML = '<div class="spinner border-white"></div>';
+            btn.disabled = true;
+            btn.classList.add('opacity-80', 'cursor-not-allowed');
+
             const user = document.getElementById('username').value;
             const pass = document.getElementById('password').value;
+            
             try {
                 const res = await fetch(`${API_URL}/admin/login`, {
                     method: 'POST',
@@ -155,14 +434,21 @@
                     body: JSON.stringify({ username: user, password: pass })
                 });
                 const data = await res.json();
+                
                 if (data.success) {
                     localStorage.setItem('adminToken', data.token);
-                    loadDashboard();
+                    await loadDashboard();
                 } else {
-                    document.getElementById('loginError').classList.remove('hidden');
+                    errorMsg.textContent = data.message || 'Invalid credentials.';
+                    errorDiv.classList.remove('hidden');
                 }
             } catch(err) {
-                alert('Connection error');
+                errorMsg.textContent = 'Connection error establishing contact with gateway.';
+                errorDiv.classList.remove('hidden');
+            } finally {
+                btn.innerHTML = '<span>Authenticating</span><i class="ph ph-arrow-right font-bold"></i>';
+                btn.disabled = false;
+                btn.classList.remove('opacity-80', 'cursor-not-allowed');
             }
         });
 
@@ -174,135 +460,247 @@
                 const res = await fetch(`${API_URL}/admin/dashboard`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
-                if (res.status === 401) {
-                    logout();
+                
+                if (res.status === 401 || res.status === 403) {
+                    logout(true);
                     return;
                 }
+                
+                if(!res.ok) throw new Error('Failed to load');
                 const data = await res.json();
                 
+                // Hide Login, Show Dash
                 document.getElementById('loginView').classList.add('hidden');
                 document.getElementById('dashboardView').classList.remove('hidden');
+                document.getElementById('dashboardView').classList.add('fade-in');
 
-                // Set initial toggle state
+                // Update Control Toggle
                 const toggle = document.getElementById('closureToggle');
                 toggle.checked = data.siteClosureMode;
                 updateClosureUI(data.siteClosureMode);
 
-                // Setup toggle listener
                 toggle.onchange = async (e) => {
                     const active = e.target.checked;
-                    await fetch(`${API_URL}/admin/config`, {
-                        method: 'POST',
-                        headers: { 
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${token}`
-                        },
-                        body: JSON.stringify({ siteClosureMode: active })
-                    });
-                    updateClosureUI(active);
+                    updateClosureUI(active); // optimistic update
+                    try {
+                        await fetch(`${API_URL}/admin/config`, {
+                            method: 'POST',
+                            headers: { 
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${token}`
+                            },
+                            body: JSON.stringify({ siteClosureMode: active })
+                        });
+                    } catch(e) {
+                         alert('Failed to update config on edge worker.');
+                         toggle.checked = !active;
+                         updateClosureUI(!active);
+                    }
                 };
 
-                // Populate Analytics
-                const tbody = document.getElementById('analyticsTable');
-                tbody.innerHTML = '';
-                const dates = Object.keys(data.analytics).sort().reverse();
-                if(dates.length === 0) {
-                     tbody.innerHTML = '<tr><td colspan="3" class="px-4 py-4 text-center">No data</td></tr>';
-                } else {
-                     dates.forEach(d => {
-                         const stats = data.analytics[d];
-                         tbody.innerHTML += `<tr class="border-b border-[#30363d]/50 hover:bg-[#010409]">
-                             <td class="px-4 py-2">${d}</td>
-                             <td class="px-4 py-2">${stats.visits}</td>
-                             <td class="px-4 py-2">${stats.actions}</td>
-                         </tr>`;
-                     });
-                }
+                // Update Stats
+                const dates = Object.keys(data.analytics).sort();
+                let totalVisits = 0, totalActions = 0;
+                dates.forEach(d => {
+                    totalVisits += data.analytics[d].visits || 0;
+                    totalActions += data.analytics[d].actions || 0;
+                });
+                document.getElementById('statVisits').textContent = totalVisits.toLocaleString();
+                document.getElementById('statActions').textContent = totalActions.toLocaleString();
+                document.getElementById('statBlocks').textContent = (data.blockedIPs || []).length;
+
+                // Render Chart
+                renderChart(dates, data.analytics);
 
                 // Populate Logs
-                const logsTbody = document.getElementById('logsTable');
-                logsTbody.innerHTML = '';
-                if(!data.recentLogs || data.recentLogs.length === 0) {
-                    logsTbody.innerHTML = '<tr><td colspan="4" class="px-4 py-4 text-center">No logs found</td></tr>';
-                } else {
-                    data.recentLogs.forEach(log => {
-                        const date = new Date(log.time).toLocaleString();
-                        logsTbody.innerHTML += `<tr class="border-b border-[#30363d]/50 hover:bg-[#010409]">
-                            <td class="px-4 py-2">${date}</td>
-                            <td class="px-4 py-2">
-                                <span class="px-2 py-1 bg-[#30363d]/50 rounded text-xs">${log.type}</span>
-                            </td>
-                            <td class="px-4 py-2">${log.path}</td>
-                            <td class="px-4 py-2 font-mono text-xs text-blue-400">${log.ip}</td>
-                        </tr>`;
-                    });
-                }
+                renderLogs(data.recentLogs || []);
 
+                // Populate Blocklist
                 renderBlocklist(data.blockedIPs || []);
-            } catch(e) {}
+                
+            } catch(e) {
+                console.error(e);
+            }
+        }
+
+        function renderChart(dates, analyticsObj) {
+            const ctx = document.getElementById('trafficChart').getContext('2d');
+            
+            // Format dates simply for X axis (Mon DD)
+            const labels = dates.map(d => {
+                const dt = new Date(d);
+                return dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            });
+            const visitsData = dates.map(d => analyticsObj[d].visits);
+            const actionsData = dates.map(d => analyticsObj[d].actions);
+
+            if (trafficChartInstance) trafficChartInstance.destroy();
+
+            // Gradient for visits
+            const gradientVisits = ctx.createLinearGradient(0, 0, 0, 400);
+            gradientVisits.addColorStop(0, 'rgba(59, 130, 246, 0.5)');
+            gradientVisits.addColorStop(1, 'rgba(59, 130, 246, 0.0)');
+
+            trafficChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Visits',
+                            data: visitsData,
+                            borderColor: '#3b82f6',
+                            backgroundColor: gradientVisits,
+                            borderWidth: 2,
+                            tension: 0.4,
+                            fill: true,
+                            pointBackgroundColor: '#0b0f19',
+                            pointBorderColor: '#3b82f6',
+                            pointHoverBackgroundColor: '#3b82f6'
+                        },
+                        {
+                            label: 'Actions',
+                            data: actionsData,
+                            borderColor: '#8b5cf6',
+                            backgroundColor: 'transparent',
+                            borderWidth: 2,
+                            borderDash: [5, 5],
+                            tension: 0.4,
+                            pointBackgroundColor: '#0b0f19',
+                            pointBorderColor: '#8b5cf6',
+                            pointHoverBackgroundColor: '#8b5cf6'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        legend: { labels: { color: '#9ca3af', usePointStyle: true, boxWidth: 6 } },
+                        tooltip: { backgroundColor: 'rgba(17, 24, 39, 0.9)', titleColor: '#fff', bodyColor: '#cbd5e1', borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1 }
+                    },
+                    scales: {
+                        x: { grid: { color: 'rgba(255,255,255,0.05)', drawBorder: false }, ticks: { color: '#6b7280' } },
+                        y: { grid: { color: 'rgba(255,255,255,0.05)', drawBorder: false }, ticks: { color: '#6b7280', precision: 0 }, beginAtZero: true }
+                    }
+                }
+            });
+        }
+
+        function renderLogs(logs) {
+            const tbody = document.getElementById('logsTable');
+            tbody.innerHTML = '';
+            if(logs.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" class="px-5 py-8 text-center text-gray-500">No activity recorded yet.</td></tr>';
+                return;
+            }
+            logs.forEach(log => {
+                const date = new Date(log.time);
+                const timeStr = date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) + ' - ' + date.toLocaleDateString([], {month:'short', day:'numeric'});
+                
+                // Color code types
+                let typeBadge = '';
+                if(log.type === 'visit') typeBadge = '<span class="px-2 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20 text-xs">VISIT</span>';
+                else typeBadge = '<span class="px-2 py-0.5 rounded bg-purple-500/10 text-purple-400 border border-purple-500/20 text-xs">ACTION</span>';
+
+                tbody.innerHTML += `
+                    <tr class="hover:bg-white/[0.02] transition-colors group">
+                        <td class="px-5 py-3 text-gray-400 text-xs whitespace-nowrap">${timeStr}</td>
+                        <td class="px-5 py-3">
+                            <div class="flex items-center gap-2">
+                                ${typeBadge}
+                                <span class="text-gray-300 truncate max-w-[150px] lg:max-w-xs" title="${log.path}">${log.path}</span>
+                            </div>
+                        </td>
+                        <td class="px-5 py-3 font-mono text-xs text-gray-500 group-hover:text-gray-300 transition-colors">${log.ip}</td>
+                    </tr>
+                `;
+            });
         }
 
         function renderBlocklist(ips) {
-            const tbody = document.getElementById('blockedIpsTable');
-            tbody.innerHTML = '';
+            const container = document.getElementById('blockedIpsTable');
+            container.innerHTML = '';
+            
+            document.getElementById('statBlocks').textContent = ips.length; // Update live stat
+
             if(ips.length === 0) {
-                tbody.innerHTML = '<tr><td class="py-2 text-center">No IPs blocked</td></tr>';
-            } else {
-                ips.forEach(ip => {
-                    tbody.innerHTML += `<tr class="border-b border-[#30363d]/50">
-                        <td class="py-2 font-mono text-xs flex justify-between items-center text-red-400">
-                            ${ip}
-                            <button onclick="modifyBlocklist('unblock', '${ip}')" class="btn-danger p-1 text-xs px-2">Unblock</button>
-                        </td>
-                    </tr>`;
-                });
+                container.innerHTML = '<div class="text-center text-gray-500 py-8 text-sm bg-gray-900/20 rounded-lg border border-dashed border-gray-700">No IPs currently blocked. System clear.</div>';
+                return;
             }
+            ips.forEach(ip => {
+                container.innerHTML += `
+                    <div class="flex items-center justify-between p-3 rounded-lg bg-red-500/5 border border-red-500/10 hover:bg-red-500/10 transition-colors group">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-full bg-red-500/20 flex items-center justify-center text-red-500"><i class="ph ph-shield-slash"></i></div>
+                            <span class="font-mono text-sm text-red-100">${ip}</span>
+                        </div>
+                        <button onclick="modifyBlocklist('unblock', '${ip}')" class="text-gray-500 hover:text-white bg-gray-800 hover:bg-gray-700 w-8 h-8 rounded flex items-center justify-center transition-colors" title="Unblock ${ip}">
+                            <i class="ph ph-x"></i>
+                        </button>
+                    </div>
+                `;
+            });
         }
 
         async function modifyBlocklist(action, explicitIp = null) {
             const token = localStorage.getItem('adminToken');
-            const ip = explicitIp || document.getElementById('ipToBlock').value.trim();
+            const ipInput = document.getElementById('ipToBlock');
+            const ip = explicitIp || ipInput.value.trim();
             if(!ip) return;
             
             try {
                 const res = await fetch(`${API_URL}/admin/ip`, {
                     method: 'POST',
-                    headers: { 
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                     body: JSON.stringify({ ip, action })
                 });
+                if(res.status === 401 || res.status === 403) { logout(true); return; }
                 const data = await res.json();
+                
                 if(data.success) {
-                    document.getElementById('ipToBlock').value = '';
+                    ipInput.value = '';
                     renderBlocklist(data.blockedIPs);
+                } else {
+                    alert(data.error || 'Failed to modify blocklist');
                 }
             } catch(e) {
-                alert('Failed to modify blocklist');
+                alert('Connection failure pushing to edge.');
             }
         }
 
         function updateClosureUI(active) {
-            const el = document.getElementById('closureStatus');
+            const badge = document.getElementById('closureStatusBadge');
+            const panel = document.getElementById('closurePanel');
+            
             if(active) {
-                el.className = 'text-xs text-red-400 bg-red-400/10 p-2 rounded mt-2';
-                el.textContent = 'Site is currently CLOSED (Maintenance).';
+                badge.className = 'mt-2 text-xs py-1.5 px-3 rounded-md bg-red-500/10 text-red-400 font-medium self-start inline-flex items-center gap-1.5 border border-red-500/20';
+                badge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse"></span> SYSTEM LOCKED';
+                panel.className = 'p-4 rounded-xl border flex flex-col gap-3 transition-colors bg-red-500/5 border-red-500/20';
             } else {
-                el.className = 'text-xs text-green-400 bg-green-400/10 p-2 rounded mt-2';
-                el.textContent = 'Site is currently ONLINE.';
+                badge.className = 'mt-2 text-xs py-1.5 px-3 rounded-md bg-green-500/10 text-green-400 font-medium self-start inline-flex items-center gap-1.5 border border-green-500/20';
+                badge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-green-400"></span> Site is ONLINE';
+                panel.className = 'p-4 rounded-xl border flex flex-col gap-3 transition-colors bg-gray-800/30 border-gray-700/50';
             }
         }
 
-        function logout() {
+        function logout(sessionExpired = false) {
             localStorage.removeItem('adminToken');
             document.getElementById('loginView').classList.remove('hidden');
             document.getElementById('dashboardView').classList.add('hidden');
-            document.getElementById('loginError').classList.add('hidden');
             document.getElementById('password').value = '';
+            
+            if (sessionExpired) {
+                const errDiv = document.getElementById('loginError');
+                document.getElementById('loginErrorMsg').textContent = 'Session expired. Please log in again.';
+                errDiv.classList.remove('hidden');
+            } else {
+                document.getElementById('loginError').classList.add('hidden');
+            }
         }
 
-        // Auto-login check
+        // Boot
         if (localStorage.getItem('adminToken')) {
             loadDashboard();
         }

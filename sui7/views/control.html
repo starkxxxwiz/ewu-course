@@ -1,0 +1,28 @@
+<div class="glass-card p-8 min-h-[400px] view-transition-enter max-w-2xl mx-auto">
+    <div class="mb-8 border-b border-gray-800 pb-6">
+        <h3 class="text-xl font-semibold text-white flex items-center gap-2 mb-2">
+            <i class="ph ph-shield-check text-green-400"></i> Global Operations
+        </h3>
+        <p class="text-gray-400 text-sm">Control site accessibility for all remote users.</p>
+    </div>
+
+    <div class="p-6 rounded-2xl border flex flex-col md:flex-row items-start md:items-center justify-between gap-6 transition-all duration-300 shadow-lg" id="controlPanelWrapper">
+        <div class="flex-1">
+            <div class="font-semibold text-lg text-white flex items-center gap-2 mb-1">
+                Maintenance Mode (Site Closure)
+            </div>
+            <p class="text-sm text-gray-400 mb-3">
+                Immediately block all public traffic and display a beautiful aesthetic maintenance curtain. Existing connections will be dropped.
+            </p>
+            <div id="controlStatusBadge" class="text-xs py-1.5 px-3 rounded-md bg-green-500/10 text-green-400 font-medium inline-flex items-center gap-1.5 border border-green-500/20">
+                <span class="w-1.5 h-1.5 rounded-full bg-green-400"></span> Site is ONLINE
+            </div>
+        </div>
+        <div class="flex-shrink-0">
+            <label class="switch scale-125 origin-right">
+                <input type="checkbox" id="ctrlClosureToggle">
+                <span class="slider"></span>
+            </label>
+        </div>
+    </div>
+</div>

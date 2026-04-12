@@ -1,0 +1,32 @@
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 view-transition-enter">
+    <div class="glass-card p-6 col-span-1">
+        <h3 class="text-lg font-semibold text-white flex items-center gap-2 mb-4">
+            <i class="ph ph-users-three text-brand-500"></i> User Origin Breakdown
+        </h3>
+        <p class="text-gray-400 text-sm mb-6">Unique active IPs observed based on latest telemetry.</p>
+        
+        <div class="space-y-4" id="userOriginList">
+            <div class="text-center text-gray-500 py-4">Processing user data...</div>
+        </div>
+    </div>
+
+    <div class="glass-card p-6 col-span-1 lg:col-span-2">
+        <h3 class="text-lg font-semibold text-white flex items-center gap-2 mb-4">
+            <i class="ph ph-map-pin text-purple-400"></i> IP Session Log
+        </h3>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left">
+                <thead class="text-xs text-gray-500 bg-gray-900/50 border-b border-gray-800">
+                    <tr>
+                        <th class="px-4 py-3 font-medium">Session IP</th>
+                        <th class="px-4 py-3 font-medium">Last Path Hit</th>
+                        <th class="px-4 py-3 font-medium text-right">Event Type</th>
+                    </tr>
+                </thead>
+                <tbody id="userSessionsTable" class="text-sm divide-y divide-gray-800/50">
+                    <tr><td colspan="3" class="px-4 py-8 text-center text-gray-500">Loading sessions...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

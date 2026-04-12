@@ -1,0 +1,64 @@
+<div class="min-h-screen flex flex-col md:flex-row fade-in">
+    <!-- SIDEBAR -->
+    <aside class="glass w-full md:w-64 md:min-h-screen flex-shrink-0 flex flex-col md:border-r border-gray-800 relative z-20">
+        <div class="p-6 border-b border-gray-800 flex items-center gap-3">
+            <div class="w-8 h-8 bg-brand-500 rounded flex items-center justify-center shadow-[0_0_15px_rgba(59,130,246,0.5)]">
+                <i class="ph ph-shield-check text-white text-xl"></i>
+            </div>
+            <span class="font-bold text-lg text-white tracking-wide">SUI7 Admin</span>
+        </div>
+        
+        <nav class="flex-1 px-4 py-6 space-y-2 overflow-y-auto" id="mainNav">
+            <a href="#/overview" class="nav-link flex items-center gap-3 px-4 py-3 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-all border border-transparent border-brand-500/20 active">
+                <i class="ph ph-squares-four text-lg"></i> Overview
+            </a>
+            <a href="#/user-analytics" class="nav-link flex items-center gap-3 px-4 py-3 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-all border border-transparent">
+                <i class="ph ph-users text-lg"></i> User Analytics
+            </a>
+            <a href="#/site-analytics" class="nav-link flex items-center gap-3 px-4 py-3 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-all border border-transparent">
+                <i class="ph ph-chart-line-up text-lg"></i> Site Analytics
+            </a>
+            <a href="#/control" class="nav-link flex items-center gap-3 px-4 py-3 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-all border border-transparent">
+                <i class="ph ph-faders text-lg"></i> Control Panel
+            </a>
+            <a href="#/security" class="nav-link flex items-center gap-3 px-4 py-3 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-all border border-transparent">
+                <i class="ph ph-shield-slash text-lg"></i> Block / Unblock
+            </a>
+            <a href="#/settings" class="nav-link flex items-center gap-3 px-4 py-3 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-all border border-transparent">
+                <i class="ph ph-gear text-lg"></i> Settings
+            </a>
+        </nav>
+        
+        <div class="p-4 border-t border-gray-800">
+            <button id="logoutBtn" class="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-gray-400 hover:text-red-400 hover:bg-red-500/10 transition-all border border-transparent hover:border-red-500/20">
+                <i class="ph ph-sign-out text-lg"></i> Sign Out
+            </button>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="flex-1 p-4 md:p-8 lg:p-10 overflow-y-auto max-h-screen relative">
+        <div class="absolute -top-40 -right-40 w-96 h-96 bg-brand-500/10 rounded-full mix-blend-screen filter blur-[100px] pointer-events-none"></div>
+        <div class="absolute top-40 -left-40 w-96 h-96 bg-purple-500/10 rounded-full mix-blend-screen filter blur-[100px] pointer-events-none"></div>
+
+        <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4 relative z-10">
+            <div>
+                <h2 id="pageTitle" class="text-2xl font-bold text-white tracking-tight">Overview</h2>
+                <p id="pageSubtitle" class="text-gray-400 mt-1">Live metrics and global controls.</p>
+            </div>
+            <div class="flex items-center gap-3">
+                <span class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-500/10 border border-green-500/20 text-green-400 text-xs font-medium backdrop-blur">
+                    <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
+                    API Connected
+                </span>
+                <button id="refreshBtn" class="p-2 rounded-lg bg-gray-800/50 text-gray-300 hover:text-white border border-gray-700/50 hover:border-gray-500 transition-all backdrop-blur" title="Refresh Data">
+                    <i class="ph ph-arrows-clockwise text-lg"></i>
+                </button>
+            </div>
+        </header>
+
+        <div id="routerView" class="relative z-10 min-h-[400px]">
+            <!-- Dynamic Sub-view Injected Here -->
+        </div>
+    </main>
+</div>

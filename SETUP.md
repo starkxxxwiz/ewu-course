@@ -60,4 +60,4 @@ Wrangler is **optional but highly recommended**. While it is entirely possible t
 
 ### Utilizing Site Closure Mode
 1. In the event of a critical update/server crash, toggle the **Site Closure Mode** pill on your SUI7 Dashboard over to ON.
-2. A KV record propagates within milliseconds. The frontend utility script (`sui-status.js`), executing on every page load globally, will intersect the HTML tree and drop a monolithic Maintenance cover, locking all interactions effortlessly.
+2. A KV record propagates within milliseconds. The frontend utility script (`system-metrics.js`), executing on every page load globally, will intersect the HTML tree and drop a monolithic Maintenance cover, locking all interactions effortlessly.

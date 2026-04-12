@@ -364,9 +364,18 @@ async function handleAnalyticsEvent(request, env) {
     const key = `analytics_${date}`;
     
     let stats = await env.ADMIN_KV.get(key, 'json');
-    if(!stats) stats = { visits: 0, actions: 0 };
-    if(data.type === 'visit') stats.visits++;
-    else stats.actions++;
+    if(!stats) stats = { visits: 0, actions: 0, unique_ips: [] };
+    if(!stats.unique_ips) stats.unique_ips = [];
+
+    if(data.type === 'visit') {
+      if (!stats.unique_ips.includes(ip)) {
+        stats.unique_ips.push(ip);
+        stats.visits++;
+      }
+    }
+    else {
+      stats.actions++;
+    }
     await env.ADMIN_KV.put(key, JSON.stringify(stats));
 
     // Log the event with IP

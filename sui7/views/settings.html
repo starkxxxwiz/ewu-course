@@ -1,0 +1,32 @@
+<div class="glass-card p-6 min-h-[400px] view-transition-enter max-w-2xl mx-auto">
+    <div class="mb-8 border-b border-gray-800 pb-6">
+        <h3 class="text-xl font-semibold text-white flex items-center gap-2 mb-2">
+            <i class="ph ph-gear text-gray-400"></i> Local Preferences
+        </h3>
+        <p class="text-gray-400 text-sm">Dashboard interface configurations.</p>
+    </div>
+
+    <div class="space-y-6">
+        <div class="p-4 rounded-xl border border-gray-800/50 bg-gray-900/30 flex items-center justify-between">
+            <div>
+                <div class="text-sm font-medium text-white mb-1">Smooth Chart Animations</div>
+                <div class="text-xs text-gray-500">Toggle Canvas transitions</div>
+            </div>
+            <label class="switch">
+                <input type="checkbox" checked id="setAnimations">
+                <span class="slider"></span>
+            </label>
+        </div>
+        
+        <div class="p-4 rounded-xl border border-gray-800/50 bg-gray-900/30 flex items-center justify-between opacity-60 pointer-events-none">
+            <div>
+                <div class="text-sm font-medium text-white mb-1">Theme Contrast</div>
+                <div class="text-xs text-gray-500">Locked to premium dark aesthetics.</div>
+            </div>
+            <label class="switch">
+                <input type="checkbox" checked disabled>
+                <span class="slider"></span>
+            </label>
+        </div>
+    </div>
+</div>

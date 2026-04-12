@@ -1,0 +1,49 @@
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 view-transition-enter">
+    
+    <!-- Blocklist -->
+    <div class="glass-card p-0 flex flex-col h-[500px]">
+        <div class="p-5 border-b border-gray-800 flex justify-between items-center bg-gray-900/50 rounded-t-xl">
+            <h3 class="text-lg font-semibold text-white flex items-center gap-2">
+                <i class="ph ph-shield-slash text-red-400"></i> Advanced IP Blocking
+            </h3>
+        </div>
+        <div class="p-5 bg-gray-900/30 border-b border-gray-800 backdrop-blur-md">
+            <form id="blockForm" class="flex gap-3">
+                <input type="text" id="secIpInput" placeholder="Enter remote IP (e.g. 192.168.1.1)" class="glass-input flex-1 rounded-lg px-4 py-2.5 text-sm focus:border-red-500 focus:ring-1 focus:ring-red-500" required>
+                <button type="submit" class="bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 rounded-lg px-5 py-2.5 font-medium transition-all shadow-[0_0_15px_rgba(239,68,68,0.15)] flex items-center gap-2">
+                    <i class="ph ph-prohibit font-bold text-lg"></i> Block Entity
+                </button>
+            </form>
+        </div>
+        <div class="flex-1 overflow-y-auto p-5 hidden-scrollbar">
+            <div id="secBlockedList" class="flex flex-col gap-2">
+                <div class="text-center text-gray-500 py-8">Loading blocked entities...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Security Logs -->
+    <div class="glass-card p-0 flex flex-col h-[500px]">
+        <div class="p-5 border-b border-gray-800 flex justify-between items-center bg-gray-900/50 rounded-t-xl">
+            <h3 class="text-lg font-semibold text-white flex items-center gap-2">
+                <i class="ph ph-list-dashes text-gray-400"></i> Event Stream
+            </h3>
+            <span class="text-xs text-gray-500 bg-gray-800/50 px-2 py-1 rounded">50 recent packets</span>
+        </div>
+        <div class="flex-1 overflow-auto hidden-scrollbar">
+            <table class="w-full text-left">
+                <thead class="text-xs text-gray-500 bg-gray-900/80 sticky top-0 backdrop-blur z-10 border-b border-gray-800 uppercase tracking-wider">
+                    <tr>
+                        <th class="px-5 py-3 font-medium">Time / Trace</th>
+                        <th class="px-5 py-3 font-medium">Target Path</th>
+                        <th class="px-5 py-3 font-medium">Origin IP</th>
+                    </tr>
+                </thead>
+                <tbody id="secLogsTable" class="text-sm divide-y divide-gray-800/50">
+                    <tr><td colspan="3" class="px-5 py-8 text-center text-gray-500">Decrypting streams...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>

@@ -59,15 +59,23 @@
             const alignClass = config.align || 'text-center';
             const sizeClass = config.fontSize || 'text-base';
             const weightClass = config.fontWeight || 'font-normal';
-            const iconHtml = config.icon
-                ? `<div class="icon-ring purple-ring" style="margin: 0 auto 1.25rem;">${config.icon}</div>`
-                : `<div class="icon-ring purple-ring" style="margin: 0 auto 1.25rem;">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="rgba(196,181,253,0.9)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="10"/>
-                    <line x1="12" y1="8" x2="12" y2="12"/>
-                    <circle cx="12" cy="16" r="0.8" fill="rgba(196,181,253,0.9)" stroke="none"/>
-                </svg>
-               </div>`;
+            
+            let iconSvgHtml = '';
+            if (config.icon === 'info') {
+                iconSvgHtml = `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="rgba(196,181,253,0.9)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>`;
+            } else if (config.icon === 'warning') {
+                iconSvgHtml = `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="rgba(252,211,77,0.9)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`;
+            } else if (config.icon === 'danger') {
+                iconSvgHtml = `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="rgba(252,165,165,0.9)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`;
+            } else if (config.icon === 'success') {
+                iconSvgHtml = `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="rgba(110,231,183,0.9)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`;
+            } else if (config.icon === 'megaphone') {
+                iconSvgHtml = `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="rgba(196,181,253,0.9)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg>`;
+            }
+
+            const iconHtml = iconSvgHtml 
+                ? `<div class="icon-ring purple-ring" style="margin: 0 auto 1.25rem;">${iconSvgHtml}</div>` 
+                : `<div class="icon-ring purple-ring" style="margin: 0 auto 1.25rem;"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="rgba(196,181,253,0.9)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><circle cx="12" cy="16" r="0.8" fill="rgba(196,181,253,0.9)" stroke="none"/></svg></div>`;
 
             contentHtml = `
             <div class="glass-container wpb-notice ${alignClass}">

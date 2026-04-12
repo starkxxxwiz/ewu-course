@@ -333,9 +333,16 @@ async function handleStatus(request, env) {
   let isBlocked = false;
   const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
 
+  let customNotice = null;
+
   if(env.ADMIN_KV) {
     isClosed = (await env.ADMIN_KV.get('site_closure_mode')) === 'true';
     
+    const noticeStr = await env.ADMIN_KV.get('custom_notice');
+    if (noticeStr) {
+      try { customNotice = JSON.parse(noticeStr); } catch(e){}
+    }
+
     const blockedIPsStr = await env.ADMIN_KV.get('blocked_ips');
     if (blockedIPsStr) {
       try {
@@ -350,6 +357,7 @@ async function handleStatus(request, env) {
   return jsonResponse({
     closed: isClosed,
     blocked: isBlocked,
+    customNotice: customNotice,
     ip: ip,
     timestamp: Date.now()
   }, 200, request);
@@ -367,22 +375,35 @@ async function handleAnalyticsEvent(request, env) {
     if(!stats) stats = { visits: 0, actions: 0, unique_ips: [] };
     if(!stats.unique_ips) stats.unique_ips = [];
 
-    if(data.type === 'visit') {
+    const isVisit = data.type === 'visit';
+    let isGlobalNew = false;
+    
+    if(isVisit) {
       if (!stats.unique_ips.includes(ip)) {
         stats.unique_ips.push(ip);
-        stats.visits++;
+        stats.visits++; // daily unique
       }
-    }
-    else {
+      
+      const ipKnown = await env.ADMIN_KV.get(`known_ip_${ip}`);
+      if (!ipKnown) {
+         await env.ADMIN_KV.put(`known_ip_${ip}`, '1');
+         let totalU = await env.ADMIN_KV.get('total_unique_visitors');
+         totalU = totalU ? parseInt(totalU) + 1 : 1;
+         await env.ADMIN_KV.put('total_unique_visitors', totalU.toString());
+         isGlobalNew = true;
+      }
+    } else {
       stats.actions++;
     }
     await env.ADMIN_KV.put(key, JSON.stringify(stats));
 
     // Log the event with IP
+    const userAgent = request.headers.get('User-Agent') || 'unknown';
     const logEntry = {
       time: new Date().toISOString(),
       type: data.type,
       ip: ip,
+      userAgent: userAgent,
       path: data.path || '/'
     };
     let logsStr = await env.ADMIN_KV.get('recent_logs');
@@ -391,7 +412,7 @@ async function handleAnalyticsEvent(request, env) {
       try { logsArr = JSON.parse(logsStr); } catch (e) {}
     }
     logsArr.unshift(logEntry);
-    if (logsArr.length > 50) logsArr = logsArr.slice(0, 50); // Keep last 50 logs
+    if (logsArr.length > 200) logsArr = logsArr.slice(0, 200); // Increased log size
     await env.ADMIN_KV.put('recent_logs', JSON.stringify(logsArr));
     
   } catch(e) {}
@@ -456,6 +477,8 @@ async function handleAdminDashboard(request, env) {
   let recentLogs = [];
   let blockedIPs = [];
   let isClosed = false;
+  let totalUniqueVisitors = 0;
+  let customNotice = null;
 
   if (env.ADMIN_KV) {
     for(let i=0; i<7; i++) {
@@ -463,10 +486,18 @@ async function handleAdminDashboard(request, env) {
       d.setDate(d.getDate() - i);
       const dateStr = d.toISOString().split('T')[0];
       const data = await env.ADMIN_KV.get(`analytics_${dateStr}`, 'json');
-      analytics[dateStr] = data || { visits: 0, actions: 0 };
+      analytics[dateStr] = data || { visits: 0, actions: 0, unique_ips: [] };
     }
     isClosed = (await env.ADMIN_KV.get('site_closure_mode')) === 'true';
     
+    let totalUStr = await env.ADMIN_KV.get('total_unique_visitors');
+    totalUniqueVisitors = totalUStr ? parseInt(totalUStr) : 0;
+
+    const noticeStr = await env.ADMIN_KV.get('custom_notice');
+    if (noticeStr) {
+      try { customNotice = JSON.parse(noticeStr); } catch(e){}
+    }
+
     const logsStr = await env.ADMIN_KV.get('recent_logs');
     if (logsStr) {
       try { recentLogs = JSON.parse(logsStr); } catch(e){}
@@ -480,6 +511,8 @@ async function handleAdminDashboard(request, env) {
 
   return jsonResponse({
     siteClosureMode: isClosed,
+    customNotice: customNotice,
+    totalUniqueVisitors: totalUniqueVisitors,
     analytics: analytics,
     recentLogs: recentLogs,
     blockedIPs: blockedIPs
@@ -514,12 +547,14 @@ async function handleIpBlock(request, env) {
 async function handleAdminConfig(request, env) {
   if (!(await verifyAdminAuth(request, env))) return jsonResponse({ error: 'Unauthorized' }, 401, request);
   try {
-    const { siteClosureMode } = await request.json();
-    if(typeof siteClosureMode === 'boolean') {
-      await env.ADMIN_KV.put('site_closure_mode', siteClosureMode ? 'true' : 'false');
-      return jsonResponse({ success: true, siteClosureMode }, 200, request);
+    const data = await request.json();
+    if(typeof data.siteClosureMode === 'boolean') {
+      await env.ADMIN_KV.put('site_closure_mode', data.siteClosureMode ? 'true' : 'false');
     }
-    return jsonResponse({ error: 'Invalid payload' }, 400, request);
+    if(data.customNotice !== undefined) {
+      await env.ADMIN_KV.put('custom_notice', JSON.stringify(data.customNotice));
+    }
+    return jsonResponse({ success: true, siteClosureMode: data.siteClosureMode, customNotice: data.customNotice }, 200, request);
   } catch(e) {
     return jsonResponse({ error: 'Server error' }, 500, request);
   }

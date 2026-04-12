@@ -22,21 +22,21 @@
         </div>
     </div>
 
-    <!-- Security Logs -->
+    <!-- Security Logs (Unique IPs) -->
     <div class="glass-card p-0 flex flex-col h-[500px]">
         <div class="p-5 border-b border-gray-800 flex justify-between items-center bg-gray-900/50 rounded-t-xl">
             <h3 class="text-lg font-semibold text-white flex items-center gap-2">
-                <i class="ph ph-list-dashes text-gray-400"></i> Event Stream
+                <i class="ph ph-fingerprint text-purple-400"></i> Real IP Footprints
             </h3>
-            <span class="text-xs text-gray-500 bg-gray-800/50 px-2 py-1 rounded">50 recent packets</span>
+            <span class="text-xs text-gray-500 bg-gray-800/50 px-2 py-1 rounded">Unique IPs only</span>
         </div>
         <div class="flex-1 overflow-auto hidden-scrollbar">
-            <table class="w-full text-left">
+            <table class="w-full text-left relative">
                 <thead class="text-xs text-gray-500 bg-gray-900/80 sticky top-0 backdrop-blur z-10 border-b border-gray-800 uppercase tracking-wider">
                     <tr>
-                        <th class="px-5 py-3 font-medium">Time / Trace</th>
-                        <th class="px-5 py-3 font-medium">Target Path</th>
-                        <th class="px-5 py-3 font-medium">Origin IP</th>
+                        <th class="px-5 py-3 font-medium">IP Address / Copy</th>
+                        <th class="px-5 py-3 font-medium">User Agent</th>
+                        <th class="px-5 py-3 font-medium text-right">Total Pings</th>
                     </tr>
                 </thead>
                 <tbody id="secLogsTable" class="text-sm divide-y divide-gray-800/50">

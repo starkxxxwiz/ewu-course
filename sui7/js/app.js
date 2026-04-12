@@ -234,6 +234,33 @@ function hydrateView(viewName, data) {
                 }
             };
         }
+
+        // Custom Notice Bindings
+        const notice = data.customNotice || { wpb: {}, unb: {} };
+        const el = id => document.getElementById(id);
+        
+        if (el('wpbToggle')) {
+            el('wpbToggle').checked = notice.wpb?.enabled || false;
+            el('wpbContent').value = notice.wpb?.content || '';
+            el('wpbFontSize').value = notice.wpb?.fontSize || 'text-base';
+            el('wpbFontWeight').value = notice.wpb?.fontWeight || 'font-normal';
+            el('wpbIcon').value = notice.wpb?.icon || '';
+            el('wpbAlign').value = notice.wpb?.align || 'text-center';
+
+            el('wpbSaveBtn').onclick = () => saveNoticeConfig(data);
+        }
+
+        if (el('unbToggle')) {
+            el('unbToggle').checked = notice.unb?.enabled || false;
+            el('unbContent').value = notice.unb?.content || '';
+            el('unbFontSize').value = notice.unb?.fontSize || 'text-sm';
+            el('unbPosition').value = notice.unb?.position || 'fixed';
+            el('unbPages').value = notice.unb?.pages || '*';
+            el('unbMarquee').checked = notice.unb?.marquee || false;
+            el('unbGlow').checked = notice.unb?.glow || false;
+
+            el('unbSaveBtn').onclick = () => saveNoticeConfig(data);
+        }
     }
 
     if (viewName === 'security') {
@@ -286,32 +313,81 @@ function renderMiniLogs(logs) {
     });
 }
 
+async function saveNoticeConfig(data) {
+    const el = id => document.getElementById(id);
+    const notice = {
+        wpb: {
+            enabled: el('wpbToggle').checked,
+            content: el('wpbContent').value,
+            fontSize: el('wpbFontSize').value,
+            fontWeight: el('wpbFontWeight').value,
+            icon: el('wpbIcon').value,
+            align: el('wpbAlign').value
+        },
+        unb: {
+            enabled: el('unbToggle').checked,
+            content: el('unbContent').value,
+            fontSize: el('unbFontSize').value,
+            position: el('unbPosition').value,
+            pages: el('unbPages').value,
+            marquee: el('unbMarquee').checked,
+            glow: el('unbGlow').checked
+        }
+    };
+    
+    try {
+        const token = localStorage.getItem('adminToken');
+        await fetch(`${API_URL}/admin/config`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ customNotice: notice })
+        });
+        data.customNotice = notice;
+        currentDataCache.customNotice = notice;
+        alert('Notice Configuration updated successfully across all edge nodes.');
+    } catch(err) {
+        alert('Edge synchronization failed for Custom Notice.');
+    }
+}
+
 function renderLogsFull(logs) {
     const tbody = document.getElementById('secLogsTable');
     if(!tbody) return;
     tbody.innerHTML = '';
-    if(logs.length === 0) {
+    if(!logs || logs.length === 0) {
         tbody.innerHTML = '<tr><td colspan="3" class="px-5 py-8 text-center text-gray-500">No activity recorded.</td></tr>';
         return;
     }
-    logs.forEach(log => {
-        const date = new Date(log.time);
-        const timeStr = date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) + ' - ' + date.toLocaleDateString([], {month:'short', day:'numeric'});
-        
-        let typeBadge = log.type === 'visit' 
-            ? '<span class="px-2 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20 text-[10px] uppercase font-bold tracking-wider">Visit</span>'
-            : '<span class="px-2 py-0.5 rounded bg-purple-500/10 text-purple-400 border border-purple-500/20 text-[10px] uppercase font-bold tracking-wider">Action</span>';
+    
+    // Aggregate by IP
+    const ipMap = {};
+    logs.forEach(l => {
+        if(!ipMap[l.ip]) ipMap[l.ip] = { ip: l.ip, userAgent: l.userAgent || 'Unknown', count: 0, lastTime: l.time };
+        ipMap[l.ip].count++;
+        if(new Date(l.time) > new Date(ipMap[l.ip].lastTime)) ipMap[l.ip].lastTime = l.time;
+    });
 
+    const sortedIps = Object.values(ipMap).sort((a,b) => b.count - a.count);
+
+    window.copyText = (text) => { navigator.clipboard.writeText(text); };
+
+    sortedIps.forEach(obj => {
         tbody.innerHTML += `
             <tr class="hover:bg-white/[0.02] transition-colors group">
-                <td class="px-5 py-3 text-gray-400 text-xs whitespace-nowrap">${timeStr}</td>
                 <td class="px-5 py-3">
-                    <div class="flex items-center gap-2">
-                        ${typeBadge}
-                        <span class="text-gray-300 truncate max-w-[200px]" title="${log.path}">${log.path}</span>
+                    <div class="flex items-center gap-3">
+                        <span class="font-mono text-sm text-purple-300 font-semibold">${obj.ip}</span>
+                        <button onclick="copyText('${obj.ip}')" class="text-gray-500 hover:text-white bg-gray-800 hover:bg-gray-700 w-6 h-6 rounded flex items-center justify-center transition-colors" title="Copy IP">
+                            <i class="ph ph-copy"></i>
+                        </button>
                     </div>
                 </td>
-                <td class="px-5 py-3 font-mono text-xs text-gray-500 group-hover:text-gray-300 transition-colors">${log.ip}</td>
+                <td class="px-5 py-3">
+                    <div class="text-xs text-gray-400 truncate max-w-[250px]" title="${obj.userAgent}">${obj.userAgent}</div>
+                </td>
+                <td class="px-5 py-3 text-right">
+                    <span class="px-2 py-1 bg-purple-500/10 text-purple-400 rounded text-xs font-bold">${obj.count} requests</span>
+                </td>
             </tr>
         `;
     });

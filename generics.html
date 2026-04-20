@@ -1,0 +1,1581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Java Multithreading – Complete Guide</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Fraunces:ital,wght@0,300;0,600;0,900;1,300&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0f14;
+    --bg2: #13161d;
+    --bg3: #1a1e28;
+    --surface: #1e2330;
+    --surface2: #252b3a;
+    --border: #2e3547;
+    --accent: #4f9eff;
+    --accent2: #7c3aed;
+    --accent3: #10b981;
+    --accent4: #f59e0b;
+    --danger: #ef4444;
+    --text: #e2e8f0;
+    --text2: #94a3b8;
+    --text3: #64748b;
+    --code-bg: #0a0c12;
+    --tip-bg: #0f2a1a;
+    --tip-border: #10b981;
+    --warn-bg: #2a1a0f;
+    --warn-border: #f59e0b;
+    --cp-bg: #0f1a2a;
+    --cp-border: #4f9eff;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.75;
+    font-size: 16px;
+  }
+
+  /* SIDEBAR */
+  .sidebar {
+    position: fixed;
+    left: 0; top: 0; bottom: 0;
+    width: 260px;
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    z-index: 100;
+    padding: 0 0 2rem 0;
+  }
+
+  .sidebar-logo {
+    padding: 1.5rem 1.25rem 1rem;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 0.75rem;
+  }
+
+  .sidebar-logo .badge {
+    display: inline-block;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #fff;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 4px;
+    margin-bottom: 0.5rem;
+  }
+
+  .sidebar-logo h2 {
+    font-family: 'Fraunces', serif;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text);
+    line-height: 1.3;
+  }
+
+  .sidebar nav { padding: 0 0.75rem; }
+
+  .nav-section {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text3);
+    padding: 0.75rem 0.5rem 0.25rem;
+  }
+
+  .nav-link {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.45rem 0.75rem;
+    border-radius: 6px;
+    color: var(--text2);
+    text-decoration: none;
+    font-size: 0.82rem;
+    font-weight: 400;
+    transition: all 0.15s;
+    margin-bottom: 1px;
+  }
+
+  .nav-link:hover {
+    background: var(--surface);
+    color: var(--text);
+  }
+
+  .nav-link .num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--accent);
+    min-width: 32px;
+    font-weight: 700;
+  }
+
+  .nav-link.special .num { color: var(--accent3); }
+  .nav-link.tips .num { color: var(--accent4); }
+
+  /* MAIN */
+  .main {
+    margin-left: 260px;
+    min-height: 100vh;
+  }
+
+  /* HERO */
+  .hero {
+    background: linear-gradient(135deg, #0d0f14 0%, #13161d 40%, #1a0f2a 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 4rem 3rem 3rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -10%;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(79,158,255,0.06) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .hero::after {
+    content: '';
+    position: absolute;
+    bottom: -30%;
+    left: 20%;
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, rgba(124,58,237,0.05) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .hero-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .hero-tag::before {
+    content: '';
+    display: inline-block;
+    width: 20px;
+    height: 2px;
+    background: var(--accent);
+  }
+
+  .hero h1 {
+    font-family: 'Fraunces', serif;
+    font-size: 3rem;
+    font-weight: 900;
+    line-height: 1.1;
+    color: var(--text);
+    margin-bottom: 0.75rem;
+  }
+
+  .hero h1 span {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .hero-sub {
+    color: var(--text2);
+    font-size: 1rem;
+    max-width: 520px;
+    margin-bottom: 2rem;
+  }
+
+  .hero-stats {
+    display: flex;
+    gap: 2rem;
+    flex-wrap: wrap;
+  }
+
+  .stat {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .stat-num {
+    font-family: 'Fraunces', serif;
+    font-size: 1.75rem;
+    font-weight: 900;
+    color: var(--accent);
+    line-height: 1;
+  }
+
+  .stat-label {
+    font-size: 0.75rem;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  /* CONTENT */
+  .content { padding: 0 3rem 4rem; max-width: 900px; }
+
+  /* SECTIONS */
+  .section {
+    margin-top: 3.5rem;
+    animation: fadeUp 0.5s ease both;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .section-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: var(--accent);
+    background: rgba(79,158,255,0.1);
+    border: 1px solid rgba(79,158,255,0.2);
+    padding: 4px 10px;
+    border-radius: 4px;
+    white-space: nowrap;
+  }
+
+  .section-title {
+    font-family: 'Fraunces', serif;
+    font-size: 1.75rem;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  h3 {
+    font-family: 'Fraunces', serif;
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: var(--text);
+    margin: 1.75rem 0 0.75rem;
+  }
+
+  p { margin-bottom: 0.85rem; color: var(--text2); }
+  p strong { color: var(--text); }
+
+  ul, ol {
+    margin: 0.5rem 0 0.85rem 1.25rem;
+    color: var(--text2);
+  }
+
+  li { margin-bottom: 0.3rem; }
+  li strong { color: var(--text); }
+
+  /* CODE */
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.25rem 1.5rem;
+    overflow-x: auto;
+    margin: 0.85rem 0 1rem;
+    position: relative;
+  }
+
+  pre code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.82rem;
+    line-height: 1.7;
+    color: #c9d1d9;
+  }
+
+  code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.82em;
+    background: rgba(79,158,255,0.08);
+    border: 1px solid rgba(79,158,255,0.15);
+    padding: 1px 6px;
+    border-radius: 4px;
+    color: #93c5fd;
+  }
+
+  pre code { background: none; border: none; padding: 0; color: #c9d1d9; font-size: 0.82rem; }
+
+  .code-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 0.4rem;
+    display: block;
+  }
+
+  /* SYNTAX HIGHLIGHT */
+  .kw { color: #c792ea; }
+  .cl { color: #82aaff; }
+  .fn { color: #82b1ff; }
+  .st { color: #c3e88d; }
+  .cm { color: #546e7a; font-style: italic; }
+  .num-c { color: #f78c6c; }
+  .an { color: #c792ea; }
+
+  /* TABLES */
+  .table-wrap { overflow-x: auto; margin: 0.85rem 0 1rem; border-radius: 8px; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+  }
+
+  thead tr {
+    background: var(--surface);
+  }
+
+  th {
+    padding: 0.75rem 1rem;
+    text-align: left;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text2);
+    border-bottom: 1px solid var(--border);
+  }
+
+  td {
+    padding: 0.65rem 1rem;
+    border-bottom: 1px solid rgba(46,53,71,0.5);
+    color: var(--text2);
+    vertical-align: top;
+  }
+
+  tr:last-child td { border-bottom: none; }
+
+  tbody tr:hover { background: rgba(30,35,48,0.5); }
+
+  td strong { color: var(--text); }
+
+  .tag-good {
+    display: inline-block;
+    background: rgba(16,185,129,0.12);
+    color: var(--accent3);
+    border: 1px solid rgba(16,185,129,0.2);
+    font-size: 0.72rem;
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .tag-bad {
+    display: inline-block;
+    background: rgba(239,68,68,0.1);
+    color: var(--danger);
+    border: 1px solid rgba(239,68,68,0.2);
+    font-size: 0.72rem;
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .tag-warn {
+    display: inline-block;
+    background: rgba(245,158,11,0.1);
+    color: var(--accent4);
+    border: 1px solid rgba(245,158,11,0.2);
+    font-size: 0.72rem;
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* CALLOUTS */
+  .tip-box {
+    background: var(--tip-bg);
+    border-left: 3px solid var(--tip-border);
+    border-radius: 0 8px 8px 0;
+    padding: 1rem 1.25rem;
+    margin: 0.85rem 0;
+  }
+
+  .tip-box .tip-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent3);
+    margin-bottom: 0.35rem;
+  }
+
+  .tip-box p { color: var(--text2); margin: 0; }
+  .tip-box p + p { margin-top: 0.4rem; }
+
+  .warn-box {
+    background: var(--warn-bg);
+    border-left: 3px solid var(--warn-border);
+    border-radius: 0 8px 8px 0;
+    padding: 1rem 1.25rem;
+    margin: 0.85rem 0;
+  }
+
+  .warn-box .tip-label { color: var(--accent4); }
+  .warn-box p { color: var(--text2); margin: 0; }
+
+  .info-box {
+    background: rgba(79,158,255,0.05);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 8px 8px 0;
+    padding: 1rem 1.25rem;
+    margin: 0.85rem 0;
+  }
+
+  .info-box .tip-label { color: var(--accent); }
+  .info-box p { color: var(--text2); margin: 0; }
+
+  /* TIPS SECTION */
+  .tips-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.85rem;
+    margin: 0.85rem 0;
+  }
+
+  .tip-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem;
+    transition: border-color 0.15s;
+  }
+
+  .tip-card:hover { border-color: var(--accent); }
+
+  .tip-card-num {
+    font-family: 'Fraunces', serif;
+    font-size: 1.75rem;
+    font-weight: 900;
+    color: rgba(79,158,255,0.25);
+    line-height: 1;
+    margin-bottom: 0.4rem;
+  }
+
+  .tip-card-title {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 0.3rem;
+  }
+
+  .tip-card p { font-size: 0.82rem; color: var(--text2); margin: 0; }
+
+  /* CHECKPOINT */
+  .checkpoint {
+    background: var(--cp-bg);
+    border: 1px solid rgba(79,158,255,0.2);
+    border-radius: 10px;
+    padding: 1.5rem;
+    margin: 1.5rem 0;
+  }
+
+  .checkpoint-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  .checkpoint-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #fff;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    padding: 4px 10px;
+    border-radius: 4px;
+  }
+
+  .checkpoint-id {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--accent);
+  }
+
+  .checkpoint-q {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid rgba(79,158,255,0.15);
+  }
+
+  .answer-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent3);
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .answer-label::before {
+    content: '▶';
+    font-size: 0.5rem;
+  }
+
+  /* STEPS */
+  .steps {
+    counter-reset: step;
+    list-style: none;
+    margin: 0.75rem 0 1rem;
+    padding: 0;
+  }
+
+  .steps li {
+    counter-increment: step;
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 0.85rem;
+    align-items: flex-start;
+  }
+
+  .steps li::before {
+    content: counter(step);
+    min-width: 28px;
+    height: 28px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #fff;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    font-weight: 700;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  /* QUICK REF */
+  .quick-ref {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .quick-ref-header {
+    background: var(--surface);
+    padding: 0.75rem 1.25rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .quick-ref pre {
+    border: none;
+    border-radius: 0;
+    margin: 0;
+  }
+
+  /* ANALOGY CARD */
+  .analogy {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.25rem;
+    margin: 0.85rem 0;
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+  }
+
+  .analogy-icon {
+    font-size: 2rem;
+    flex-shrink: 0;
+  }
+
+  .analogy-title {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-family: 'JetBrains Mono', monospace;
+    margin-bottom: 0.4rem;
+  }
+
+  .analogy p { margin: 0; font-size: 0.9rem; color: var(--text2); }
+
+  /* DIVIDER */
+  .divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 2.5rem 0;
+  }
+
+  /* SCROLL TO TOP */
+  .scroll-top {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    width: 42px;
+    height: 42px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--text2);
+    text-decoration: none;
+    font-size: 1rem;
+    transition: all 0.15s;
+    z-index: 50;
+  }
+
+  .scroll-top:hover {
+    background: var(--surface);
+    color: var(--accent);
+    border-color: var(--accent);
+  }
+
+  /* METHOD TABLE */
+  .method-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    margin: 0.85rem 0;
+  }
+
+  .method-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.85rem 1rem;
+  }
+
+  .method-name {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #93c5fd;
+    margin-bottom: 0.3rem;
+  }
+
+  .method-desc {
+    font-size: 0.8rem;
+    color: var(--text2);
+    line-height: 1.5;
+  }
+
+  /* RESPONSIVE */
+  @media (max-width: 768px) {
+    .sidebar { display: none; }
+    .main { margin-left: 0; }
+    .hero { padding: 2rem 1.25rem; }
+    .hero h1 { font-size: 2rem; }
+    .content { padding: 0 1.25rem 3rem; }
+    .tips-grid { grid-template-columns: 1fr; }
+    .method-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="badge">Chapter 30</div>
+    <h2>Java Multithreading<br>Complete Guide</h2>
+  </div>
+  <nav>
+    <div class="nav-section">Topics</div>
+    <a href="#s301" class="nav-link"><span class="num">30.1</span> Introduction</a>
+    <a href="#s302" class="nav-link"><span class="num">30.2</span> Thread Concepts</a>
+    <a href="#s303" class="nav-link"><span class="num">30.3</span> Creating Tasks</a>
+    <a href="#s304" class="nav-link"><span class="num">30.4</span> Thread Class</a>
+    <a href="#s306" class="nav-link"><span class="num">30.6</span> Thread Pools</a>
+    <div class="nav-section">Review</div>
+    <a href="#checkpoints" class="nav-link special"><span class="num">✅</span> Checkpoints</a>
+    <a href="#tips" class="nav-link tips"><span class="num">💡</span> Tips &amp; Tricks</a>
+  </nav>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+
+  <!-- HERO -->
+  <div class="hero" id="top">
+    <div class="hero-tag">Java Chapter 30</div>
+    <h1>Java <span>Multithreading</span><br>Complete Beginner's Guide</h1>
+    <p class="hero-sub">Master threads, the Runnable interface, thread pools, and all checkpoint solutions — explained simply with clear examples.</p>
+    <div class="hero-stats">
+      <div class="stat"><div class="stat-num">5</div><div class="stat-label">Topics Covered</div></div>
+      <div class="stat"><div class="stat-num">9</div><div class="stat-label">Checkpoints Solved</div></div>
+      <div class="stat"><div class="stat-num">10</div><div class="stat-label">Exam Strategies</div></div>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- ===================== 30.1 ===================== -->
+    <div class="section" id="s301">
+      <div class="section-header">
+        <span class="section-num">30.1</span>
+        <h2 class="section-title">Introduction to Multithreading</h2>
+      </div>
+
+      <h3>What is Multithreading?</h3>
+      <p>Imagine you're using a word processor. You're typing, and at the same time, the app is <strong>auto-saving</strong> your file and also <strong>checking spelling</strong> in the background. All three things are happening at the same time. That's <strong>multithreading</strong>.</p>
+
+      <div class="info-box">
+        <div class="tip-label">Definition</div>
+        <p><strong>Multithreading</strong> = Running multiple tasks <em>concurrently</em> inside one program. Java has built-in support — no external libraries needed.</p>
+      </div>
+
+      <h3>Why Do We Need It?</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Without Multithreading</th><th>With Multithreading</th></tr></thead>
+          <tbody>
+            <tr><td>Tasks run one by one</td><td>Tasks run at the same time</td></tr>
+            <tr><td>Program feels slow / frozen</td><td>Program feels fast and responsive</td></tr>
+            <tr><td>CPU sits idle often</td><td>CPU is used more efficiently</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="analogy">
+        <div class="analogy-icon">🍳</div>
+        <div>
+          <div class="analogy-title">Real-Life Analogy</div>
+          <p>Think of a restaurant kitchen: one cook handles salads, another handles the main course, another handles desserts — all at the same time. That's multithreading: multiple "cooks" (threads) working on different "dishes" (tasks) simultaneously.</p>
+        </div>
+      </div>
+
+      <div class="tip-box">
+        <div class="tip-label">💡 Tips &amp; Tricks — 30.1</div>
+        <p><strong>Exam Tip:</strong> Multithreading is needed because the CPU is often <strong>idle</strong> (waiting for input, file I/O, etc.). Threads fill that idle time with useful work.</p>
+        <p><strong>Common Mistake:</strong> Students think multithreading always requires multiple CPUs. No! Even on a <strong>single CPU</strong>, multithreading works via <strong>time-sharing</strong> — the OS switches between threads so fast it feels simultaneous.</p>
+      </div>
+    </div>
+
+    <!-- ===================== 30.2 ===================== -->
+    <div class="section" id="s302">
+      <div class="section-header">
+        <span class="section-num">30.2</span>
+        <h2 class="section-title">Thread Concepts</h2>
+      </div>
+
+      <h3>What is a Thread?</h3>
+      <p>A <strong>thread</strong> is like a single path of execution — a sequence of instructions from start to finish. Think of it like a <strong>lane on a highway</strong>: multiple lanes = multiple threads; cars (instructions) move through their lane independently.</p>
+
+      <h3>Multi-CPU vs Single-CPU</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Multi-CPU (Parallel)</th><th>Single-CPU (Time Sharing)</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><code>CPU 1 → Thread 1 runs<br>CPU 2 → Thread 2 runs<br>CPU 3 → Thread 3 runs</code><br>All <em>truly</em> at the same time!</td>
+              <td>OS rapidly switches:<br><code>Slice 1 → Thread 1<br>Slice 2 → Thread 2<br>Slice 3 → Thread 3...</code><br>Appears simultaneous to users.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Key Terms</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Term</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Thread</strong></td><td>The mechanism that runs a task</td></tr>
+            <tr><td><strong>Task</strong></td><td>The actual job / work to be done</td></tr>
+            <tr><td><strong>Runnable</strong></td><td>The interface a task class must implement</td></tr>
+            <tr><td><strong>Time Sharing</strong></td><td>Single CPU giving each thread a small time slice</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="analogy">
+        <div class="analogy-icon">👨‍🍳</div>
+        <div>
+          <div class="analogy-title">Simple Analogy</div>
+          <p><strong>Task (Runnable)</strong> = A recipe (the instructions). <strong>Thread</strong> = A chef (the one who executes the recipe). You can have multiple chefs running multiple recipes at once!</p>
+        </div>
+      </div>
+
+      <div class="tip-box">
+        <div class="tip-label">💡 Tips &amp; Tricks — 30.2</div>
+        <p><strong>Remember:</strong> A task is a <strong>Runnable object</strong>. A thread is the <strong>executor</strong> of that task. The task tells WHAT to do. The thread is HOW it gets done.</p>
+        <p><strong>Exam Shortcut:</strong> "Runnable object" = instance of a class that implements the <code>Runnable</code> interface.</p>
+      </div>
+    </div>
+
+    <!-- ===================== 30.3 ===================== -->
+    <div class="section" id="s303">
+      <div class="section-header">
+        <span class="section-num">30.3</span>
+        <h2 class="section-title">Creating Tasks and Threads</h2>
+      </div>
+
+      <p>This is the <strong>most important section</strong> — the core of Java multithreading.</p>
+
+      <h3>The 4-Step Pattern: T → T → S</h3>
+      <ol class="steps">
+        <li>
+          <div>
+            <strong>Create a Task Class (implements Runnable)</strong>
+            <pre><code><span class="kw">public class</span> <span class="cl">MyTask</span> <span class="kw">implements</span> <span class="cl">Runnable</span> {
+    <span class="an">@Override</span>
+    <span class="kw">public void</span> <span class="fn">run</span>() {
+        <span class="cm">// This is the task's job</span>
+        System.out.<span class="fn">println</span>(<span class="st">"Task is running!"</span>);
+    }
+}</code></pre>
+            <p>Every task class <strong>must implement Runnable</strong>. The <code>run()</code> method contains what the task does.</p>
+          </div>
+        </li>
+        <li>
+          <div>
+            <strong>Create a Task Object</strong>
+            <pre><code><span class="cl">MyTask</span> task = <span class="kw">new</span> <span class="cl">MyTask</span>();</code></pre>
+            <p>Just create an instance of your task class.</p>
+          </div>
+        </li>
+        <li>
+          <div>
+            <strong>Wrap It in a Thread</strong>
+            <pre><code><span class="cl">Thread</span> thread = <span class="kw">new</span> <span class="cl">Thread</span>(task);</code></pre>
+            <p>Hand the task to a Thread object — like "hiring a chef for this recipe."</p>
+          </div>
+        </li>
+        <li>
+          <div>
+            <strong>Start the Thread</strong>
+            <pre><code>thread.<span class="fn">start</span>();</code></pre>
+            <p>Tells the JVM: "This thread is ready!" The JVM calls <code>task.run()</code> automatically in a new thread.</p>
+          </div>
+        </li>
+      </ol>
+
+      <h3>🔥 Full Example from the Book (Listing 30.1)</h3>
+      <span class="code-label">TaskThreadDemo.java</span>
+      <pre><code><span class="kw">public class</span> <span class="cl">TaskThreadDemo</span> {
+    <span class="kw">public static void</span> <span class="fn">main</span>(String[] args) {
+
+        <span class="cm">// Step 1: Create tasks</span>
+        <span class="cl">Runnable</span> printA   = <span class="kw">new</span> <span class="cl">PrintChar</span>(<span class="st">'a'</span>, <span class="num-c">100</span>);
+        <span class="cl">Runnable</span> printB   = <span class="kw">new</span> <span class="cl">PrintChar</span>(<span class="st">'b'</span>, <span class="num-c">100</span>);
+        <span class="cl">Runnable</span> print100 = <span class="kw">new</span> <span class="cl">PrintNum</span>(<span class="num-c">100</span>);
+
+        <span class="cm">// Step 2: Create threads</span>
+        <span class="cl">Thread</span> thread1 = <span class="kw">new</span> <span class="cl">Thread</span>(printA);
+        <span class="cl">Thread</span> thread2 = <span class="kw">new</span> <span class="cl">Thread</span>(printB);
+        <span class="cl">Thread</span> thread3 = <span class="kw">new</span> <span class="cl">Thread</span>(print100);
+
+        <span class="cm">// Step 3: Start threads</span>
+        thread1.<span class="fn">start</span>();
+        thread2.<span class="fn">start</span>();
+        thread3.<span class="fn">start</span>();
+    }
+}
+
+<span class="cm">// Task 1 & 2: Print a character N times</span>
+<span class="kw">class</span> <span class="cl">PrintChar</span> <span class="kw">implements</span> <span class="cl">Runnable</span> {
+    <span class="kw">private char</span> charToPrint;
+    <span class="kw">private int</span> times;
+
+    <span class="kw">public</span> <span class="fn">PrintChar</span>(<span class="kw">char</span> c, <span class="kw">int</span> t) {
+        charToPrint = c;
+        times = t;
+    }
+
+    <span class="an">@Override</span>
+    <span class="kw">public void</span> <span class="fn">run</span>() {
+        <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num-c">0</span>; i &lt; times; i++) {
+            System.out.<span class="fn">print</span>(charToPrint);
+        }
+    }
+}
+
+<span class="cm">// Task 3: Print numbers 1 to N</span>
+<span class="kw">class</span> <span class="cl">PrintNum</span> <span class="kw">implements</span> <span class="cl">Runnable</span> {
+    <span class="kw">private int</span> lastNum;
+
+    <span class="kw">public</span> <span class="fn">PrintNum</span>(<span class="kw">int</span> n) { lastNum = n; }
+
+    <span class="an">@Override</span>
+    <span class="kw">public void</span> <span class="fn">run</span>() {
+        <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num-c">1</span>; i &lt;= lastNum; i++) {
+            System.out.<span class="fn">print</span>(<span class="st">" "</span> + i);
+        }
+    }
+}</code></pre>
+
+      <p>The 3 threads run <strong>concurrently</strong>, so output is mixed: <code>aaab1b2aa3bba4b5a...</code> — the exact order changes every run!</p>
+
+      <h3>⚠️ Critical: start() vs run()</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th><code>thread.start()</code> ✅</th><th><code>thread.run()</code> ❌</th></tr></thead>
+          <tbody>
+            <tr><td>Creates a <strong>new thread</strong>, runs task in it</td><td>No new thread! Runs in the CURRENT thread</td></tr>
+            <tr><td>True concurrency happens</td><td>Sequential execution — no concurrency</td></tr>
+            <tr><td><strong>Always use this</strong></td><td>Common exam trap / mistake</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="tip-box">
+        <div class="tip-label">💡 Tips &amp; Tricks — 30.3</div>
+        <p><strong>#1 Exam Mistake:</strong> Calling <code>run()</code> instead of <code>start()</code>. The code compiles fine but creates no new threads!</p>
+        <p><strong>Memory Trick:</strong> <strong>T → T → S</strong> = Task → Thread → Start</p>
+        <p><strong>Can you start a thread twice?</strong> NO. Calling <code>start()</code> on an already-started thread throws <code>IllegalThreadStateException</code>.</p>
+        <p><strong>Design Principle:</strong> Keep the task (Runnable) separate from the thread (Thread). This is called "separation of concerns."</p>
+      </div>
+    </div>
+
+    <!-- ===================== 30.4 ===================== -->
+    <div class="section" id="s304">
+      <div class="section-header">
+        <span class="section-num">30.4</span>
+        <h2 class="section-title">The Thread Class</h2>
+      </div>
+
+      <p>The <code>Thread</code> class provides many methods to <strong>control</strong> how threads behave.</p>
+
+      <h3>Key Methods Overview</h3>
+      <div class="method-grid">
+        <div class="method-card">
+          <div class="method-name">start()</div>
+          <div class="method-desc">Starts the thread. JVM calls <code>run()</code> in a new thread.</div>
+        </div>
+        <div class="method-card">
+          <div class="method-name">isAlive()</div>
+          <div class="method-desc">Returns true if the thread is currently running.</div>
+        </div>
+        <div class="method-card">
+          <div class="method-name">setPriority(int p)</div>
+          <div class="method-desc">Sets thread priority from 1 (min) to 10 (max).</div>
+        </div>
+        <div class="method-card">
+          <div class="method-name">join()</div>
+          <div class="method-desc">Makes the calling thread wait for this thread to finish.</div>
+        </div>
+        <div class="method-card">
+          <div class="method-name">sleep(long millis)</div>
+          <div class="method-desc">Pauses the current thread for N milliseconds.</div>
+        </div>
+        <div class="method-card">
+          <div class="method-name">yield()</div>
+          <div class="method-desc">Temporarily gives up CPU time for other threads.</div>
+        </div>
+        <div class="method-card">
+          <div class="method-name">interrupt()</div>
+          <div class="method-desc">Interrupts a sleeping or waiting thread.</div>
+        </div>
+        <div class="method-card" style="border-color: rgba(239,68,68,0.3); background: rgba(239,68,68,0.04);">
+          <div class="method-name" style="color: var(--danger);">stop() / suspend() / resume()</div>
+          <div class="method-desc"><span class="tag-bad">DEPRECATED</span> — Never use these.</div>
+        </div>
+      </div>
+
+      <h3>Method 1: yield()</h3>
+      <p><code>yield()</code> = "I'll pause briefly; let other threads have a turn." Like a polite person saying "You go first."</p>
+      <pre><code><span class="kw">public void</span> <span class="fn">run</span>() {
+    <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num-c">1</span>; i &lt;= lastNum; i++) {
+        System.out.<span class="fn">print</span>(<span class="st">" "</span> + i);
+        Thread.<span class="fn">yield</span>();   <span class="cm">// Gives other threads a chance</span>
+    }
+}</code></pre>
+
+      <h3>Method 2: sleep(long millis)</h3>
+      <p><code>sleep()</code> = "This thread naps for X milliseconds." Must always be inside a try-catch!</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>✅ CORRECT — Loop INSIDE try-catch</th><th>❌ INCORRECT — try-catch INSIDE loop</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><pre style="margin:0;border:none;padding:0.5rem 0;background:transparent"><code><span class="kw">public void</span> <span class="fn">run</span>() {
+  <span class="kw">try</span> {
+    <span class="kw">while</span> (...) {
+      Thread.<span class="fn">sleep</span>(<span class="num-c">1000</span>);
+    }
+  } <span class="kw">catch</span> (<span class="cl">InterruptedException</span> ex) {
+    <span class="cm">// Loop stops cleanly ✅</span>
+  }
+}</code></pre></td>
+              <td><pre style="margin:0;border:none;padding:0.5rem 0;background:transparent"><code><span class="kw">public void</span> <span class="fn">run</span>() {
+  <span class="kw">while</span> (...) {
+    <span class="kw">try</span> {
+      Thread.<span class="fn">sleep</span>(<span class="num-c">1000</span>);
+    } <span class="kw">catch</span> (<span class="cl">InterruptedException</span> ex) {
+      <span class="cm">// Loop CONTINUES! Bug ❌</span>
+    }
+  }
+}</code></pre></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Method 3: join()</h3>
+      <p><code>join()</code> = "Wait for this thread to finish before I continue." Like waiting for a friend before starting dinner.</p>
+      <pre><code><span class="kw">public void</span> <span class="fn">run</span>() {
+    <span class="cl">Thread</span> thread4 = <span class="kw">new</span> <span class="cl">Thread</span>(<span class="kw">new</span> <span class="cl">PrintChar</span>(<span class="st">'c'</span>, <span class="num-c">40</span>));
+    thread4.<span class="fn">start</span>();
+    <span class="kw">try</span> {
+        <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num-c">1</span>; i &lt;= lastNum; i++) {
+            System.out.<span class="fn">print</span>(<span class="st">" "</span> + i);
+            <span class="kw">if</span> (i == <span class="num-c">50</span>) thread4.<span class="fn">join</span>(); <span class="cm">// Wait for thread4 at i=50</span>
+        }
+    } <span class="kw">catch</span> (<span class="cl">InterruptedException</span> ex) {}
+}
+<span class="cm">// Numbers 1-50 print freely → wait for thread4 → then 51-100 print</span></code></pre>
+
+      <h3>Thread Priority</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Constant</th><th>Value</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td><code>Thread.MIN_PRIORITY</code></td><td>1</td><td>Lowest priority</td></tr>
+            <tr><td><code>Thread.NORM_PRIORITY</code></td><td>5</td><td><strong>Default (normal)</strong></td></tr>
+            <tr><td><code>Thread.MAX_PRIORITY</code></td><td>10</td><td>Highest priority</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <pre><code>thread3.<span class="fn">setPriority</span>(Thread.MAX_PRIORITY); <span class="cm">// thread3 gets more CPU time</span></code></pre>
+
+      <div class="warn-box">
+        <div class="tip-label">⚠️ Starvation / Contention</div>
+        <p>If a high-priority thread runs forever, low-priority threads <strong>never get to run</strong>. Fix: high-priority threads should periodically call <code>sleep()</code> or <code>yield()</code> to give lower-priority threads a chance.</p>
+      </div>
+
+      <div class="tip-box">
+        <div class="tip-label">💡 Tips &amp; Tricks — 30.4</div>
+        <p><strong>Deprecated Trick:</strong> <code>stop()</code>, <code>suspend()</code>, <code>resume()</code> — all are deprecated. Remember: "SSS = deprecated".</p>
+        <p><strong>sleep() vs yield():</strong> Both are <em>static</em> methods. <code>sleep()</code> throws <code>InterruptedException</code>; <code>yield()</code> does NOT.</p>
+        <p><strong>Priority Tip:</strong> Use constants (<code>Thread.MAX_PRIORITY</code>) not raw numbers — values may change in future Java versions.</p>
+        <p><strong>Round Robin</strong> = when ALL threads have equal priority → each gets equal CPU time in turns.</p>
+      </div>
+    </div>
+
+    <!-- ===================== 30.6 ===================== -->
+    <div class="section" id="s306">
+      <div class="section-header">
+        <span class="section-num">30.6</span>
+        <h2 class="section-title">Thread Pools</h2>
+      </div>
+
+      <h3>The Problem with Creating New Threads</h3>
+      <p>If you have 1000 tasks, creating 1000 individual threads is memory-expensive, time-consuming, and hard to manage. <strong>Thread pools</strong> solve this.</p>
+
+      <div class="analogy">
+        <div class="analogy-icon">🏊</div>
+        <div>
+          <div class="analogy-title">What is a Thread Pool?</div>
+          <p>A collection of pre-created, reusable threads. A thread finishes its task → immediately picks up the next waiting task. No need to create a new thread each time!</p>
+        </div>
+      </div>
+
+      <pre><code><span class="cm">// Thread Pool (3 threads)</span>
+Thread 1 ← picks up Task A, finishes, picks up Task D...
+Thread 2 ← picks up Task B, finishes, picks up Task E...
+Thread 3 ← picks up Task C, finishes, picks up Task F...
+
+Task Queue: [A, B, C, D, E, F, ...]</code></pre>
+
+      <h3>The Executor Framework</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Interface / Class</th><th>Key Methods</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Executor</strong></td><td><code>execute(Runnable task)</code> — Submit a task</td></tr>
+            <tr><td><strong>ExecutorService</strong></td><td><code>shutdown()</code>, <code>isShutdown()</code>, <code>isTerminated()</code>, <code>shutdownNow()</code></td></tr>
+            <tr><td><strong>Executors</strong> (factory)</td><td><code>newFixedThreadPool(N)</code>, <code>newCachedThreadPool()</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Creating Thread Pools</h3>
+      <pre><code><span class="cm">// Fixed pool: always exactly N threads</span>
+<span class="cl">ExecutorService</span> executor = <span class="cl">Executors</span>.<span class="fn">newFixedThreadPool</span>(<span class="num-c">3</span>);
+
+<span class="cm">// Cached pool: creates threads as needed, reuses idle ones (60s timeout)</span>
+<span class="cl">ExecutorService</span> executor = <span class="cl">Executors</span>.<span class="fn">newCachedThreadPool</span>();</code></pre>
+
+      <h3>Full Example (Listing 30.3)</h3>
+      <span class="code-label">ExecutorDemo.java</span>
+      <pre><code><span class="kw">import</span> java.util.concurrent.*;
+
+<span class="kw">public class</span> <span class="cl">ExecutorDemo</span> {
+    <span class="kw">public static void</span> <span class="fn">main</span>(String[] args) {
+
+        <span class="cm">// Step 1: Create a fixed thread pool with 3 threads</span>
+        <span class="cl">ExecutorService</span> executor = <span class="cl">Executors</span>.<span class="fn">newFixedThreadPool</span>(<span class="num-c">3</span>);
+
+        <span class="cm">// Step 2: Submit tasks</span>
+        executor.<span class="fn">execute</span>(<span class="kw">new</span> <span class="cl">PrintChar</span>(<span class="st">'a'</span>, <span class="num-c">100</span>));
+        executor.<span class="fn">execute</span>(<span class="kw">new</span> <span class="cl">PrintChar</span>(<span class="st">'b'</span>, <span class="num-c">100</span>));
+        executor.<span class="fn">execute</span>(<span class="kw">new</span> <span class="cl">PrintNum</span>(<span class="num-c">100</span>));
+
+        <span class="cm">// Step 3: Shut down (waits for running tasks to finish)</span>
+        executor.<span class="fn">shutdown</span>();
+    }
+}</code></pre>
+
+      <h3>Pool Size Comparison</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Pool Configuration</th><th>Behavior</th></tr></thead>
+          <tbody>
+            <tr><td><code>newFixedThreadPool(3)</code></td><td>3 tasks run concurrently at a time</td></tr>
+            <tr><td><code>newFixedThreadPool(1)</code></td><td>Tasks run one by one (sequential)</td></tr>
+            <tr><td><code>newCachedThreadPool()</code></td><td>All tasks run concurrently (new thread per task)</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="tip-box">
+        <div class="tip-label">💡 Tips &amp; Tricks — 30.6</div>
+        <p><strong>Rule of Thumb:</strong> 1 task → use <code>new Thread(task).start()</code>. Multiple tasks → use a thread pool (<code>ExecutorService</code>).</p>
+        <p><strong>shutdown() ≠ stop:</strong> <code>shutdown()</code> refuses new tasks but lets existing ones finish. Like "closing time" at a restaurant — no new customers, but seated ones are still served.</p>
+        <p><strong>Exam Trick:</strong> Pool with 1 thread = sequential execution. Pool with N threads (N ≥ tasks) = all run concurrently.</p>
+      </div>
+    </div>
+
+    <!-- ===================== CHECKPOINTS ===================== -->
+    <div class="section" id="checkpoints">
+      <div class="section-header">
+        <span class="section-num" style="background:rgba(16,185,129,0.1);border-color:rgba(16,185,129,0.25);color:var(--accent3);">✅ ALL</span>
+        <h2 class="section-title">Key Checkpoints — Questions &amp; Solutions</h2>
+      </div>
+
+      <!-- CP 30.1 -->
+      <div class="checkpoint">
+        <div class="checkpoint-header">
+          <span class="checkpoint-badge">Checkpoint</span>
+          <span class="checkpoint-id">30.1</span>
+        </div>
+        <div class="checkpoint-q">Why is multithreading needed? How can multiple threads run simultaneously in a single-processor system?</div>
+        <div class="answer-label">Answer</div>
+        <p><strong>Why multithreading is needed:</strong></p>
+        <ul>
+          <li>To make programs more <strong>responsive and interactive</strong></li>
+          <li>To improve <strong>performance</strong> by doing multiple things at once</li>
+          <li>Example: A word processor prints while you type, and auto-saves in the background</li>
+          <li>CPU is often <strong>idle</strong> (waiting for user input, disk I/O) — threads fill that idle time</li>
+        </ul>
+        <p><strong>How multiple threads run on a single CPU:</strong></p>
+        <ul>
+          <li>Through <strong>time sharing</strong> (time-slicing)</li>
+          <li>The OS rapidly switches between threads, giving each a small CPU slice</li>
+          <li>The switching is so fast it <strong>appears simultaneous</strong> to users</li>
+          <li>The OS handles all scheduling and resource allocation</li>
+        </ul>
+      </div>
+
+      <!-- CP 30.2 -->
+      <div class="checkpoint">
+        <div class="checkpoint-header">
+          <span class="checkpoint-badge">Checkpoint</span>
+          <span class="checkpoint-id">30.2</span>
+        </div>
+        <div class="checkpoint-q">What is a runnable object? What is a thread?</div>
+        <div class="answer-label">Answer</div>
+        <p><strong>Runnable object:</strong> An instance of a class that <strong>implements the <code>Runnable</code> interface</strong>. It represents a <em>task</em> — the actual work to be done. The <code>run()</code> method defines what the task does.</p>
+        <pre><code><span class="cl">Runnable</span> printA = <span class="kw">new</span> <span class="cl">PrintChar</span>(<span class="st">'a'</span>, <span class="num-c">100</span>); <span class="cm">// This is a runnable object</span></code></pre>
+        <p><strong>Thread:</strong> An object of the <code>Thread</code> class that provides the <strong>mechanism</strong> for executing a task — it is the "executor" that runs the Runnable.</p>
+        <pre><code><span class="cl">Thread</span> thread = <span class="kw">new</span> <span class="cl">Thread</span>(printA); <span class="cm">// This is a thread</span></code></pre>
+        <p><strong>Analogy:</strong> Task (Runnable) = recipe. Thread = chef who follows the recipe.</p>
+      </div>
+
+      <!-- CP 30.3 -->
+      <div class="checkpoint">
+        <div class="checkpoint-header">
+          <span class="checkpoint-badge">Checkpoint</span>
+          <span class="checkpoint-id">30.3</span>
+        </div>
+        <div class="checkpoint-q">How do you define a task class? How do you create a thread for a task?</div>
+        <div class="answer-label">Answer</div>
+        <p><strong>Defining a task class:</strong></p>
+        <pre><code><span class="kw">public class</span> <span class="cl">MyTask</span> <span class="kw">implements</span> <span class="cl">Runnable</span> {
+    <span class="an">@Override</span>
+    <span class="kw">public void</span> <span class="fn">run</span>() {
+        <span class="cm">// Define what this task does here</span>
+    }
+}</code></pre>
+        <ul>
+          <li>The class must <strong>implement <code>Runnable</code></strong></li>
+          <li>Must <strong>override</strong> the <code>run()</code> method with the task logic</li>
+        </ul>
+        <p><strong>Creating a thread for the task (3 steps):</strong></p>
+        <pre><code><span class="cl">MyTask</span> task = <span class="kw">new</span> <span class="cl">MyTask</span>();         <span class="cm">// 1. Create task object</span>
+<span class="cl">Thread</span> thread = <span class="kw">new</span> <span class="cl">Thread</span>(task);   <span class="cm">// 2. Wrap in a Thread</span>
+thread.<span class="fn">start</span>();                      <span class="cm">// 3. Start → JVM calls run()</span></code></pre>
+      </div>
+
+      <!-- CP 30.4 -->
+      <div class="checkpoint">
+        <div class="checkpoint-header">
+          <span class="checkpoint-badge">Checkpoint</span>
+          <span class="checkpoint-id">30.4</span>
+        </div>
+        <div class="checkpoint-q">What would happen if you replace the <code>start()</code> method with the <code>run()</code> method in lines 14–16 in Listing 30.1?</div>
+        <div class="answer-label">Answer</div>
+        <p>If <code>thread1.start()</code>, <code>thread2.start()</code>, <code>thread3.start()</code> are replaced with <code>.run()</code>:</p>
+        <ul>
+          <li><strong>No new threads are created</strong></li>
+          <li><code>run()</code> executes directly in the <strong>main thread</strong>, one after another</li>
+          <li>Execution becomes <strong>sequential</strong>: first all 100 'a's print, then all 100 'b's, then 1–100</li>
+          <li>No interleaving — the output is always in fixed order</li>
+          <li>This <strong>defeats the entire purpose</strong> of multithreading</li>
+        </ul>
+        <div class="info-box" style="margin-top:0.75rem">
+          <div class="tip-label">Key Lesson</div>
+          <p><code>start()</code> creates a new thread and calls <code>run()</code> in it. <code>run()</code> alone just calls the method in the current thread — no new thread is created!</p>
+        </div>
+      </div>
+
+      <!-- CP 30.5 -->
+      <div class="checkpoint">
+        <div class="checkpoint-header">
+          <span class="checkpoint-badge">Checkpoint</span>
+          <span class="checkpoint-id">30.5</span>
+        </div>
+        <div class="checkpoint-q">What is wrong in the following two programs? Correct the errors.</div>
+        <div class="answer-label">Program (a) — Analysis</div>
+        <pre><code><span class="kw">public class</span> <span class="cl">Test</span> <span class="kw">implements</span> <span class="cl">Runnable</span> {
+    <span class="kw">public static void</span> <span class="fn">main</span>(String[] args) { <span class="kw">new</span> <span class="cl">Test</span>(); }
+    <span class="kw">public</span> <span class="fn">Test</span>() {
+        <span class="cl">Test</span> task = <span class="kw">new</span> <span class="cl">Test</span>(); <span class="cm">// ❌ BUG: creates Test() → calls constructor → creates Test() → ∞</span>
+        <span class="kw">new</span> <span class="cl">Thread</span>(task).<span class="fn">start</span>();
+    }
+    <span class="kw">public void</span> <span class="fn">run</span>() { System.out.<span class="fn">println</span>(<span class="st">"test"</span>); }
+}</code></pre>
+        <p><strong>Problem:</strong> <code>new Test()</code> inside the constructor calls itself → <strong>infinite recursion</strong> → <code>StackOverflowError</code>.</p>
+        <p><strong>Fix:</strong> Use <code>this</code> instead of creating a new <code>Test()</code>:</p>
+        <pre><code><span class="kw">public</span> <span class="fn">Test</span>() {
+    <span class="kw">new</span> <span class="cl">Thread</span>(<span class="kw">this</span>).<span class="fn">start</span>(); <span class="cm">// ✅ Use 'this' — refers to current object</span>
+}</code></pre>
+        <div class="answer-label" style="margin-top:1rem">Program (b) — Analysis</div>
+        <pre><code><span class="kw">public</span> <span class="fn">Test</span>() {
+    <span class="cl">Thread</span> t = <span class="kw">new</span> <span class="cl">Thread</span>(<span class="kw">this</span>);
+    t.<span class="fn">start</span>();
+    t.<span class="fn">start</span>(); <span class="cm">// ❌ BUG: starting the same thread object TWICE</span>
+}</code></pre>
+        <p><strong>Problem:</strong> A thread can only be <code>start()</code>ed <strong>once</strong>. The second call throws <code>IllegalThreadStateException</code> at runtime.</p>
+        <p><strong>Fix:</strong> Remove the second <code>start()</code>, or create two separate Thread objects:</p>
+        <pre><code><span class="kw">public</span> <span class="fn">Test</span>() {
+    <span class="kw">new</span> <span class="cl">Thread</span>(<span class="kw">this</span>).<span class="fn">start</span>(); <span class="cm">// First thread (new object)</span>
+    <span class="kw">new</span> <span class="cl">Thread</span>(<span class="kw">this</span>).<span class="fn">start</span>(); <span class="cm">// Second thread (different object) ✅</span>
+}</code></pre>
+      </div>
+
+      <!-- CP 30.6 -->
+      <div class="checkpoint">
+        <div class="checkpoint-header">
+          <span class="checkpoint-badge">Checkpoint</span>
+          <span class="checkpoint-id">30.6</span>
+        </div>
+        <div class="checkpoint-q">Which of the following methods are instance methods in <code>java.lang.Thread</code>? Which may throw <code>InterruptedException</code>? Which are deprecated?<br><br><em>Methods: run, start, stop, suspend, resume, sleep, interrupt, yield, join</em></div>
+        <div class="answer-label">Answer</div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Method</th><th>Type</th><th>Throws InterruptedException?</th><th>Deprecated?</th></tr></thead>
+            <tbody>
+              <tr><td><code>run()</code></td><td>Instance</td><td>No</td><td>No</td></tr>
+              <tr><td><code>start()</code></td><td>Instance</td><td>No</td><td>No</td></tr>
+              <tr><td><code>stop()</code></td><td>Instance</td><td>No</td><td><span class="tag-bad">YES</span></td></tr>
+              <tr><td><code>suspend()</code></td><td>Instance</td><td>No</td><td><span class="tag-bad">YES</span></td></tr>
+              <tr><td><code>resume()</code></td><td>Instance</td><td>No</td><td><span class="tag-bad">YES</span></td></tr>
+              <tr><td><code>sleep(millis)</code></td><td><strong>Static</strong></td><td><span class="tag-warn">YES</span></td><td>No</td></tr>
+              <tr><td><code>interrupt()</code></td><td>Instance</td><td>No</td><td>No</td></tr>
+              <tr><td><code>yield()</code></td><td><strong>Static</strong></td><td>No</td><td>No</td></tr>
+              <tr><td><code>join()</code></td><td>Instance</td><td><span class="tag-warn">YES</span></td><td>No</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <ul>
+          <li><strong>Methods that throw <code>InterruptedException</code>:</strong> <code>sleep()</code> and <code>join()</code></li>
+          <li><strong>Deprecated methods:</strong> <code>stop()</code> (unsafe), <code>suspend()</code> (can deadlock), <code>resume()</code> (paired with suspend)</li>
+          <li><strong>Static methods:</strong> <code>sleep()</code> and <code>yield()</code></li>
+        </ul>
+      </div>
+
+      <!-- CP 30.7 -->
+      <div class="checkpoint">
+        <div class="checkpoint-header">
+          <span class="checkpoint-badge">Checkpoint</span>
+          <span class="checkpoint-id">30.7</span>
+        </div>
+        <div class="checkpoint-q">If a loop contains a method that throws an <code>InterruptedException</code>, why should the loop be placed inside a try-catch block?</div>
+        <div class="answer-label">Answer</div>
+        <p>The loop must be placed <strong>inside</strong> the try-catch (not the other way around):</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>✅ Correct — Loop INSIDE try-catch</th><th>❌ Wrong — try-catch INSIDE loop</th></tr></thead>
+            <tbody>
+              <tr>
+                <td><pre style="margin:0;background:transparent;border:none;padding:0.5rem 0"><code><span class="kw">try</span> {
+  <span class="kw">while</span> (...) {
+    Thread.<span class="fn">sleep</span>(<span class="num-c">1000</span>);
+  }
+} <span class="kw">catch</span> (<span class="cl">InterruptedException</span> ex) {
+  <span class="cm">// Loop exits cleanly ✅</span>
+}</code></pre></td>
+                <td><pre style="margin:0;background:transparent;border:none;padding:0.5rem 0"><code><span class="kw">while</span> (...) {
+  <span class="kw">try</span> {
+    Thread.<span class="fn">sleep</span>(<span class="num-c">1000</span>);
+  } <span class="kw">catch</span> (<span class="cl">InterruptedException</span> ex) {
+    <span class="cm">// Caught but loop CONTINUES ❌</span>
+  }
+}</code></pre></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p><strong>Explanation:</strong> If try-catch is inside the loop, the exception is caught but the loop keeps running — the thread continues executing even after interruption, which is almost always a bug. Wrapping the entire loop ensures the thread stops cleanly when interrupted.</p>
+      </div>
+
+      <!-- CP 30.8 -->
+      <div class="checkpoint">
+        <div class="checkpoint-header">
+          <span class="checkpoint-badge">Checkpoint</span>
+          <span class="checkpoint-id">30.8</span>
+        </div>
+        <div class="checkpoint-q">How do you set a priority for a thread? What is the default priority?</div>
+        <div class="answer-label">Answer</div>
+        <p><strong>Setting priority:</strong></p>
+        <pre><code>thread.<span class="fn">setPriority</span>(Thread.MAX_PRIORITY);  <span class="cm">// Sets to 10 ✅ Recommended</span>
+thread.<span class="fn">setPriority</span>(Thread.MIN_PRIORITY);  <span class="cm">// Sets to 1</span>
+thread.<span class="fn">setPriority</span>(Thread.NORM_PRIORITY); <span class="cm">// Sets to 5</span>
+thread.<span class="fn">setPriority</span>(<span class="num-c">7</span>);                    <span class="cm">// Raw number — not recommended</span></code></pre>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Constant</th><th>Value</th></tr></thead>
+            <tbody>
+              <tr><td><code>Thread.MIN_PRIORITY</code></td><td>1</td></tr>
+              <tr><td><code>Thread.NORM_PRIORITY</code></td><td><strong>5 (default)</strong></td></tr>
+              <tr><td><code>Thread.MAX_PRIORITY</code></td><td>10</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <ul>
+          <li><strong>Default priority:</strong> <code>Thread.NORM_PRIORITY</code> = <strong>5</strong></li>
+          <li>A thread <strong>inherits the priority</strong> of the thread that created it</li>
+          <li>Threads created by <code>main</code> also start at priority 5</li>
+          <li>JVM always picks the <strong>highest-priority</strong> runnable thread</li>
+          <li>Equal priority → <strong>round-robin</strong> scheduling</li>
+        </ul>
+      </div>
+
+      <!-- CP 30.14 -->
+      <div class="checkpoint">
+        <div class="checkpoint-header">
+          <span class="checkpoint-badge">Checkpoint</span>
+          <span class="checkpoint-id">30.14</span>
+        </div>
+        <div class="checkpoint-q">What are the benefits of using a thread pool?</div>
+        <div class="answer-label">Answer</div>
+        <ol>
+          <li><strong>Reusability:</strong> Threads are created once and reused — no overhead of repeatedly creating/destroying threads</li>
+          <li><strong>Performance:</strong> Starting a new thread for each task is expensive. Thread pools avoid this, making execution faster</li>
+          <li><strong>Resource Control:</strong> You can cap the maximum number of threads (e.g., <code>newFixedThreadPool(10)</code>) to prevent system overload</li>
+          <li><strong>Throughput:</strong> More tasks completed per unit time because threads aren't wasted being created and destroyed</li>
+          <li><strong>Simplicity:</strong> <code>ExecutorService</code> manages scheduling automatically — just submit tasks</li>
+          <li><strong>Prevents Crash:</strong> Without a pool, launching 10,000 threads could crash the JVM. A pool queues extra tasks and processes them orderly</li>
+        </ol>
+      </div>
+
+      <!-- CP 30.15 -->
+      <div class="checkpoint">
+        <div class="checkpoint-header">
+          <span class="checkpoint-badge">Checkpoint</span>
+          <span class="checkpoint-id">30.15</span>
+        </div>
+        <div class="checkpoint-q">How do you create a thread pool with three fixed threads? How do you submit a task to a thread pool? How do you know that all the tasks are finished?</div>
+        <div class="answer-label">Answer</div>
+        <p><strong>1. Create a fixed thread pool with 3 threads:</strong></p>
+        <pre><code><span class="kw">import</span> java.util.concurrent.*;
+<span class="cl">ExecutorService</span> executor = <span class="cl">Executors</span>.<span class="fn">newFixedThreadPool</span>(<span class="num-c">3</span>);</code></pre>
+        <p><strong>2. Submit tasks to the pool:</strong></p>
+        <pre><code>executor.<span class="fn">execute</span>(<span class="kw">new</span> <span class="cl">PrintChar</span>(<span class="st">'a'</span>, <span class="num-c">100</span>)); <span class="cm">// Task 1</span>
+executor.<span class="fn">execute</span>(<span class="kw">new</span> <span class="cl">PrintChar</span>(<span class="st">'b'</span>, <span class="num-c">100</span>)); <span class="cm">// Task 2</span>
+executor.<span class="fn">execute</span>(<span class="kw">new</span> <span class="cl">PrintNum</span>(<span class="num-c">100</span>));        <span class="cm">// Task 3</span></code></pre>
+        <p><strong>3. Knowing when all tasks are finished:</strong></p>
+        <pre><code>executor.<span class="fn">shutdown</span>();              <span class="cm">// Stop accepting new tasks</span>
+
+<span class="cm">// Option A: Poll until done</span>
+<span class="kw">while</span> (!executor.<span class="fn">isTerminated</span>()) { <span class="cm">// Loop until all done</span> }
+System.out.<span class="fn">println</span>(<span class="st">"All tasks done!"</span>);
+
+<span class="cm">// Option B: Await with timeout</span>
+executor.<span class="fn">awaitTermination</span>(<span class="num-c">1</span>, TimeUnit.HOURS);</code></pre>
+        <div class="info-box" style="margin-top:0.75rem">
+          <div class="tip-label">Key Distinction</div>
+          <p><code>shutdown()</code> = stops accepting new tasks, existing ones continue. <code>isTerminated()</code> = true only when ALL tasks have completed AND <code>shutdown()</code> was called first.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== TIPS & TRICKS ===================== -->
+    <div class="section" id="tips">
+      <div class="section-header">
+        <span class="section-num" style="background:rgba(245,158,11,0.1);border-color:rgba(245,158,11,0.25);color:var(--accent4);">💡 TIP</span>
+        <h2 class="section-title">Overall Tips &amp; Tricks</h2>
+      </div>
+
+      <h3>🏆 Top 10 Exam Strategies</h3>
+      <div class="tips-grid">
+        <div class="tip-card">
+          <div class="tip-card-num">01</div>
+          <div class="tip-card-title">start() vs run()</div>
+          <p>The #1 trick question. <code>start()</code> creates a new thread. <code>run()</code> just calls a method in the current thread. NEVER confuse these.</p>
+        </div>
+        <div class="tip-card">
+          <div class="tip-card-num">02</div>
+          <div class="tip-card-title">Runnable over Thread subclass</div>
+          <p>Always prefer implementing <code>Runnable</code> over extending <code>Thread</code>. Better design and allows extending other classes.</p>
+        </div>
+        <div class="tip-card">
+          <div class="tip-card-num">03</div>
+          <div class="tip-card-title">sleep() needs try-catch</div>
+          <p><code>InterruptedException</code> is a <em>checked</em> exception. Code with <code>Thread.sleep()</code> without try-catch won't compile.</p>
+        </div>
+        <div class="tip-card">
+          <div class="tip-card-num">04</div>
+          <div class="tip-card-title">Loop inside try-catch</div>
+          <p>For <code>sleep()</code> in a loop, the <em>loop goes INSIDE</em> the try-catch — not the try-catch inside the loop.</p>
+        </div>
+        <div class="tip-card">
+          <div class="tip-card-num">05</div>
+          <div class="tip-card-title">Thread pool for many tasks</div>
+          <p>1 task → single Thread. Many tasks → <code>ExecutorService</code> thread pool. Never create 1000 threads manually.</p>
+        </div>
+        <div class="tip-card">
+          <div class="tip-card-num">06</div>
+          <div class="tip-card-title">shutdown() ≠ stop</div>
+          <p><code>shutdown()</code> gracefully waits for tasks to finish. <code>stop()</code> is deprecated and dangerous. Never use <code>stop()</code>.</p>
+        </div>
+        <div class="tip-card">
+          <div class="tip-card-num">07</div>
+          <div class="tip-card-title">Priority ≠ guaranteed order</div>
+          <p>High priority = more likely to run first, but NOT guaranteed. Thread scheduling is OS-dependent.</p>
+        </div>
+        <div class="tip-card">
+          <div class="tip-card-num">08</div>
+          <div class="tip-card-title">Deprecated methods trap</div>
+          <p><code>stop()</code>, <code>suspend()</code>, <code>resume()</code> = NEVER use. Common exam trap: code using these asking "what's wrong?"</p>
+        </div>
+        <div class="tip-card">
+          <div class="tip-card-num">09</div>
+          <div class="tip-card-title">One start() only</div>
+          <p>A thread can only be <code>start()</code>ed once. Calling it twice on the same object throws <code>IllegalThreadStateException</code>.</p>
+        </div>
+        <div class="tip-card">
+          <div class="tip-card-num">10</div>
+          <div class="tip-card-title">join() makes caller wait</div>
+          <p>If thread A calls <code>threadB.join()</code>, thread A pauses until thread B completes.</p>
+        </div>
+      </div>
+
+      <h3>🧠 Quick Reference Card</h3>
+      <div class="quick-ref">
+        <div class="quick-ref-header">JAVA MULTITHREADING — CHEAT SHEET</div>
+        <pre><code><span class="cm">// ── RUNNABLE APPROACH ──────────────────────────────────</span>
+<span class="kw">class</span> <span class="cl">MyTask</span> <span class="kw">implements</span> <span class="cl">Runnable</span> { <span class="kw">public void</span> <span class="fn">run</span>() { <span class="cm">/*work*/</span> } }
+<span class="cl">Thread</span> t = <span class="kw">new</span> <span class="cl">Thread</span>(<span class="kw">new</span> <span class="cl">MyTask</span>());
+t.<span class="fn">start</span>();   <span class="cm">// ← NOT t.run()!</span>
+
+<span class="cm">// ── THREAD CONTROL ─────────────────────────────────────</span>
+Thread.<span class="fn">yield</span>();              <span class="cm">// Give other threads a turn</span>
+Thread.<span class="fn">sleep</span>(millis);        <span class="cm">// Pause N ms (needs try-catch)</span>
+thread.<span class="fn">join</span>();               <span class="cm">// Wait for thread to finish (needs try-catch)</span>
+thread.<span class="fn">setPriority</span>(Thread.MAX_PRIORITY);
+
+<span class="cm">// ── THREAD POOL ────────────────────────────────────────</span>
+<span class="cl">ExecutorService</span> ex = <span class="cl">Executors</span>.<span class="fn">newFixedThreadPool</span>(N);
+ex.<span class="fn">execute</span>(task);           <span class="cm">// Submit task</span>
+ex.<span class="fn">shutdown</span>();              <span class="cm">// Stop accepting new tasks</span>
+ex.<span class="fn">isTerminated</span>();          <span class="cm">// Check if all done</span>
+
+<span class="cm">// ── PRIORITY CONSTANTS ─────────────────────────────────</span>
+Thread.MIN_PRIORITY  = <span class="num-c">1</span>
+Thread.NORM_PRIORITY = <span class="num-c">5</span>  <span class="cm">// default</span>
+Thread.MAX_PRIORITY  = <span class="num-c">10</span></code></pre>
+      </div>
+
+      <h3>⚡ Common Mistakes Summary</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>❌ Mistake</th><th>✅ Correct Approach</th></tr></thead>
+          <tbody>
+            <tr><td>Calling <code>run()</code> instead of <code>start()</code></td><td>Always call <code>start()</code> to create a new thread</td></tr>
+            <tr><td>Calling <code>start()</code> twice on same thread</td><td>Create a new Thread object for each start</td></tr>
+            <tr><td>try-catch <em>inside</em> the loop with sleep</td><td>Put the entire loop <em>inside</em> try-catch</td></tr>
+            <tr><td>Using <code>stop()</code>, <code>suspend()</code>, <code>resume()</code></td><td>These are deprecated — never use them</td></tr>
+            <tr><td>Using raw numbers for priority (e.g., 7)</td><td>Use <code>Thread.MAX_PRIORITY</code> constants</td></tr>
+            <tr><td>Creating 1000 threads manually</td><td>Use a thread pool for many tasks</td></tr>
+            <tr><td>Forgetting <code>executor.shutdown()</code></td><td>Always shut down thread pools after use</td></tr>
+            <tr><td>Assuming thread order is predictable</td><td>Thread scheduling is OS-dependent; order varies</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+
+    <hr class="divider">
+    <p style="text-align:center;color:var(--text3);font-size:0.8rem;font-family:'JetBrains Mono',monospace;">
+      Java Multithreading Guide · Chapter 30 (30.1 – 30.6) · All Checkpoints Solved
+    </p>
+
+  </div><!-- /content -->
+</main>
+
+<a href="#top" class="scroll-top" title="Back to top">↑</a>
+
+</body>
+</html>

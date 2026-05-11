@@ -738,9 +738,12 @@ function displayCourses(courses) {
         return;
     }
 
-    // Add each course as a table row
-    courses.forEach(course => {
+    // Add each course as a table row with staggered animation
+    courses.forEach((course, index) => {
         const row = document.createElement('tr');
+        row.style.animation = `fadeIn 0.3s ease forwards`;
+        row.style.animationDelay = `${Math.min(index * 0.02, 0.5)}s`;
+        row.style.opacity = '0';
 
         // Calculate seats display
         const seatsDisplay = `${course.SeatTaken}/${course.SeatCapacity}`;
@@ -748,7 +751,7 @@ function displayCourses(courses) {
 
         // Color code seats left
         let seatsColor = 'var(--success-color)';
-        if (seatsLeft === 0) {
+        if (seatsLeft <= 0) {
             seatsColor = 'var(--error-color)';
         } else if (seatsLeft < 5) {
             seatsColor = '#f59e0b';
@@ -758,14 +761,14 @@ function displayCourses(courses) {
         const cleanCode = cleanCourseCode(course.CourseCode);
 
         row.innerHTML = `
-            <td><strong>${cleanCode}</strong></td>
-            <td>${course.Section}</td>
-            <td>${course.ShortName}</td>
-            <td>${seatsDisplay}</td>
-            <td style="color: ${seatsColor}; font-weight: 600;">${seatsLeft}</td>
-            <td>${course.Days}</td>
-            <td>${course.Time}</td>
-            <td>${course.RoomCode}</td>
+            <td><strong style="color: var(--accent-primary);">${cleanCode}</strong></td>
+            <td><span style="background: rgba(108, 99, 255, 0.1); padding: 4px 8px; border-radius: 6px;">${course.Section}</span></td>
+            <td><span style="font-weight: 500;">${course.ShortName}</span></td>
+            <td><span style="color: var(--text-secondary);">${seatsDisplay}</span></td>
+            <td style="color: ${seatsColor}; font-weight: bold; font-size: 1.1em;">${seatsLeft}</td>
+            <td><span style="color: #a855f7;">${course.Days}</span></td>
+            <td><span style="font-family: monospace; color: #06b6d4;">${course.Time}</span></td>
+            <td><span style="background: rgba(16, 185, 129, 0.1); color: #10b981; padding: 4px 8px; border-radius: 6px;">${course.RoomCode}</span></td>
         `;
 
         tbody.appendChild(row);
@@ -830,20 +833,25 @@ function showSearchSuggestions() {
     // Convert to array and limit to 5
     const matches = Array.from(uniqueCourses.values()).slice(0, 5);
 
-    // Display suggestions
+    // Display suggestions with staggered animations
     if (matches.length > 0) {
         suggestionsEl.innerHTML = matches
-            .map(course => {
+            .map((course, index) => {
                 return `
-                    <div class="suggestion-item" data-tag="${course.code}">
-                        <strong>${course.code}</strong> - ${course.name}
+                    <div class="suggestion-item" data-tag="${course.code}" onclick="addSearchTag('${course.code}')" style="animation: fadeIn 0.3s ease forwards; animation-delay: ${index * 0.05}s; opacity: 0; cursor: pointer; padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.3s;">
+                        <strong style="color: var(--accent-primary);">${course.code}</strong> - <span style="font-size: 0.9em; color: var(--text-secondary);">${course.name}</span>
                     </div>
                 `;
             })
             .join('');
         suggestionsEl.classList.remove('hidden');
     } else {
-        suggestionsEl.classList.add('hidden');
+        suggestionsEl.innerHTML = `
+            <div style="padding: 15px; text-align: center; color: var(--text-secondary); opacity: 0.7; animation: fadeIn 0.3s ease forwards;">
+                No matches found
+            </div>
+        `;
+        suggestionsEl.classList.remove('hidden');
     }
 }
 

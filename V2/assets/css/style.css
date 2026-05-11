@@ -2446,3 +2446,62 @@ a:focus-visible {
     }
 }
 
+/* ===== DEPARTMENT CHECKBOX SCROLLBAR ===== */
+#department-checkboxes::-webkit-scrollbar,
+#dynamic-dept-checkboxes::-webkit-scrollbar {
+    width: 5px;
+}
+#department-checkboxes::-webkit-scrollbar-track,
+#dynamic-dept-checkboxes::-webkit-scrollbar-track {
+    background: transparent;
+}
+#department-checkboxes::-webkit-scrollbar-thumb,
+#dynamic-dept-checkboxes::-webkit-scrollbar-thumb {
+    background: rgba(108, 99, 255, 0.3);
+    border-radius: 10px;
+}
+
+/* ===== DETAILS PANEL ===== */
+details > summary::-webkit-details-marker,
+details > summary::marker {
+    display: none;
+    content: '';
+}
+
+details[open] .details-chevron {
+    transform: rotate(180deg);
+}
+
+/* ===== PAGINATION ===== */
+#pagination-controls button:hover:not(:disabled) {
+    background: rgba(108, 99, 255, 0.25);
+    border-color: rgba(108, 99, 255, 0.4);
+}
+
+#pagination-controls button:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+#page-jump-input:focus {
+    border-color: var(--accent-primary);
+}
+
+#page-numbers button:hover {
+    transform: translateY(-1px);
+}
+
+/* ===== RESPONSIVE PAGINATION ===== */
+@media (max-width: 600px) {
+    #pagination-controls {
+        gap: 0.35rem !important;
+        padding: 0.75rem 0 !important;
+    }
+    #pagination-controls button {
+        padding: 5px 8px !important;
+        font-size: 0.8rem !important;
+    }
+    #page-jump-input {
+        width: 42px !important;
+    }
+}

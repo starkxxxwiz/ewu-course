@@ -304,28 +304,60 @@ function trimDepartmentPrefix(deptName) {
     return deptName.replace(/^Department of /i, '').trim();
 }
 
-/**
- * Populate department dropdown with fetched data
- */
 function populateDepartments(departments) {
-    const select = document.getElementById('department-select');
-    if (!select) return;
+    const container = document.getElementById('department-checkboxes');
+    const selectAllToggle = document.getElementById('select-all-depts');
+    
+    if (!container) return;
 
-    // Clear existing options
-    select.innerHTML = '<option value="">-- Select Department --</option>';
-
-    // Add departments from API
     if (departments && departments.length > 0) {
+        container.innerHTML = '';
         departments.forEach(dept => {
-            const option = document.createElement('option');
-            option.value = dept.AcademicDepartmentId;
-            option.textContent = trimDepartmentPrefix(dept.AcademicDepartmentName);
-            select.appendChild(option);
+            const label = document.createElement('label');
+            label.style.display = 'flex';
+            label.style.alignItems = 'center';
+            label.style.gap = '0.5rem';
+            label.style.cursor = 'pointer';
+            label.style.padding = '6px 12px';
+            label.style.borderRadius = '8px';
+            label.style.transition = 'background 0.2s';
+            label.onmouseover = () => label.style.background = 'rgba(255,255,255,0.05)';
+            label.onmouseout = () => label.style.background = 'transparent';
+
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.className = 'dept-checkbox';
+            checkbox.value = dept.AcademicDepartmentId;
+            checkbox.dataset.name = trimDepartmentPrefix(dept.AcademicDepartmentName);
+            checkbox.checked = selectAllToggle ? selectAllToggle.checked : true;
+            checkbox.style.width = '16px';
+            checkbox.style.height = '16px';
+            checkbox.style.accentColor = 'var(--accent-primary)';
+
+            checkbox.addEventListener('change', () => {
+                if (selectAllToggle && !checkbox.checked) {
+                    selectAllToggle.checked = false;
+                } else if (selectAllToggle) {
+                    const allChecked = Array.from(document.querySelectorAll('.dept-checkbox')).every(cb => cb.checked);
+                    selectAllToggle.checked = allChecked;
+                }
+            });
+
+            label.appendChild(checkbox);
+            label.appendChild(document.createTextNode(checkbox.dataset.name));
+            container.appendChild(label);
         });
 
-        console.log(`Loaded ${departments.length} departments`);
+        if (selectAllToggle) {
+            selectAllToggle.addEventListener('change', (e) => {
+                const isChecked = e.target.checked;
+                document.querySelectorAll('.dept-checkbox').forEach(cb => {
+                    cb.checked = isChecked;
+                });
+            });
+        }
     } else {
-        select.innerHTML = '<option value="">No departments available</option>';
+        container.innerHTML = '<div style="color: var(--text-secondary); text-align: center; padding: 1rem 0;">No departments available</div>';
     }
 }
 
@@ -354,38 +386,34 @@ function populateSemesters(semesters) {
     }
 }
 
-/**
- * Handle fetch courses button click
- */
 function handleFetchCourses() {
-    const deptSelect = document.getElementById('department-select');
     const semSelect = document.getElementById('semester-select');
-
-    const departmentId = deptSelect ? deptSelect.value : '';
     const semesterId = semSelect ? semSelect.value : '';
-
-    // Get selected text (names) for display
-    const departmentName = deptSelect ? deptSelect.options[deptSelect.selectedIndex].text : '';
     const semesterName = semSelect ? semSelect.options[semSelect.selectedIndex].text : '';
 
-    // Clear previous messages
-    hideMessage('error-message');
-
-    // Validate selections
-    if (!departmentId || !semesterId) {
-        showError('Please select both department and semester', 'error-message');
+    const checkboxes = Array.from(document.querySelectorAll('.dept-checkbox:checked'));
+    if (checkboxes.length === 0) {
+        showError('Please select at least one department', 'error-message');
+        return;
+    }
+    if (!semesterId) {
+        showError('Please select a semester', 'error-message');
         return;
     }
 
+    const selectedDepartments = checkboxes.map(cb => ({
+        id: cb.value,
+        name: cb.dataset.name
+    }));
+
     // Store selections in sessionStorage
-    sessionStorage.setItem('selectedDepartmentId', departmentId);
-    sessionStorage.setItem('selectedDepartmentName', departmentName);
+    sessionStorage.setItem('selectedDepartmentId', selectedDepartments.map(d=>d.id).join(','));
+    sessionStorage.setItem('selectedDepartmentName', selectedDepartments.length > 1 ? 'Multiple Departments' : selectedDepartments[0].name);
     sessionStorage.setItem('selectedSemesterId', semesterId);
     sessionStorage.setItem('selectedSemesterName', semesterName);
 
-    console.log('Selections stored:', { departmentId, semesterId });
-
-    // Show success message
+    // Clear previous messages
+    hideMessage('error-message');
     showSuccess('Loading courses...', 'success-message');
 
     // Hide initial section and show courses section
@@ -399,9 +427,16 @@ function handleFetchCourses() {
         coursesSection.classList.remove('hidden');
     }
 
+    // Reset global courses array
+    allCourses = [];
+    
+    // Clear table completely
+    const tbody = document.getElementById('courses-table-body');
+    if (tbody) tbody.innerHTML = '';
+
     // Load filter dropdowns and courses
     loadCoursesFilters().then(() => {
-        loadCourses();
+        fetchDepartmentsQueue(selectedDepartments, semesterId);
     });
 }
 
@@ -523,23 +558,17 @@ function populateFilterDropdowns() {
  * Load and display courses from API
  */
 async function loadCourses() {
-    console.log('Loading courses...');
+    // Determine selected departments from session
+    const selectedDeptStr = sessionStorage.getItem('selectedDepartmentId');
+    const selectedSemId = sessionStorage.getItem('selectedSemesterId');
 
-    // Get selected IDs from filters or sessionStorage
-    const deptFilter = document.getElementById('dept-filter');
-    const semFilter = document.getElementById('sem-filter');
-
-    let departmentId = deptFilter ? deptFilter.value : sessionStorage.getItem('selectedDepartmentId');
-    let semesterId = semFilter ? semFilter.value : sessionStorage.getItem('selectedSemesterId');
-
-    // Validate selections exist
-    if (!departmentId || !semesterId) {
+    if (!selectedDeptStr || !selectedSemId) {
         const tbody = document.getElementById('courses-table-body');
         if (tbody) {
             tbody.innerHTML = `
                 <tr>
                     <td colspan="8" style="text-align: center; padding: 3rem; color: var(--text-secondary);">
-                        Please select department and semester from the dropdowns above
+                        Please select department and semester to begin
                     </td>
                 </tr>
             `;
@@ -547,104 +576,147 @@ async function loadCourses() {
         return;
     }
 
-    // Clear any previous error messages
+    const deptIds = selectedDeptStr.split(',');
+    
+    // Attempt to reconstruct department info for fetching queue
+    const departments = deptIds.map(id => {
+        // Find name if possible
+        const option = availableDepartments.find(d => d.AcademicDepartmentId === id);
+        return {
+            id: id,
+            name: option ? trimDepartmentPrefix(option.AcademicDepartmentName) : `Dept ${id}`
+        };
+    });
+
+    // Reset courses array
+    allCourses = [];
+    const tbody = document.getElementById('courses-table-body');
+    if (tbody) tbody.innerHTML = '';
+    
     hideMessage('error-message');
 
-    // Show loading spinner
+    // Start sequential fetch
+    fetchDepartmentsQueue(departments, selectedSemId);
+}
+
+/**
+ * Sequentially fetch departments with live update and retries
+ */
+async function fetchDepartmentsQueue(departments, semesterId) {
+    const tbody = document.getElementById('courses-table-body');
+    const statusRowId = 'fetch-status-row';
+
+    const fetchBtn = document.getElementById('fetch-courses-btn');
     const spinner = document.getElementById('loading-spinner');
-    if (spinner) {
-        spinner.classList.remove('hidden');
+    
+    if (fetchBtn) fetchBtn.disabled = true;
+    if (spinner) spinner.classList.remove('hidden');
+
+    for (let i = 0; i < departments.length; i++) {
+        const dept = departments[i];
+        
+        // Add or update status row
+        let statusRow = document.getElementById(statusRowId);
+        if (!statusRow && tbody) {
+            statusRow = document.createElement('tr');
+            statusRow.id = statusRowId;
+            const statusCell = document.createElement('td');
+            statusCell.colSpan = 8;
+            statusCell.id = 'fetch-status-cell';
+            statusCell.style.textAlign = 'center';
+            statusCell.style.padding = '2rem';
+            statusRow.appendChild(statusCell);
+            tbody.appendChild(statusRow);
+        }
+        
+        const statusCell = document.getElementById('fetch-status-cell');
+        if (statusCell) {
+            statusCell.innerHTML = `
+                <div class="spinner" style="display: inline-block; margin-right: 10px; width: 20px; height: 20px; border-width: 2px;"></div>
+                <span style="color: var(--accent-primary);">Fetching ${dept.name}... (${i + 1}/${departments.length})</span>
+            `;
+        }
+
+        let success = false;
+        let retries = 0;
+        
+        while (!success && retries < 3) {
+            try {
+                const response = await fetchWithRetry(`${API_BASE_URL}/courses`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        departmentId: dept.id,
+                        semesterId: semesterId
+                    })
+                }, `Fetching ${dept.name}`);
+                
+                const data = response.data;
+                if (data.status === 'success') {
+                    const parsedCourses = (data.courses || []).map(course => {
+                        const { days, time } = parseSchedule(course.TimeSlotName);
+                        return {
+                            ...course,
+                            Days: days,
+                            Time: time
+                        };
+                    });
+                    
+                    allCourses = [...allCourses, ...parsedCourses];
+                    
+                    if (statusRow && statusRow.parentNode) {
+                        statusRow.parentNode.removeChild(statusRow);
+                    }
+                    
+                    applyFiltersAndDisplay();
+                    success = true;
+                } else {
+                    throw new Error(data.message || 'API error');
+                }
+            } catch (error) {
+                if (error.message === 'Cancelled by user') {
+                    console.log(`Fetch cancelled for ${dept.name}`);
+                    break;
+                }
+                retries++;
+                console.warn(`Failed to fetch ${dept.name}, retry ${retries}/3`, error);
+                
+                if (retries >= 3) {
+                    showError(`Skipped ${dept.name} after 3 failed attempts.`, 'error-message');
+                    setTimeout(() => hideMessage('error-message'), 5000);
+                } else {
+                    await new Promise(r => setTimeout(r, 1000));
+                }
+            }
+        }
     }
-
-    try {
-        // Call fetchCourses API with retry logic
-        const result = await fetchWithRetry(`${API_BASE_URL}/courses`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
-            },
-            credentials: 'include',
-            body: JSON.stringify({
-                departmentId: departmentId,
-                semesterId: semesterId
-            })
-        }, 'Fetching Courses from EWU Portal');
-
-        const data = result.data;
-
-        // Hide spinner
-        if (spinner) {
-            spinner.classList.add('hidden');
+    
+    // Clean up when done
+    const finalStatusRow = document.getElementById(statusRowId);
+    if (finalStatusRow && finalStatusRow.parentNode) {
+        finalStatusRow.parentNode.removeChild(finalStatusRow);
+    }
+    
+    if (spinner) spinner.classList.add('hidden');
+    if (fetchBtn) fetchBtn.disabled = false;
+    
+    if (allCourses.length === 0) {
+        if (tbody) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="8" style="text-align: center; padding: 3rem; color: var(--text-secondary);">
+                        No courses found or failed to load data.
+                    </td>
+                </tr>
+            `;
         }
-
-        // Check response status
-        if (data.status === 'success') {
-            // Store courses globally and parse schedule for each
-            allCourses = (data.courses || []).map(course => {
-                const { days, time } = parseSchedule(course.TimeSlotName);
-                return {
-                    ...course,
-                    Days: days,
-                    Time: time
-                };
-            });
-
-            // Apply all filters and display
-            applyFiltersAndDisplay();
-
-            console.log(`Loaded ${allCourses.length} courses successfully`);
-        } else {
-            // Show error message
-            showError(data.message || 'Failed to load courses. Please try again.', 'error-message');
-
-            const tbody = document.getElementById('courses-table-body');
-            if (tbody) {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="8" style="text-align: center; padding: 3rem; color: var(--error-color);">
-                            ${data.message || 'Failed to load courses'}
-                        </td>
-                    </tr>
-                `;
-            }
-        }
-
-    } catch (error) {
-        // Hide spinner
-        if (spinner) {
-            spinner.classList.add('hidden');
-        }
-
-        // Check if cancelled by user
-        if (error.message === 'Cancelled by user') {
-            console.log('Course fetch cancelled by user');
-            const tbody = document.getElementById('courses-table-body');
-            if (tbody) {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="8" style="text-align: center; padding: 3rem; color: var(--text-secondary);">
-                            Course fetch cancelled. Click "Fetch Courses" to try again.
-                        </td>
-                    </tr>
-                `;
-            }
-        } else {
-            // Show connection error
-            showError('Connection error. Please check your internet or log in again.', 'error-message');
-            console.error('Courses fetch error:', error);
-
-            const tbody = document.getElementById('courses-table-body');
-            if (tbody) {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="8" style="text-align: center; padding: 3rem; color: var(--error-color);">
-                            Connection error. Please try again.
-                        </td>
-                    </tr>
-                `;
-            }
-        }
+    } else {
+        showSuccess('All selected departments loaded successfully!', 'success-message');
+        setTimeout(() => hideMessage('success-message'), 5000);
     }
 }
 

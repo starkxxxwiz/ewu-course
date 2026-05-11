@@ -116,7 +116,7 @@
             
             <div class="dashboard-grid">
                 <!-- Department Selection -->
-                <div class="card">
+                <div class="card" style="background: rgba(22, 33, 62, 0.4); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(108, 99, 255, 0.2); border-radius: 24px;">
                     <div class="card-header">
                         <h3 class="card-title">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline; vertical-align: middle; margin-right: 8px;">
@@ -127,15 +127,21 @@
                         </h3>
                     </div>
                     <div class="form-group">
-                        <label for="department-select" style="font-weight: 600; color: var(--text-primary);">Select Department</label>
-                        <select id="department-select" name="department" disabled style="cursor: pointer;">
-                            <option value="">Loading departments...</option>
-                        </select>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                            <label style="font-weight: 600; color: var(--text-primary);">Select Departments</label>
+                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.9em; color: var(--accent-primary);">
+                                <input type="checkbox" id="select-all-depts" checked style="width: 16px; height: 16px; accent-color: var(--accent-primary);">
+                                All Departments
+                            </label>
+                        </div>
+                        <div id="department-checkboxes" style="max-height: 150px; overflow-y: auto; background: rgba(0,0,0,0.2); border-radius: 12px; padding: 10px; border: 1px solid rgba(255,255,255,0.05); display: flex; flex-direction: column; gap: 8px;">
+                            <div style="color: var(--text-secondary); text-align: center; padding: 1rem 0;">Loading departments...</div>
+                        </div>
                     </div>
                 </div>
                 
                 <!-- Semester Selection -->
-                <div class="card">
+                <div class="card" style="background: rgba(22, 33, 62, 0.4); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(108, 99, 255, 0.2); border-radius: 24px;">
                     <div class="card-header">
                         <h3 class="card-title">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline; vertical-align: middle; margin-right: 8px;">
@@ -148,8 +154,8 @@
                         </h3>
                     </div>
                     <div class="form-group">
-                        <label for="semester-select" style="font-weight: 600; color: var(--text-primary);">Select Semester</label>
-                        <select id="semester-select" name="semester" disabled style="cursor: pointer;">
+                        <label for="semester-select" style="font-weight: 600; color: var(--text-primary); margin-bottom: 0.5rem; display: block;">Select Semester</label>
+                        <select id="semester-select" name="semester" disabled style="cursor: pointer; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); color: var(--text-primary); padding: 0.875rem 1rem; border-radius: 12px; width: 100%; outline: none;">
                             <option value="">Loading semesters...</option>
                         </select>
                     </div>

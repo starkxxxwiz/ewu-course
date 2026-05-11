@@ -341,6 +341,18 @@ function populateDepartments(departments) {
                     const allChecked = Array.from(document.querySelectorAll('.dept-checkbox')).every(cb => cb.checked);
                     selectAllToggle.checked = allChecked;
                 }
+                
+                // Dynamic Add/Remove if already fetched
+                const coursesSection = document.getElementById('courses-section');
+                if (coursesSection && !coursesSection.classList.contains('hidden')) {
+                    const semesterId = document.getElementById('semester-select').value;
+                    if (checkbox.checked) {
+                        fetchDepartmentsQueue([{ id: checkbox.value, name: checkbox.dataset.name }], semesterId);
+                    } else {
+                        allCourses = allCourses.filter(c => c.DepartmentId !== checkbox.value);
+                        applyFiltersAndDisplay();
+                    }
+                }
             });
 
             label.appendChild(checkbox);
@@ -661,6 +673,7 @@ async function fetchDepartmentsQueue(departments, semesterId) {
                         const { days, time } = parseSchedule(course.TimeSlotName);
                         return {
                             ...course,
+                            DepartmentId: dept.id,
                             Days: days,
                             Time: time
                         };
@@ -720,6 +733,11 @@ async function fetchDepartmentsQueue(departments, semesterId) {
     }
 }
 
+// Pagination Variables
+let currentPage = 1;
+let entriesPerPage = '50';
+let currentFilteredCourses = [];
+
 /**
  * Apply all active filters and display results
  */
@@ -757,11 +775,81 @@ function applyFiltersAndDisplay() {
         filteredCourses = sortCourses(filteredCourses, sortBy);
     }
 
-    // Display filtered and sorted courses
-    displayCourses(filteredCourses);
+    // Update current filter state
+    currentFilteredCourses = filteredCourses;
+    currentPage = 1; // Reset to page 1 on filter change
+    
+    // Handle Pagination and display
+    displayPaginatedCourses();
+}
 
-    // Update stats
-    updateStats(filteredCourses.length, allCourses.length);
+/**
+ * Handles slicing the courses array and updating pagination UI
+ */
+function displayPaginatedCourses() {
+    const totalCourses = currentFilteredCourses.length;
+    const paginationControls = document.getElementById('pagination-controls');
+    
+    if (paginationControls) {
+        if (totalCourses > 0) {
+            paginationControls.classList.remove('hidden');
+            paginationControls.style.display = 'flex';
+        } else {
+            paginationControls.classList.add('hidden');
+            paginationControls.style.display = 'none';
+        }
+    }
+    
+    let startIndex = 0;
+    let endIndex = totalCourses;
+    let totalPages = 1;
+    
+    if (entriesPerPage !== 'all') {
+        const perPage = parseInt(entriesPerPage);
+        totalPages = Math.ceil(totalCourses / perPage) || 1;
+        
+        // Ensure currentPage is within bounds
+        if (currentPage > totalPages) currentPage = totalPages;
+        if (currentPage < 1) currentPage = 1;
+        
+        startIndex = (currentPage - 1) * perPage;
+        endIndex = Math.min(startIndex + perPage, totalCourses);
+    }
+    
+    // Update Pagination UI
+    const pageStartIdx = document.getElementById('page-start-idx');
+    const pageEndIdx = document.getElementById('page-end-idx');
+    const pageTotalCount = document.getElementById('page-total-count');
+    const totalPagesSpan = document.getElementById('total-pages');
+    const pageInput = document.getElementById('current-page-input');
+    
+    if (pageStartIdx) pageStartIdx.textContent = totalCourses > 0 ? startIndex + 1 : 0;
+    if (pageEndIdx) pageEndIdx.textContent = endIndex;
+    if (pageTotalCount) pageTotalCount.textContent = totalCourses;
+    if (totalPagesSpan) totalPagesSpan.textContent = totalPages;
+    if (pageInput) {
+        pageInput.value = currentPage;
+        pageInput.max = totalPages;
+    }
+    
+    const prevBtn = document.getElementById('prev-page-btn');
+    const nextBtn = document.getElementById('next-page-btn');
+    if (prevBtn) {
+        prevBtn.disabled = currentPage <= 1;
+        prevBtn.style.opacity = currentPage <= 1 ? '0.5' : '1';
+        prevBtn.style.cursor = currentPage <= 1 ? 'not-allowed' : 'pointer';
+    }
+    if (nextBtn) {
+        nextBtn.disabled = currentPage >= totalPages;
+        nextBtn.style.opacity = currentPage >= totalPages ? '0.5' : '1';
+        nextBtn.style.cursor = currentPage >= totalPages ? 'not-allowed' : 'pointer';
+    }
+    
+    const coursesToDisplay = currentFilteredCourses.slice(startIndex, endIndex);
+    displayCourses(coursesToDisplay);
+    
+    // Update stats globally
+    updateStats(totalCourses, allCourses.length);
 }
 
 /**
@@ -1386,6 +1474,49 @@ document.addEventListener('DOMContentLoaded', function () {
         const exportBtn = document.getElementById('export-pdf-btn');
         if (exportBtn) {
             exportBtn.addEventListener('click', exportToPDF);
+        }
+        
+        // Pagination Event Listeners
+        const entriesSelect = document.getElementById('entries-per-page');
+        if (entriesSelect) {
+            entriesSelect.addEventListener('change', (e) => {
+                entriesPerPage = e.target.value;
+                currentPage = 1;
+                displayPaginatedCourses();
+            });
+        }
+        
+        const prevPageBtn = document.getElementById('prev-page-btn');
+        if (prevPageBtn) {
+            prevPageBtn.addEventListener('click', () => {
+                if (currentPage > 1) {
+                    currentPage--;
+                    displayPaginatedCourses();
+                }
+            });
+        }
+        
+        const nextPageBtn = document.getElementById('next-page-btn');
+        if (nextPageBtn) {
+            nextPageBtn.addEventListener('click', () => {
+                const totalPages = entriesPerPage === 'all' ? 1 : Math.ceil(currentFilteredCourses.length / parseInt(entriesPerPage));
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    displayPaginatedCourses();
+                }
+            });
+        }
+        
+        const pageInput = document.getElementById('current-page-input');
+        if (pageInput) {
+            pageInput.addEventListener('change', (e) => {
+                const totalPages = entriesPerPage === 'all' ? 1 : Math.ceil(currentFilteredCourses.length / parseInt(entriesPerPage));
+                let newPage = parseInt(e.target.value);
+                if (isNaN(newPage) || newPage < 1) newPage = 1;
+                if (newPage > totalPages) newPage = totalPages;
+                currentPage = newPage;
+                displayPaginatedCourses();
+            });
         }
     }
 });

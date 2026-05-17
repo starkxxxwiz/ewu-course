@@ -1,71 +1,81 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="View, filter, and plan your East West University courses on EWU Course Filter V2. Advanced search and schedule building.">
-    <meta name="keywords" content="EWU courses, East West University, course filter, course search, academic schedule, V2, aftabkabir">
+    <meta name="description"
+        content="View, filter, and plan your East West University courses on EWU Course Filter V2. Advanced search and schedule building.">
+    <meta name="keywords"
+        content="EWU courses, East West University, course filter, course search, academic schedule, V2, aftabkabir">
     <meta name="author" content="Aftab Kabir">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://aftabkabir.me/V2/courses.html">
-    
+
     <!-- Open Graph for Social Media -->
     <meta property="og:title" content="Courses - EWU Course Filter V2">
-    <meta property="og:description" content="Advanced search and filtering for EWU courses. Check real-time seat availability and faculty info.">
+    <meta property="og:description"
+        content="Advanced search and filtering for EWU courses. Check real-time seat availability and faculty info.">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://aftabkabir.me/V2/courses.html">
-    
+
     <!-- Twitter Cards -->
     <meta name="twitter:card" content="summary">
     <meta name="twitter:title" content="Courses - EWU Course Filter V2">
     <meta name="twitter:description" content="Advanced search and filtering for EWU courses.">
     <title>Courses - EWU Course Filter V2</title>
-    
+
     <!-- CSS -->
     <link rel="stylesheet" href="assets/css/style.css">
-    
+
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-    
+
     <!-- jsPDF for PDF Export -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
 </head>
+
 <body>
     <header>
         <nav>
-            <a href="index.html" class="nav-brand" style="text-decoration: none; display: flex; align-items: center; gap: 1rem; animation: none; transition: none;">
-                <img src="assets/images/ewu.png" alt="EWU Logo" class="nav-logo" style="animation: none; transition: none;">
+            <a href="index.html" class="nav-brand"
+                style="text-decoration: none; display: flex; align-items: center; gap: 1rem; animation: none; transition: none;">
+                <img src="assets/images/ewu.png" alt="EWU Logo" class="nav-logo"
+                    style="animation: none; transition: none;">
                 <h1 style="animation: none; transition: none;">EWU Course Filter V2</h1>
             </a>
-            
+
             <!-- Desktop Navigation -->
             <ul class="nav-desktop">
                 <li><a href="index.html">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-                    </svg>
-                    Home
-                </a></li>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                        </svg>
+                        Home
+                    </a></li>
                 <li><a href="courses.html" class="active">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
-                        <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
-                    </svg>
-                    Courses
-                </a></li>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                            <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+                        </svg>
+                        Courses
+                    </a></li>
                 <li><a href="#" onclick="handleLogout(); return false;" class="logout-link">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                        <polyline points="16 17 21 12 16 7"></polyline>
-                        <line x1="21" y1="12" x2="9" y2="12"></line>
-                    </svg>
-                    Logout
-                </a></li>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                            <polyline points="16 17 21 12 16 7"></polyline>
+                            <line x1="21" y1="12" x2="9" y2="12"></line>
+                        </svg>
+                        Logout
+                    </a></li>
             </ul>
-            
+
             <!-- Mobile Hamburger -->
             <input type="checkbox" id="checkbox">
             <label for="checkbox" class="toggle" id="hamburger-label">
@@ -74,7 +84,7 @@
                 <div class="bars" id="bar3"></div>
             </label>
         </nav>
-        
+
         <!-- Mobile Menu -->
         <div class="mobile-menu hidden" id="mobile-menu">
             <a href="index.html">
@@ -100,25 +110,30 @@
             </a>
         </div>
     </header>
-    
+
     <div class="container">
-        <h1 class="page-title" style="background: var(--gradient-1); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">Course Selection</h1>
-        
+        <h1 class="page-title"
+            style="background: var(--gradient-1); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
+            Course Selection</h1>
+
         <!-- Step 1: Initial Selection (Department & Semester) -->
         <div id="initial-selection" class="initial-selection-section">
-            <p class="text-center text-secondary mb-2" style="font-size: 1.05rem; opacity: 0.85;">Select departments and semester to get started</p>
-            
+            <p class="text-center text-secondary mb-2" style="font-size: 1.05rem; opacity: 0.85;">Select departments and
+                semester to get started</p>
+
             <div id="options-loading-spinner" class="spinner hidden"></div>
-            
+
             <div id="error-message" class="text-error text-center hidden mb-2"></div>
             <div id="success-message" class="text-success text-center hidden mb-2"></div>
-            
+
             <div class="dashboard-grid">
                 <!-- Department Selection -->
-                <div class="card" style="background: rgba(22, 33, 62, 0.35); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(108, 99, 255, 0.15); border-radius: 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.25);">
+                <div class="card"
+                    style="background: rgba(22, 33, 62, 0.35); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(108, 99, 255, 0.15); border-radius: 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.25);">
                     <div class="card-header" style="padding-bottom: 0.5rem;">
                         <h3 class="card-title" style="font-size: 1rem;">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent-primary)" stroke-width="2" style="display: inline; vertical-align: middle; margin-right: 8px;">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent-primary)"
+                                stroke-width="2" style="display: inline; vertical-align: middle; margin-right: 8px;">
                                 <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
                                 <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
                             </svg>
@@ -126,24 +141,34 @@
                         </h3>
                     </div>
                     <div class="form-group" style="margin-top: 0;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
-                            <span id="dept-count-badge" style="font-size: 0.8rem; color: var(--accent-secondary); background: rgba(78,205,196,0.1); padding: 3px 10px; border-radius: 20px; border: 1px solid rgba(78,205,196,0.2);">0 selected</span>
-                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.85em; color: var(--accent-primary); user-select: none;">
-                                <input type="checkbox" id="select-all-depts" checked style="width: 16px; height: 16px; accent-color: var(--accent-primary); cursor: pointer;">
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                            <span id="dept-count-badge"
+                                style="font-size: 0.8rem; color: var(--accent-secondary); background: rgba(78,205,196,0.1); padding: 3px 10px; border-radius: 20px; border: 1px solid rgba(78,205,196,0.2);">0
+                                selected</span>
+                            <label
+                                style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.85em; color: var(--accent-primary); user-select: none;">
+                                <input type="checkbox" id="select-all-depts" checked
+                                    style="width: 16px; height: 16px; accent-color: var(--accent-primary); cursor: pointer;">
                                 Select All
                             </label>
                         </div>
-                        <div id="department-checkboxes" style="max-height: 200px; overflow-y: auto; background: rgba(0,0,0,0.18); border-radius: 14px; padding: 8px; border: 1px solid rgba(255,255,255,0.04); display: flex; flex-direction: column; gap: 4px;">
-                            <div style="color: var(--text-secondary); text-align: center; padding: 1.5rem 0; font-size: 0.9rem;">Loading departments...</div>
+                        <div id="department-checkboxes"
+                            style="max-height: 200px; overflow-y: auto; background: rgba(0,0,0,0.18); border-radius: 14px; padding: 8px; border: 1px solid rgba(255,255,255,0.04); display: flex; flex-direction: column; gap: 4px;">
+                            <div
+                                style="color: var(--text-secondary); text-align: center; padding: 1.5rem 0; font-size: 0.9rem;">
+                                Loading departments...</div>
                         </div>
                     </div>
                 </div>
-                
+
                 <!-- Semester Selection -->
-                <div class="card" style="background: rgba(22, 33, 62, 0.35); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(108, 99, 255, 0.15); border-radius: 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.25); display: flex; flex-direction: column; justify-content: center;">
+                <div class="card"
+                    style="background: rgba(22, 33, 62, 0.35); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(108, 99, 255, 0.15); border-radius: 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.25); display: flex; flex-direction: column; justify-content: center;">
                     <div class="card-header" style="padding-bottom: 0.5rem;">
                         <h3 class="card-title" style="font-size: 1rem;">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent-primary)" stroke-width="2" style="display: inline; vertical-align: middle; margin-right: 8px;">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent-primary)"
+                                stroke-width="2" style="display: inline; vertical-align: middle; margin-right: 8px;">
                                 <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
                                 <line x1="16" y1="2" x2="16" y2="6"></line>
                                 <line x1="8" y1="2" x2="8" y2="6"></line>
@@ -153,17 +178,21 @@
                         </h3>
                     </div>
                     <div class="form-group" style="margin-top: 0;">
-                        <label for="semester-select" style="font-weight: 600; color: var(--text-primary); margin-bottom: 0.75rem; display: block; font-size: 0.85rem;">Choose a semester</label>
-                        <select id="semester-select" name="semester" disabled style="cursor: pointer; background: rgba(0,0,0,0.22); border: 1px solid rgba(255,255,255,0.08); color: var(--text-primary); padding: 0.875rem 1rem; border-radius: 14px; width: 100%; outline: none; font-size: 0.95rem; appearance: none; -webkit-appearance: none; background-image: url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2216%22 height=%2216%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%236c63ff%22 stroke-width=%222%22><polyline points=%226 9 12 15 18 9%22/></svg>'); background-repeat: no-repeat; background-position: right 12px center; background-size: 16px; transition: border-color 0.2s;">
+                        <label for="semester-select"
+                            style="font-weight: 600; color: var(--text-primary); margin-bottom: 0.75rem; display: block; font-size: 0.85rem;">Choose
+                            a semester</label>
+                        <select id="semester-select" name="semester" disabled
+                            style="cursor: pointer; background: rgba(0,0,0,0.22); border: 1px solid rgba(255,255,255,0.08); color: var(--text-primary); padding: 0.875rem 1rem; border-radius: 14px; width: 100%; outline: none; font-size: 0.95rem; appearance: none; -webkit-appearance: none; background-image: url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2216%22 height=%2216%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%236c63ff%22 stroke-width=%222%22><polyline points=%226 9 12 15 18 9%22/></svg>'); background-repeat: no-repeat; background-position: right 12px center; background-size: 16px; transition: border-color 0.2s;">
                             <option value="">Loading semesters...</option>
                         </select>
                     </div>
                 </div>
             </div>
-            
+
             <div class="text-center mt-2">
                 <button id="fetch-courses-btn" class="btn-fetch-courses" disabled>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="display: inline; vertical-align: middle; margin-right: 6px;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        style="display: inline; vertical-align: middle; margin-right: 6px;">
                         <polyline points="21 8 21 21 3 21 3 8"></polyline>
                         <rect x="1" y="3" width="22" height="5" rx="1"></rect>
                     </svg>
@@ -171,35 +200,50 @@
                 </button>
             </div>
         </div>
-        
+
         <!-- Step 2: Filters and Course Table (Hidden Initially) -->
         <div id="courses-section" class="courses-section hidden">
-            
+
             <!-- Dynamic Department Management Panel -->
-            <div class="card mb-2" style="background: rgba(22, 33, 62, 0.3); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(108, 99, 255, 0.12); border-radius: 16px;">
+            <div class="card mb-2"
+                style="background: rgba(22, 33, 62, 0.3); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(108, 99, 255, 0.12); border-radius: 16px;">
                 <details id="dept-manager-panel">
-                    <summary style="cursor: pointer; padding: 0.75rem 1rem; display: flex; align-items: center; gap: 0.5rem; color: var(--text-primary); font-weight: 600; font-size: 0.9rem; user-select: none; list-style: none;">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent-primary)" stroke-width="2" style="flex-shrink: 0;">
+                    <summary
+                        style="cursor: pointer; padding: 0.75rem 1rem; display: flex; align-items: center; gap: 0.5rem; color: var(--text-primary); font-weight: 600; font-size: 0.9rem; user-select: none; list-style: none;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent-primary)"
+                            stroke-width="2" style="flex-shrink: 0;">
                             <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
                             <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
                         </svg>
                         <span>Manage Departments</span>
-                        <span id="loaded-dept-badge" style="font-size: 0.75rem; color: var(--accent-secondary); background: rgba(78,205,196,0.1); padding: 2px 8px; border-radius: 12px; border: 1px solid rgba(78,205,196,0.15); margin-left: auto;">0 loaded</span>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="2" style="transition: transform 0.2s; flex-shrink: 0;" class="details-chevron">
+                        <span id="loaded-dept-badge"
+                            style="font-size: 0.75rem; color: var(--accent-secondary); background: rgba(78,205,196,0.1); padding: 2px 8px; border-radius: 12px; border: 1px solid rgba(78,205,196,0.15); margin-left: auto;">0
+                            loaded</span>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)"
+                            stroke-width="2" style="transition: transform 0.2s; flex-shrink: 0;"
+                            class="details-chevron">
                             <polyline points="6 9 12 15 18 9"></polyline>
                         </svg>
                     </summary>
                     <div style="padding: 0 1rem 1rem;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                            <span style="font-size: 0.8rem; color: var(--text-secondary);">Toggle departments to add or remove courses</span>
-                            <label style="display: flex; align-items: center; gap: 0.4rem; cursor: pointer; font-size: 0.8rem; color: var(--accent-primary); user-select: none;">
-                                <input type="checkbox" id="dynamic-select-all" style="width: 14px; height: 14px; accent-color: var(--accent-primary); cursor: pointer;">
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                            <span style="font-size: 0.8rem; color: var(--text-secondary);">Toggle departments to add or
+                                remove courses</span>
+                            <label
+                                style="display: flex; align-items: center; gap: 0.4rem; cursor: pointer; font-size: 0.8rem; color: var(--accent-primary); user-select: none;">
+                                <input type="checkbox" id="dynamic-select-all"
+                                    style="width: 14px; height: 14px; accent-color: var(--accent-primary); cursor: pointer;">
                                 All
                             </label>
                         </div>
-                        <div id="dynamic-dept-checkboxes" style="max-height: 160px; overflow-y: auto; background: rgba(0,0,0,0.15); border-radius: 12px; padding: 6px; border: 1px solid rgba(255,255,255,0.03); display: flex; flex-wrap: wrap; gap: 4px;"></div>
+                        <div id="dynamic-dept-checkboxes"
+                            style="max-height: 160px; overflow-y: auto; background: rgba(0,0,0,0.15); border-radius: 12px; padding: 6px; border: 1px solid rgba(255,255,255,0.03); display: flex; flex-wrap: wrap; gap: 4px;">
+                        </div>
                         <div style="margin-top: 0.75rem; text-align: right;">
-                            <button id="apply-dept-changes-btn" style="background: var(--gradient-1); color: #fff; border: none; padding: 8px 20px; border-radius: 10px; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: opacity 0.2s, transform 0.1s;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">
+                            <button id="apply-dept-changes-btn"
+                                style="background: var(--gradient-1); color: #fff; border: none; padding: 8px 20px; border-radius: 10px; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: opacity 0.2s, transform 0.1s;"
+                                onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">
                                 Apply Changes
                             </button>
                         </div>
@@ -213,7 +257,8 @@
                     <!-- Sort By -->
                     <div class="filter-item">
                         <label for="sort-filter" style="font-weight: 600;">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline; vertical-align: middle;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" style="display: inline; vertical-align: middle;">
                                 <line x1="4" y1="21" x2="4" y2="14"></line>
                                 <line x1="4" y1="10" x2="4" y2="3"></line>
                                 <line x1="12" y1="21" x2="12" y2="12"></line>
@@ -230,11 +275,12 @@
                             <option value="time">Time</option>
                         </select>
                     </div>
-                    
+
                     <!-- Entries Per Page -->
                     <div class="filter-item">
                         <label for="page-size-select" style="font-weight: 600;">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline; vertical-align: middle;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" style="display: inline; vertical-align: middle;">
                                 <rect x="3" y="3" width="7" height="7"></rect>
                                 <rect x="14" y="3" width="7" height="7"></rect>
                                 <rect x="3" y="14" width="7" height="7"></rect>
@@ -250,7 +296,7 @@
                             <option value="all">All</option>
                         </select>
                     </div>
-                    
+
                     <!-- Available Seats Toggle & Export Button -->
                     <div class="filter-item filter-actions-row">
                         <div class="toggle-container">
@@ -263,49 +309,58 @@
                             </label>
                         </div>
                         
+                        <!-- Auto Refresh Toggle -->
+                        <div class="toggle-container" style="margin-left: 0.75rem;">
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="auto-refresh-toggle">
+                                <span class="toggle-slider" style="background-color: var(--accent-secondary);"></span>
+                            </label>
+                            <label for="auto-refresh-toggle" class="toggle-label">
+                                Auto Refresh
+                            </label>
+                        </div>
+
                         <button id="export-pdf-btn" class="export-btn-new">
                             <svg class="export-icon" viewBox="0 0 384 512" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M169.4 470.6c12.5 12.5 32.8 12.5 45.3 0l160-160c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L224 370.8 224 64c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 306.7L54.6 265.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l160 160z"></path>
+                                <path
+                                    d="M169.4 470.6c12.5 12.5 32.8 12.5 45.3 0l160-160c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L224 370.8 224 64c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 306.7L54.6 265.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l160 160z">
+                                </path>
                             </svg>
                             <span class="export-text">Export</span>
                         </button>
                     </div>
                 </div>
             </div>
-            
+
             <!-- Multi-Tag Search Section -->
             <div class="card mb-2">
                 <div class="search-container">
                     <div class="search-tags-wrapper">
                         <div id="search-tags" class="search-tags"></div>
-                        <input 
-                            type="text" 
-                            id="search-input" 
-                            class="search-input-tags"
-                            placeholder="Type course name or code and press Enter..."
-                            autocomplete="off"
-                        >
+                        <input type="text" id="search-input" class="search-input-tags"
+                            placeholder="Type course name or code and press Enter..." autocomplete="off">
                     </div>
                     <div id="search-suggestions" class="search-suggestions hidden"></div>
                 </div>
             </div>
-            
+
             <!-- Stats Bar -->
-            <div class="stats-bar" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+            <div class="stats-bar"
+                style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
                 <span>
-                    <span>Showing:</span> 
-                    <strong id="visible-count">0</strong> 
-                    <span>/</span> 
-                    <strong id="total-count">0</strong> 
+                    <span>Showing:</span>
+                    <strong id="visible-count">0</strong>
+                    <span>/</span>
+                    <strong id="total-count">0</strong>
                     <span>courses</span>
                 </span>
                 <span id="page-info" style="font-size: 0.85rem; color: var(--text-secondary);">Page 1 of 1</span>
             </div>
-            
+
             <div id="courses-error-message" class="text-error text-center hidden mb-2"></div>
-            
+
             <div id="loading-spinner" class="spinner hidden"></div>
-            
+
             <!-- Courses Table -->
             <div class="table-container">
                 <div class="table-wrapper">
@@ -314,7 +369,7 @@
                             <tr>
                                 <th>Course Code</th>
                                 <th>Section</th>
-                                <th>Course Name</th>
+                                <th>Faculty</th>
                                 <th>Seats (T/C)</th>
                                 <th>Left</th>
                                 <th>Days</th>
@@ -324,7 +379,8 @@
                         </thead>
                         <tbody id="courses-table-body">
                             <tr>
-                                <td colspan="8" style="text-align: center; padding: 3rem; color: var(--text-secondary);">
+                                <td colspan="8"
+                                    style="text-align: center; padding: 3rem; color: var(--text-secondary);">
                                     Select filters and click Fetch to load courses
                                 </td>
                             </tr>
@@ -332,26 +388,40 @@
                     </table>
                 </div>
             </div>
-            
+
             <!-- Pagination Controls -->
-            <div id="pagination-controls" style="display: flex; justify-content: center; align-items: center; gap: 0.5rem; padding: 1rem 0; flex-wrap: wrap;">
-                <button id="page-first" style="background: rgba(108,99,255,0.1); border: 1px solid rgba(108,99,255,0.2); color: var(--text-primary); padding: 6px 12px; border-radius: 8px; cursor: pointer; font-size: 0.85rem; transition: all 0.2s;" title="First Page">«</button>
-                <button id="page-prev" style="background: rgba(108,99,255,0.1); border: 1px solid rgba(108,99,255,0.2); color: var(--text-primary); padding: 6px 12px; border-radius: 8px; cursor: pointer; font-size: 0.85rem; transition: all 0.2s;" title="Previous Page">‹ Prev</button>
+            <div id="pagination-controls"
+                style="display: flex; justify-content: center; align-items: center; gap: 0.5rem; padding: 1rem 0; flex-wrap: wrap;">
+                <button id="page-first"
+                    style="background: rgba(108,99,255,0.1); border: 1px solid rgba(108,99,255,0.2); color: var(--text-primary); padding: 6px 12px; border-radius: 8px; cursor: pointer; font-size: 0.85rem; transition: all 0.2s;"
+                    title="First Page">«</button>
+                <button id="page-prev"
+                    style="background: rgba(108,99,255,0.1); border: 1px solid rgba(108,99,255,0.2); color: var(--text-primary); padding: 6px 12px; border-radius: 8px; cursor: pointer; font-size: 0.85rem; transition: all 0.2s;"
+                    title="Previous Page">‹ Prev</button>
                 <div id="page-numbers" style="display: flex; gap: 4px; flex-wrap: wrap; justify-content: center;"></div>
-                <button id="page-next" style="background: rgba(108,99,255,0.1); border: 1px solid rgba(108,99,255,0.2); color: var(--text-primary); padding: 6px 12px; border-radius: 8px; cursor: pointer; font-size: 0.85rem; transition: all 0.2s;" title="Next Page">Next ›</button>
-                <button id="page-last" style="background: rgba(108,99,255,0.1); border: 1px solid rgba(108,99,255,0.2); color: var(--text-primary); padding: 6px 12px; border-radius: 8px; cursor: pointer; font-size: 0.85rem; transition: all 0.2s;" title="Last Page">»</button>
+                <button id="page-next"
+                    style="background: rgba(108,99,255,0.1); border: 1px solid rgba(108,99,255,0.2); color: var(--text-primary); padding: 6px 12px; border-radius: 8px; cursor: pointer; font-size: 0.85rem; transition: all 0.2s;"
+                    title="Next Page">Next ›</button>
+                <button id="page-last"
+                    style="background: rgba(108,99,255,0.1); border: 1px solid rgba(108,99,255,0.2); color: var(--text-primary); padding: 6px 12px; border-radius: 8px; cursor: pointer; font-size: 0.85rem; transition: all 0.2s;"
+                    title="Last Page">»</button>
                 <div style="display: flex; align-items: center; gap: 4px; margin-left: 0.5rem;">
                     <label for="page-jump-input" style="font-size: 0.8rem; color: var(--text-secondary);">Go to:</label>
-                    <input type="number" id="page-jump-input" min="1" style="width: 52px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); color: var(--text-primary); padding: 5px 6px; border-radius: 8px; font-size: 0.85rem; text-align: center; outline: none;">
+                    <input type="number" id="page-jump-input" min="1"
+                        style="width: 52px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); color: var(--text-primary); padding: 5px 6px; border-radius: 8px; font-size: 0.85rem; text-align: center; outline: none;">
                 </div>
             </div>
         </div>
     </div>
-    <div style="padding: 1.5rem; text-align: center; border-top: 1px solid var(--border-color); background: rgba(0,0,0,0.2); margin-top: 2rem;">
-        <p style="color: var(--text-secondary); margin-bottom: 0.5rem; font-size: 0.85rem; max-width: 600px; margin-left: auto; margin-right: auto;">
-            This website is created for educational purposes only. It has no official connection with East West University (EWU). If any authority requests content removal, please contact us.
+    <div
+        style="padding: 1.5rem; text-align: center; border-top: 1px solid var(--border-color); background: rgba(0,0,0,0.2); margin-top: 2rem;">
+        <p
+            style="color: var(--text-secondary); margin-bottom: 0.5rem; font-size: 0.85rem; max-width: 600px; margin-left: auto; margin-right: auto;">
+            This website is created for educational purposes only. It has no official connection with East West
+            University (EWU). If any authority requests content removal, please contact us.
         </p>
-        <a href="mailto:contact.aftabkabir@proton.me" style="display: inline-block; padding: 0.4rem 1rem; border-radius: 4px; background: rgba(108, 99, 255, 0.1); border: 1px solid rgba(108, 99, 255, 0.3); color: var(--text-primary); text-decoration: none; font-size: 0.8rem; margin-top: 0.5rem; transition: all 0.2s;">Contact</a>
+        <a href="mailto:contact.aftabkabir@proton.me"
+            style="display: inline-block; padding: 0.4rem 1rem; border-radius: 4px; background: rgba(108, 99, 255, 0.1); border: 1px solid rgba(108, 99, 255, 0.3); color: var(--text-primary); text-decoration: none; font-size: 0.8rem; margin-top: 0.5rem; transition: all 0.2s;">Contact</a>
     </div>
 
     <footer style="padding: 1.5rem 2rem; text-align: center; border-top: 1px solid var(--border-color);">
@@ -362,21 +432,41 @@
             &copy; <span class="dynamic-year">2025</span> EWU Course Filter V2. All rights reserved.
         </p>
     </footer>
-    
+
+    <div id="auto-refresh-settings-container" style="position: fixed; bottom: 85px; right: 2rem; z-index: 1000; display: flex; flex-direction: column; align-items: center; gap: 8px;">
+        <button id="auto-refresh-settings-btn" title="Auto Refresh Settings" style="background: rgba(30,30,40,0.8); border: 1px solid rgba(255,255,255,0.1); border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; backdrop-filter: blur(5px); box-shadow: 0 4px 10px rgba(0,0,0,0.3); transition: all 0.2s; color: white;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"></path></svg>
+        </button>
+        <!-- Refresh Settings Popup -->
+        <div id="auto-refresh-menu" class="hidden" style="position: absolute; bottom: 50px; right: 0; background: rgba(20,20,25,0.95); border: 1px solid rgba(108, 99, 255, 0.3); border-radius: 12px; padding: 15px; width: 220px; backdrop-filter: blur(10px); box-shadow: 0 10px 30px rgba(0,0,0,0.5); transform-origin: bottom right; transition: all 0.2s;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px;">
+                <span style="font-size: 0.9rem; font-weight: 600; color: white;">Auto Refresh</span>
+                <button id="close-auto-refresh-menu" style="background:none;border:none;color:gray;cursor:pointer;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+            <label style="display: block; font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 5px;">Delay (seconds):</label>
+            <input type="number" id="auto-refresh-delay-input" value="30" min="5" max="300" style="width: 100%; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 6px 10px; border-radius: 6px; font-size: 0.85rem; outline: none;">
+            <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 8px;">Updates automatically.</div>
+        </div>
+    </div>
+
     <!-- Floating Action Buttons -->
     <button id="floating-refresh" class="floating-btn floating-refresh" title="Refresh Courses">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <svg class="refresh-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
             <polyline points="23 4 23 10 17 10"></polyline>
-            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+            <polyline points="1 20 1 14 7 14"></polyline>
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
         </svg>
     </button>
-    
+
     <button id="scroll-to-top" class="floating-btn scroll-to-top hidden" title="Scroll to Top">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
             <polyline points="18 15 12 9 6 15"></polyline>
         </svg>
     </button>
-    
+
+
     <!-- JavaScript -->
     <script>
         document.querySelectorAll('.dynamic-year').forEach(el => el.textContent = new Date().getFullYear());
@@ -385,5 +475,5 @@
     <script src="assets/js/retry-system.js"></script>
     <script src="assets/js/main.js"></script>
 </body>
-</html>
 
+</html>

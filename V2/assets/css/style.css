@@ -2505,3 +2505,223 @@ details[open] .details-chevron {
         width: 42px !important;
     }
 }
+
+/* ===== TABLE COLUMN WIDTH FIXES ===== */
+/* Ensure Days column is wide enough for "SUNDAY, TUESDAY" etc. */
+#courses-table td:nth-child(6),
+#courses-table th:nth-child(6) {
+    min-width: 140px;
+    white-space: normal;
+    word-break: break-word;
+}
+
+/* Time column */
+#courses-table td:nth-child(7),
+#courses-table th:nth-child(7) {
+    min-width: 130px;
+    white-space: normal;
+    word-break: break-word;
+}
+
+/* Room column */
+#courses-table td:nth-child(8),
+#courses-table th:nth-child(8) {
+    min-width: 140px;
+    white-space: normal;
+    word-break: break-word;
+}
+
+/* Faculty column – compact width, wraps name */
+#courses-table td:nth-child(3),
+#courses-table th:nth-child(3) {
+    max-width: 110px;
+    white-space: normal;
+    word-break: break-word;
+}
+
+/* ===== LOW-END DEVICE PERFORMANCE OPTIMIZATIONS ===== */
+/* Reduce backdrop-filter on non-hover states for performance */
+@media (max-width: 768px) {
+    /* Reduce expensive blur effects on mobile */
+    .card {
+        backdrop-filter: blur(4px) !important;
+        -webkit-backdrop-filter: blur(4px) !important;
+    }
+
+    /* Disable card hover lift on touch devices */
+    .card:hover {
+        transform: none !important;
+    }
+
+    /* Simplify table row hover on mobile */
+    tbody tr:hover {
+        transform: none !important;
+        box-shadow: none !important;
+        background: rgba(108, 99, 255, 0.06) !important;
+    }
+
+    /* Reduce filter-select hover transforms */
+    .filter-select:hover {
+        transform: none !important;
+    }
+
+    /* Reduce suggestion item hover effect */
+    .suggestion-item:hover {
+        transform: translateX(2px) !important;
+    }
+
+    /* Simpler search-tag hover */
+    .search-tag:hover {
+        transform: none !important;
+    }
+}
+
+/* Coarse pointer (touch) devices — remove hover transforms globally */
+@media (hover: none) and (pointer: coarse) {
+    .card:hover,
+    .btn:hover,
+    .export-btn-new:hover,
+    tbody tr:hover,
+    .filter-select:hover,
+    .mobile-menu a:hover {
+        transform: none !important;
+    }
+
+    /* Simpler animations for touch */
+    .btn::before,
+    .export-btn-new::before {
+        display: none;
+    }
+
+    /* Ensure table rows are stable */
+    tbody tr {
+        transition: background 0.15s ease !important;
+    }
+}
+
+/* ===== FLOATING BUTTON REFRESHING STATE ===== */
+.floating-refresh.refreshing .refresh-icon,
+.floating-btn.refreshing svg {
+    animation: spin 1s linear infinite;
+}
+
+/* ===== SMOOTH ANIMATIONS - PERFORMANCE TUNED ===== */
+/* Use will-change only during active animation states */
+.course-row {
+    will-change: opacity, transform;
+}
+
+.course-row.animated {
+    will-change: auto;
+}
+
+/* Reduce animation complexity for tables with many rows on mobile */
+@media (max-width: 768px) {
+    tbody tr {
+        transition: background 0.15s ease;
+    }
+}
+
+/* ===== ADVISE PAGE TABLE COLUMN WIDTHS ===== */
+/* These override table-layout:fixed for the advise page premium table */
+.table-premium th:nth-child(4),
+.table-premium td:nth-child(4) {
+    /* Faculty column - compact */
+    max-width: 100px;
+    white-space: normal;
+    word-break: break-word;
+}
+
+.table-premium th:nth-child(9),
+.table-premium td:nth-child(9) {
+    /* Time column - wider, wraps */
+    min-width: 160px;
+    white-space: normal;
+    word-break: break-word;
+}
+
+.table-premium th:nth-child(10),
+.table-premium td:nth-child(10) {
+    /* Room column - wider, wraps */
+    min-width: 150px;
+    white-space: normal;
+    word-break: break-word;
+}
+
+
+/* ===== FLOATING ACTION BUTTONS ===== */
+.floating-btn {
+    position: fixed;
+    bottom: 2rem;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 6px 25px rgba(0,0,0,0.4);
+}
+
+.floating-refresh {
+    right: 2rem;
+    background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
+}
+
+.floating-refresh svg {
+    width: 22px;
+    height: 22px;
+    stroke: #fff;
+    transition: transform 0.3s ease;
+}
+
+.floating-refresh:hover {
+    transform: scale(1.1) rotate(20deg);
+    box-shadow: 0 8px 35px rgba(108, 99, 255, 0.6);
+}
+
+.floating-refresh.refreshing svg {
+    animation: spin 1s linear infinite;
+}
+
+.scroll-to-top {
+    right: 5rem;
+    background: rgba(22, 33, 62, 0.9);
+    border: 1px solid rgba(108, 99, 255, 0.3);
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(20px);
+    transition: all 0.3s ease;
+}
+
+.scroll-to-top.visible {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+}
+
+.scroll-to-top svg {
+    width: 20px;
+    height: 20px;
+    stroke: var(--accent-primary);
+}
+
+.scroll-to-top:hover {
+    background: rgba(108, 99, 255, 0.2);
+    border-color: var(--accent-primary);
+    transform: translateY(-4px);
+}
+
+@media (max-width: 768px) {
+    .floating-btn {
+        width: 48px;
+        height: 48px;
+        bottom: 1.5rem;
+    }
+    .floating-refresh { right: 1.5rem; }
+    .scroll-to-top { right: 4rem; }
+    .floating-refresh:hover { transform: scale(1.05); }
+}

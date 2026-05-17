@@ -1219,3 +1219,39 @@ input:focus, textarea:focus, select:focus {
     }
 }
 
+
+/* ===== LOW-END DEVICE ANIMATION OPTIMIZATIONS ===== */
+@media (max-width: 768px) {
+    .glass-card, .glass-premium, .glass-subtle {
+        backdrop-filter: blur(8px) !important;
+        -webkit-backdrop-filter: blur(8px) !important;
+    }
+    .table-row:hover, .table-premium tbody tr:hover {
+        transform: translateX(3px) !important;
+    }
+    .suggestion-item:hover { transform: translateX(3px) !important; }
+    .dropdown-option:hover { transform: translateX(3px) !important; }
+}
+@media (hover: none) and (pointer: coarse) {
+    .table-row:hover, .table-premium tbody tr:hover, .suggestion-item:hover,
+    .dropdown-option:hover, .filter-option:hover,
+    .btn-premium-primary:hover, .btn-premium-secondary:hover {
+        transform: none !important;
+    }
+    .shimmer { animation: none !important; background: rgba(255,255,255,0.04) !important; }
+}
+
+/* ===== ADVISE PAGE TABLE COLUMN WIDTHS ===== */
+.table-premium th:nth-child(9), .table-premium td:nth-child(9) {
+    min-width: 155px; white-space: normal !important; word-break: break-word;
+}
+.table-premium th:nth-child(10), .table-premium td:nth-child(10) {
+    min-width: 145px; white-space: normal !important; word-break: break-word;
+}
+.table-premium th:nth-child(4), .table-premium td:nth-child(4) {
+    max-width: 95px; white-space: normal !important; word-break: break-word;
+}
+.table-premium th:nth-child(8), .table-premium td:nth-child(8) {
+    min-width: 80px; white-space: normal !important; word-break: break-word;
+}
+.time-text { white-space: normal !important; word-break: break-word; display: inline-block; }

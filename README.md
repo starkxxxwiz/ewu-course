@@ -6,11 +6,12 @@ Welcome to the **EWU Course Schedule Tool**! This web application, developed by 
 The main objective of this tool is to provide an accessible, fast, and highly responsive dashboard for checking the availability, timing, and classroom allocations of your **ewu course schedule**. It optimizes the advising process and reduces friction when students are planning their semesters, making it easy to check the **ewu faculty**, **ewu faculty list**, and the complete **ewu department faculty list**.
 
 ## ✨ Features
-- **Modern Dashboard (Main & V2)**: Choose between our classic experience and the enhanced V2 dashboard designed with a premium, focused UI.
+- **Modern Dashboard (Main & V2)**: Choose between our classic experience and the enhanced V2 dashboard designed with a premium Glassmorphism UI.
+- **Auto-Refresh System**: A robust, built-in auto-refresh feature allowing students to automatically poll for the latest course seat capacities without manually reloading the page. It includes a custom, configurable delay interval and state persistence.
 - **Find EWU Course Schedules & Faculty**: Rapidly search and filter courses by **ewu faculty**, seat availability, timings, and class codes. Look up specific professors easily.
 - **Dynamic Sorting**: Check available capacity for classes seamlessly.
-- **Mobile Responsive**: Fully usable across smartphones, tablets, and desktops.
-- **Export to PDF**: Easily export your planned courses directly into a clean, physical copy.
+- **Mobile & Low-End Device Optimized**: Highly responsive across smartphones, tablets, and desktops. Includes specific CSS hardware acceleration and animation throttling targeting low-end mobile devices to ensure a lag-free experience.
+- **Export to PDF**: Easily export your planned courses directly into a clean, physical copy. The PDF generator now features intelligent pagination, customized column widths for faculty names and schedules, and responsive row heights.
 - **Secure Sessions**: Directly hooks into standard login mechanisms to fetch private routines.
 
 ## 📖 Basic Usage Instructions
@@ -19,8 +20,9 @@ The main objective of this tool is to provide an accessible, fast, and highly re
 3. Use your standard student credentials (Student ID format: `YYYY-S-XX-XXX`) to authenticate.
 4. Once logged in, use the global search bar or dropdown filters to narrow down your desired **ewu course** or search through the **ewu faculty list**.
 5. Watch the dashboard update seamlessly. Select the **Available Only** toggle to only see classes with remaining seat capacity. 
-6. Choose the **Export PDF** action if you wish to save your plan locally.
-7. Don't forget to **Logout** when finished!
+6. (Optional) Toggle **Auto Refresh** and use the settings gear to specify a refresh interval (5-300 seconds).
+7. Choose the **Export PDF** action if you wish to save your plan locally.
+8. Don't forget to **Logout** when finished!
 
 ## ⚠️ Disclaimer
 **This website is created and maintained entirely for educational purposes.** 

@@ -225,7 +225,7 @@ function updateResultCount(count) {
 function populateCourseFilter() {
     const courseCodes = [...new Set(allCourses.map(c => c.CourseCode))].sort();
     const container = document.getElementById('courseFilterOptions');
-    
+
     if (!container) return;
 
     container.innerHTML = `
@@ -250,22 +250,22 @@ function selectCourseFilter(course, event) {
         event.preventDefault();
         event.stopPropagation();
     }
-    
+
     selectedCourseFilter = course;
-    
+
     const filterText = document.getElementById('courseFilterText');
     const dropdown = document.getElementById('courseFilterDropdown');
-    
+
     if (filterText) {
         filterText.textContent = course || 'All Courses';
     }
-    
+
     if (dropdown) {
         dropdown.classList.add('hidden');
     }
-    
+
     applyFilters();
-    
+
     // Show confirmation
     showToast(course ? `Filtered by: ${course}` : 'Showing all courses', 1500);
 }
@@ -368,7 +368,7 @@ function renderCourseTable() {
                     <span class="badge-section">${course.SectionName}</span>
                 </td>
                 <td>
-                    <span class="faculty-name" title="${course.ShortName}">${truncateText(course.ShortName, 30)}</span>
+                    <span class="faculty-name" title="${course.ShortName}">${course.ShortName}</span>
                 </td>
                 <td class="text-center">
                     <span class="text-gray-400 font-medium text-sm">${course.SeatCapacity}</span>
@@ -391,7 +391,7 @@ function renderCourseTable() {
                     <span class="time-text">${time || 'TBA'}</span>
                 </td>
                 <td>
-                    <span class="badge-room" title="${course.RoomName}">${truncateText(course.RoomName, 12)}</span>
+                    <span class="badge-room" title="${course.RoomName}" style="white-space:normal;overflow:visible;text-overflow:unset;max-width:none;">${course.RoomName}</span>
                 </td>
             </tr>
         `;
@@ -445,7 +445,7 @@ function initializeSearch() {
     // Keyboard navigation for suggestions
     searchInput.addEventListener('keydown', function (e) {
         if (!searchSuggestions) return;
-        
+
         const suggestions = searchSuggestions.querySelectorAll('.suggestion-item-premium');
 
         if (e.key === 'ArrowDown') {
@@ -523,7 +523,7 @@ function updateSuggestionHighlight(suggestions) {
 function showSearchSuggestions(query) {
     const searchSuggestions = document.getElementById('searchSuggestions');
     if (!searchSuggestions) return;
-    
+
     const queryLower = query.toLowerCase();
 
     // Intelligent matching with priority scoring
@@ -622,24 +622,24 @@ function selectSearchSuggestion(courseCode) {
     const searchInput = document.getElementById('searchInput');
     const searchSuggestions = document.getElementById('searchSuggestions');
     const searchClear = document.getElementById('searchClear');
-    
+
     if (searchInput) {
         searchInput.value = courseCode;
     }
-    
+
     currentSearch = courseCode.toLowerCase();
-    
+
     if (searchSuggestions) {
         searchSuggestions.classList.add('hidden');
     }
-    
+
     if (searchClear) {
         searchClear.classList.remove('hidden');
     }
-    
+
     suggestionIndex = -1;
     applyFilters();
-    
+
     // Show confirmation toast
     showToast(`Showing results for "${courseCode}"`, 1500);
 }
@@ -660,7 +660,7 @@ function initializeToggle() {
         checkbox.checked = !checkbox.checked;
         toggle.classList.toggle('active', checkbox.checked);
         applyFilters();
-        
+
         // Visual feedback
         showToast(checkbox.checked ? 'Showing available seats only' : 'Showing all courses', 1500);
     });
@@ -670,7 +670,7 @@ function initializeToggle() {
         toggle.classList.toggle('active', this.checked);
         applyFilters();
     });
-    
+
     // Initialize visual state
     if (checkbox.checked) {
         toggle.classList.add('active');
@@ -681,10 +681,10 @@ function initializeToggle() {
 function initializeCourseFilterDropdown() {
     const filterBtn = document.getElementById('courseFilterBtn');
     const dropdown = document.getElementById('courseFilterDropdown');
-    
+
     if (!filterBtn || !dropdown) return;
-    
-    filterBtn.addEventListener('click', function(e) {
+
+    filterBtn.addEventListener('click', function (e) {
         e.preventDefault();
         e.stopPropagation();
         dropdown.classList.toggle('hidden');
@@ -695,7 +695,7 @@ function initializeCourseFilterDropdown() {
 function initializeCourseFilterSearch() {
     const filterSearch = document.getElementById('courseFilterSearch');
     if (!filterSearch) return;
-    
+
     filterSearch.addEventListener('input', function (e) {
         const query = e.target.value.toLowerCase();
         const options = document.querySelectorAll('#courseFilterOptions .filter-option');
@@ -711,14 +711,14 @@ function initializeCourseFilterSearch() {
 document.addEventListener('click', function (e) {
     const dropdown = document.getElementById('courseFilterDropdown');
     const searchSuggestions = document.getElementById('searchSuggestions');
-    
+
     // Close course filter dropdown
     if (dropdown && !dropdown.classList.contains('hidden')) {
         if (!e.target.closest('#courseFilterBtn') && !e.target.closest('#courseFilterDropdown')) {
             dropdown.classList.add('hidden');
         }
     }
-    
+
     // Close search suggestions
     if (searchSuggestions && !searchSuggestions.classList.contains('hidden')) {
         if (!e.target.closest('#searchInput') && !e.target.closest('#searchSuggestions') && !e.target.closest('#searchClear')) {
@@ -790,13 +790,13 @@ function exportToPDF() {
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(20);
     doc.setTextColor(lightText[0], lightText[1], lightText[2]);
-    doc.text('EWU Course Schedule', margin, 18);
+    doc.text('EWU Updated Faculty List', margin, 18);
 
     // Subtitle
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(10);
     doc.setTextColor(grayText[0], grayText[1], grayText[2]);
-    doc.text('East West University Course List', margin, 26);
+    doc.text('Generated from recommended course', margin, 26);
 
     // User Info (right side)
     doc.setFont('helvetica', 'bold');
@@ -825,52 +825,50 @@ function exportToPDF() {
     doc.setTextColor(lightText[0], lightText[1], lightText[2]);
     doc.text(String(filteredCourses.length), pageWidth - margin - 30, 30);
 
-    // Prepare table data with proper text truncation (without counting column)
+    // Prepare table data without text truncation to allow wrapping
     const tableData = filteredCourses.map((course) => {
         const available = course.SeatCapacity - course.SeatTaken;
         const { day, time } = parseDayTime(course.TimeSlotName);
 
-        // Truncate long text to prevent overlap
-        const truncatedFaculty = truncateForPDF(course.ShortName, 22);  // Reduced for 40mm column
-        const truncatedRoom = truncateForPDF(course.RoomName, 14);
-        const truncatedDay = truncateForPDF(day, 14);
-        const truncatedTime = truncateForPDF(time, 16);
-
         return [
             course.CourseCode,
             course.SectionName,
-            truncatedFaculty,
+            course.ShortName,
             String(course.SeatCapacity),
             String(course.SeatTaken),
             String(available),
-            truncatedDay || 'TBA',
-            truncatedTime || 'TBA',
-            truncatedRoom
+            day || 'TBA',
+            time || 'TBA',
+            course.RoomName
         ];
     });
 
     // Calculate table width for centering
-    const totalTableWidth = 28 + 16 + 40 + 14 + 14 + 14 + 28 + 34 + 28; // Sum of all column widths = 216mm
+    const totalTableWidth = 30 + 16 + 26 + 18 + 14 + 18 + 38 + 60 + 46; // Sum = 266mm
     const tableMargin = (pageWidth - totalTableWidth) / 2; // Center the table
 
     // Add table with professional styling - CENTER ALIGNED
+    // First page: 12 rows (startY=46, bottom=20, rowHeight~10.5mm → 46+(12*10.5)=172 < 210-20=190 ✓)
+    // Subsequent pages: 15 rows (top=21mm, bottom=20, available=210-41=169 > 15*10.5=157.5 ✓)
     doc.autoTable({
-        head: [['Course', 'Sec', 'Faculty', 'Cap', 'Taken', 'Avail', 'Day', 'Time', 'Room']],
+        head: [['Course', 'Section', 'Faculty', 'Capacity', 'Taken', 'Available', 'Day', 'Time', 'Room']],
         body: tableData,
         startY: 46,
-        margin: { left: tableMargin, right: tableMargin },
+        margin: { top: 21, bottom: 20, left: tableMargin, right: tableMargin },
         tableWidth: totalTableWidth,
         theme: 'plain',
+        pageBreak: 'auto',
+        rowPageBreak: 'avoid',
         styles: {
             fontSize: 9,
-            cellPadding: { top: 5, right: 5, bottom: 5, left: 5 },
+            cellPadding: { top: 3, right: 3, bottom: 3, left: 3 },
             lineColor: [30, 30, 40],
             lineWidth: 0.1,
             textColor: [60, 60, 70],
             font: 'helvetica',
-            overflow: 'ellipsize',
+            overflow: 'linebreak', // Allow text wrapping
             cellWidth: 'wrap',
-            minCellHeight: 8,
+            minCellHeight: 10,
             halign: 'center',
             valign: 'middle'
         },
@@ -880,18 +878,18 @@ function exportToPDF() {
             fontStyle: 'bold',
             fontSize: 9,
             halign: 'center',
-            cellPadding: { top: 6, right: 5, bottom: 6, left: 5 }
+            cellPadding: { top: 4, right: 3, bottom: 4, left: 3 }
         },
         columnStyles: {
-            0: { cellWidth: 28, halign: 'center', fontStyle: 'bold', textColor: [90, 143, 216] },  // Course
-            1: { cellWidth: 16, halign: 'center' },  // Section
-            2: { cellWidth: 40, halign: 'left' },    // Faculty (reduced for balance)
-            3: { cellWidth: 14, halign: 'center' },  // Capacity
-            4: { cellWidth: 14, halign: 'center' },  // Taken
-            5: { cellWidth: 14, halign: 'center' },  // Available
-            6: { cellWidth: 28, halign: 'center' },  // Day
-            7: { cellWidth: 34, halign: 'center' },  // Time
-            8: { cellWidth: 28, halign: 'center' }   // Room
+            0: { cellWidth: 30, halign: 'center', fontStyle: 'bold', textColor: [90, 143, 216] },
+            1: { cellWidth: 16, halign: 'center' },
+            2: { cellWidth: 26, halign: 'left' },    // Faculty minimal width
+            3: { cellWidth: 18, halign: 'center' },
+            4: { cellWidth: 14, halign: 'center' },
+            5: { cellWidth: 18, halign: 'center' },
+            6: { cellWidth: 38, halign: 'center' },  // Day more space
+            7: { cellWidth: 60, halign: 'center' },  // Time more space
+            8: { cellWidth: 46, halign: 'center' }   // Room more space
         },
         alternateRowStyles: {
             fillColor: [248, 249, 252]
@@ -970,6 +968,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     initializeCourseFilterDropdown();
     initializeCourseFilterSearch();
     initializeSortSelect();
+    initAutoRefresh();
 
     // Check authentication first
     const isAuthenticated = await checkAuth();
@@ -984,9 +983,101 @@ document.addEventListener('DOMContentLoaded', async function () {
 function initializeSortSelect() {
     const sortSelect = document.getElementById('sortSelect');
     if (!sortSelect) return;
-    
+
     sortSelect.addEventListener('change', function (e) {
         currentSort = e.target.value;
         applyFilters();
     });
 }
+
+// ========================================
+// AUTO REFRESH SYSTEM
+// ========================================
+let autoRefreshInterval = null;
+let autoRefreshDelay = 30; // seconds
+
+function initAutoRefresh() {
+    const autoRefreshToggle = document.getElementById('autoRefreshToggle');
+    const autoRefreshCheckbox = document.getElementById('autoRefresh');
+    const settingsBtn = document.getElementById('auto-refresh-settings-btn');
+    const settingsMenu = document.getElementById('auto-refresh-menu');
+    const closeMenuBtn = document.getElementById('close-auto-refresh-menu');
+    const delayInput = document.getElementById('auto-refresh-delay-input');
+
+    if (autoRefreshToggle && autoRefreshCheckbox) {
+        autoRefreshToggle.addEventListener('click', function (e) {
+            e.preventDefault();
+            autoRefreshCheckbox.checked = !autoRefreshCheckbox.checked;
+            this.classList.toggle('active', autoRefreshCheckbox.checked);
+
+            if (autoRefreshCheckbox.checked) {
+                startAutoRefresh();
+                showToast(`Auto Refresh enabled (${autoRefreshDelay}s)`, 2000);
+            } else {
+                stopAutoRefresh();
+                showToast('Auto Refresh disabled', 2000);
+            }
+        });
+    }
+
+    if (settingsBtn && settingsMenu) {
+        settingsBtn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            settingsMenu.classList.toggle('hidden');
+        });
+
+        if (closeMenuBtn) {
+            closeMenuBtn.addEventListener('click', () => {
+                settingsMenu.classList.add('hidden');
+            });
+        }
+
+        document.addEventListener('click', function (e) {
+            if (!settingsMenu.contains(e.target) && !settingsBtn.contains(e.target)) {
+                settingsMenu.classList.add('hidden');
+            }
+        });
+
+        if (delayInput) {
+            // Load saved preference
+            const savedDelay = localStorage.getItem('ewu_auto_refresh_delay');
+            if (savedDelay) {
+                autoRefreshDelay = parseInt(savedDelay, 10);
+                delayInput.value = autoRefreshDelay;
+            }
+
+            // Live-update on input change
+            const applyDelay = () => {
+                let val = parseInt(delayInput.value, 10);
+                if (isNaN(val) || val < 5) val = 5;
+                if (val > 300) val = 300;
+                delayInput.value = val;
+                autoRefreshDelay = val;
+                localStorage.setItem('ewu_auto_refresh_delay', val.toString());
+                if (autoRefreshCheckbox && autoRefreshCheckbox.checked) {
+                    startAutoRefresh();
+                    showToast(`Interval updated to ${val}s`, 1500);
+                }
+            };
+            delayInput.addEventListener('input', applyDelay);
+            delayInput.addEventListener('change', applyDelay);
+        }
+    }
+}
+
+function startAutoRefresh() {
+    stopAutoRefresh();
+    autoRefreshInterval = setInterval(() => {
+        const refreshBtn = document.getElementById('refreshBtn');
+        if (refreshBtn) refreshBtn.click();
+    }, autoRefreshDelay * 1000);
+}
+
+function stopAutoRefresh() {
+    if (autoRefreshInterval) {
+        clearInterval(autoRefreshInterval);
+        autoRefreshInterval = null;
+    }
+}
+
+// initAutoRefresh is initialized inside the main DOMContentLoaded above

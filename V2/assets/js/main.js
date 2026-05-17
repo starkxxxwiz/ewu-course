@@ -264,7 +264,7 @@ function trimDepartmentPrefix(deptName) {
 function populateDepartments(departments) {
     const container = document.getElementById('department-checkboxes');
     const selectAllToggle = document.getElementById('select-all-depts');
-    
+
     if (!container) return;
 
     function updateDeptBadge() {
@@ -363,7 +363,7 @@ function handleFetchCourses() {
         name: cb.dataset.name
     }));
 
-    sessionStorage.setItem('selectedDepartmentId', selectedDepartments.map(d=>d.id).join(','));
+    sessionStorage.setItem('selectedDepartmentId', selectedDepartments.map(d => d.id).join(','));
     sessionStorage.setItem('selectedDepartmentName', selectedDepartments.length > 1 ? 'Multiple Departments' : selectedDepartments[0].name);
     sessionStorage.setItem('selectedSemesterId', semesterId);
     sessionStorage.setItem('selectedSemesterName', semesterName);
@@ -380,7 +380,7 @@ function handleFetchCourses() {
     allCourses = [];
     loadedDeptIds = new Set();
     currentPage = 1;
-    
+
     const tbody = document.getElementById('courses-table-body');
     if (tbody) tbody.innerHTML = '';
 
@@ -556,7 +556,7 @@ async function loadCourses() {
     }
 
     const deptIds = selectedDeptStr.split(',');
-    
+
     // Attempt to reconstruct department info for fetching queue
     const departments = deptIds.map(id => {
         // Find name if possible
@@ -573,7 +573,7 @@ async function loadCourses() {
     currentPage = 1;
     const tbody = document.getElementById('courses-table-body');
     if (tbody) tbody.innerHTML = '';
-    
+
     hideMessage('error-message');
 
     // Start sequential fetch
@@ -589,16 +589,16 @@ async function fetchDepartmentsQueue(departments, semesterId) {
     const fetchBtn = document.getElementById('fetch-courses-btn');
     const applyBtn = document.getElementById('apply-dept-changes-btn');
     const spinner = document.getElementById('loading-spinner');
-    
+
     if (fetchBtn) fetchBtn.disabled = true;
     if (applyBtn) applyBtn.disabled = true;
     if (spinner) spinner.classList.remove('hidden');
 
     for (let i = 0; i < departments.length; i++) {
         const dept = departments[i];
-        
+
         if (loadedDeptIds.has(String(dept.id))) continue;
-        
+
         let statusRow = document.getElementById(statusRowId);
         if (!statusRow && tbody) {
             statusRow = document.createElement('tr');
@@ -611,7 +611,7 @@ async function fetchDepartmentsQueue(departments, semesterId) {
             statusRow.appendChild(statusCell);
             tbody.appendChild(statusRow);
         }
-        
+
         const statusCell = document.getElementById('fetch-status-cell');
         if (statusCell) {
             statusCell.innerHTML = `
@@ -622,7 +622,7 @@ async function fetchDepartmentsQueue(departments, semesterId) {
 
         let success = false;
         let retries = 0;
-        
+
         while (!success && retries < 3) {
             try {
                 const response = await fetchWithRetry(`${API_BASE_URL}/courses`, {
@@ -637,22 +637,22 @@ async function fetchDepartmentsQueue(departments, semesterId) {
                         semesterId: semesterId
                     })
                 }, `Fetching ${dept.name}`);
-                
+
                 const data = response.data;
                 if (data.status === 'success') {
                     const parsedCourses = (data.courses || []).map(course => {
                         const { days, time } = parseSchedule(course.TimeSlotName);
                         return { ...course, Days: days, Time: time, _deptId: String(dept.id) };
                     });
-                    
+
                     allCourses = [...allCourses, ...parsedCourses];
                     loadedDeptIds.add(String(dept.id));
                     updateLoadedDeptBadge();
-                    
+
                     if (statusRow && statusRow.parentNode) {
                         statusRow.parentNode.removeChild(statusRow);
                     }
-                    
+
                     currentPage = 1;
                     applyFiltersAndDisplay();
                     success = true;
@@ -671,14 +671,14 @@ async function fetchDepartmentsQueue(departments, semesterId) {
             }
         }
     }
-    
+
     const finalStatusRow = document.getElementById(statusRowId);
     if (finalStatusRow && finalStatusRow.parentNode) finalStatusRow.parentNode.removeChild(finalStatusRow);
-    
+
     if (spinner) spinner.classList.add('hidden');
     if (fetchBtn) fetchBtn.disabled = false;
     if (applyBtn) applyBtn.disabled = false;
-    
+
     if (allCourses.length === 0) {
         if (tbody) {
             tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 3rem; color: var(--text-secondary);">No courses found.</td></tr>`;
@@ -761,9 +761,14 @@ function displayCourses(courses) {
     const fragment = document.createDocumentFragment();
     courses.forEach((course, index) => {
         const row = document.createElement('tr');
-        row.style.animation = `fadeIn 0.25s ease forwards`;
-        row.style.animationDelay = `${Math.min(index * 0.015, 0.4)}s`;
-        row.style.opacity = '0';
+        // Limit animation stagger to first 15 rows for low-end devices
+        if (index < 15) {
+            row.style.animation = `fadeIn 0.2s ease forwards`;
+            row.style.animationDelay = `${Math.min(index * 0.01, 0.15)}s`;
+            row.style.opacity = '0';
+        } else {
+            row.style.opacity = '1';
+        }
 
         const seatsDisplay = `${course.SeatTaken}/${course.SeatCapacity}`;
         const seatsLeft = course.SeatsLeft;
@@ -775,12 +780,12 @@ function displayCourses(courses) {
         row.innerHTML = `
             <td><strong style="color: var(--accent-primary);">${cleanCode}</strong></td>
             <td><span style="background: rgba(108, 99, 255, 0.1); padding: 4px 8px; border-radius: 6px;">${course.Section}</span></td>
-            <td><span style="font-weight: 500;">${course.ShortName}</span></td>
+            <td><span style="font-weight: 500; word-break: break-word; max-width: 100px; display: inline-block;">${course.ShortName}</span></td>
             <td><span style="color: var(--text-secondary);">${seatsDisplay}</span></td>
             <td style="color: ${seatsColor}; font-weight: bold; font-size: 1.1em;">${seatsLeft}</td>
-            <td><span style="color: #a855f7;">${course.Days}</span></td>
-            <td><span style="font-family: monospace; color: #06b6d4;">${course.Time}</span></td>
-            <td><span style="background: rgba(16, 185, 129, 0.1); color: #10b981; padding: 4px 8px; border-radius: 6px;">${course.RoomCode}</span></td>
+            <td><span style="color: #a855f7; word-break: break-word;">${course.Days}</span></td>
+            <td><span style="font-family: monospace; color: #06b6d4; white-space: normal; word-break: break-word;">${course.Time}</span></td>
+            <td><span style="background: rgba(16, 185, 129, 0.1); color: #10b981; padding: 4px 8px; border-radius: 6px; word-break: break-word; display: inline-block;">${course.RoomCode}</span></td>
         `;
         fragment.appendChild(row);
     });
@@ -1005,7 +1010,7 @@ function handleDynamicDeptChange() {
     if (toFetch.length > 0) {
         fetchDepartmentsQueue(toFetch, semesterId);
     }
-    
+
     // Close the details panel
     const panel = document.getElementById('dept-manager-panel');
     if (panel) panel.open = false;
@@ -1013,14 +1018,19 @@ function handleDynamicDeptChange() {
 
 function refreshCourses() {
     const refreshBtn = document.getElementById('refresh-btn');
+    const floatingRefreshBtn = document.getElementById('floating-refresh');
     if (refreshBtn) refreshBtn.classList.add('refreshing');
+    if (floatingRefreshBtn) floatingRefreshBtn.classList.add('refreshing');
 
     showSuccess('Refreshing courses...', 'success-message');
     setTimeout(() => hideMessage('success-message'), 1000);
 
     loadCourses();
 
-    setTimeout(() => { if (refreshBtn) refreshBtn.classList.remove('refreshing'); }, 2500);
+    setTimeout(() => {
+        if (refreshBtn) refreshBtn.classList.remove('refreshing');
+        if (floatingRefreshBtn) floatingRefreshBtn.classList.remove('refreshing');
+    }, 2500);
 }
 
 /**
@@ -1074,7 +1084,7 @@ function exportToPDF() {
 
         // Add title
         doc.setFontSize(18);
-        doc.text('EWU Course Listings V2', 14, 15);
+        doc.text('EWU Updated Faculty List', 14, 15);
 
         // Add filter info
         doc.setFontSize(11);
@@ -1116,7 +1126,7 @@ function exportToPDF() {
         // Generate table
         doc.autoTable({
             startY: yPos + 5,
-            head: [['Code', 'Sec', 'Course Name', 'Seats(T/C)', 'Left', 'Days', 'Time', 'Room']],
+            head: [['Course', 'Section', 'Faculty', 'Seats(T/C)', 'Left', 'Days', 'Time', 'Room']],
             body: tableData,
             theme: 'striped',
             headStyles: {
@@ -1126,20 +1136,27 @@ function exportToPDF() {
                 fontStyle: 'bold'
             },
             bodyStyles: {
-                fontSize: 8
+                fontSize: 8,
+                overflow: 'linebreak',
+                cellWidth: 'wrap'
             },
             alternateRowStyles: {
                 fillColor: [240, 240, 245]
             },
             columnStyles: {
-                2: { cellWidth: 'auto' },
-                5: { cellWidth: 'auto' },
-                6: { cellWidth: 'auto' }
+                0: { cellWidth: 28 },          // Course code
+                1: { cellWidth: 14 },          // Section
+                2: { cellWidth: 24, halign: 'left' }, // Faculty - minimal
+                3: { cellWidth: 22 },          // Seats T/C
+                4: { cellWidth: 14 },          // Left
+                5: { cellWidth: 55, halign: 'left' }, // Days - wide enough for SUNDAY, TUESDAY
+                6: { cellWidth: 42 },          // Time
+                7: { cellWidth: 40 }           // Room
             }
         });
 
         // Generate filename
-        const fileName = `EWU_Courses_V2_${deptName.replace(/\s+/g, '_')}_${semName.replace(/\s+/g, '_')}.pdf`;
+        const fileName = `EWU_Courses_${deptName.replace(/\s+/g, '_')}_${semName.replace(/\s+/g, '_')}.pdf`;
 
         // Save PDF
         doc.save(fileName);
@@ -1413,5 +1430,92 @@ document.addEventListener('DOMContentLoaded', function () {
         // Export PDF button
         const exportBtn = document.getElementById('export-pdf-btn');
         if (exportBtn) exportBtn.addEventListener('click', exportToPDF);
+
+        // Initialize auto-refresh for V2
+        initAutoRefreshV2();
     }
 });
+
+// ===== AUTO REFRESH SYSTEM (V2) =====
+let v2AutoRefreshInterval = null;
+let v2AutoRefreshDelay = 30; // seconds
+
+function initAutoRefreshV2() {
+    const autoRefreshToggle = document.getElementById('auto-refresh-toggle');
+    const settingsBtn = document.getElementById('auto-refresh-settings-btn');
+    const settingsMenu = document.getElementById('auto-refresh-menu');
+    const closeMenuBtn = document.getElementById('close-auto-refresh-menu');
+    const delayInput = document.getElementById('auto-refresh-delay-input');
+
+    if (autoRefreshToggle) {
+        autoRefreshToggle.addEventListener('change', function () {
+            if (this.checked) {
+                startV2AutoRefresh();
+                showSuccess(`Auto Refresh enabled (${v2AutoRefreshDelay}s)`, 'success-message');
+                setTimeout(() => hideMessage('success-message'), 2000);
+            } else {
+                stopV2AutoRefresh();
+                showSuccess('Auto Refresh disabled', 'success-message');
+                setTimeout(() => hideMessage('success-message'), 2000);
+            }
+        });
+    }
+
+    if (settingsBtn && settingsMenu) {
+        settingsBtn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            settingsMenu.classList.toggle('hidden');
+        });
+
+        if (closeMenuBtn) {
+            closeMenuBtn.addEventListener('click', () => {
+                settingsMenu.classList.add('hidden');
+            });
+        }
+
+        document.addEventListener('click', function (e) {
+            if (!settingsMenu.contains(e.target) && !settingsBtn.contains(e.target)) {
+                settingsMenu.classList.add('hidden');
+            }
+        });
+
+        if (delayInput) {
+            // Load saved preference
+            const savedDelay = localStorage.getItem('ewu_v2_auto_refresh_delay');
+            if (savedDelay) {
+                v2AutoRefreshDelay = parseInt(savedDelay, 10);
+                delayInput.value = v2AutoRefreshDelay;
+            }
+
+            const applyDelay = () => {
+                let val = parseInt(delayInput.value, 10);
+                if (isNaN(val) || val < 5) val = 5;
+                if (val > 300) val = 300;
+                delayInput.value = val;
+                v2AutoRefreshDelay = val;
+                localStorage.setItem('ewu_v2_auto_refresh_delay', val.toString());
+                if (autoRefreshToggle && autoRefreshToggle.checked) {
+                    startV2AutoRefresh();
+                    showSuccess(`Interval updated to ${val}s`, 'success-message');
+                    setTimeout(() => hideMessage('success-message'), 1500);
+                }
+            };
+            delayInput.addEventListener('input', applyDelay);
+            delayInput.addEventListener('change', applyDelay);
+        }
+    }
+}
+
+function startV2AutoRefresh() {
+    stopV2AutoRefresh();
+    v2AutoRefreshInterval = setInterval(() => {
+        refreshCourses();
+    }, v2AutoRefreshDelay * 1000);
+}
+
+function stopV2AutoRefresh() {
+    if (v2AutoRefreshInterval) {
+        clearInterval(v2AutoRefreshInterval);
+        v2AutoRefreshInterval = null;
+    }
+}

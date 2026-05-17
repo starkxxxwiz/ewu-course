@@ -867,7 +867,6 @@ function exportToPDF() {
             textColor: [60, 60, 70],
             font: 'helvetica',
             overflow: 'linebreak', // Allow text wrapping
-            cellWidth: 'wrap',
             minCellHeight: 10,
             halign: 'center',
             valign: 'middle'
@@ -956,8 +955,9 @@ function exportToPDF() {
 function truncateForPDF(text, maxLength) {
     if (!text) return '';
     text = String(text).trim();
-    if (text.length <= maxLength) return text;
-    return text.substring(0, maxLength - 2) + '..';
+    if (!maxLength || text.length <= maxLength) return text;
+    // Just return the text and let jsPDF autoTable handle wrapping instead of dot truncation
+    return text;
 }
 
 // Initialize on page load
@@ -1004,13 +1004,13 @@ function initAutoRefresh() {
     const closeMenuBtn = document.getElementById('close-auto-refresh-menu');
     const delayInput = document.getElementById('auto-refresh-delay-input');
 
-    if (autoRefreshToggle && autoRefreshCheckbox) {
-        autoRefreshToggle.addEventListener('click', function (e) {
-            e.preventDefault();
-            autoRefreshCheckbox.checked = !autoRefreshCheckbox.checked;
-            this.classList.toggle('active', autoRefreshCheckbox.checked);
+    if (autoRefreshCheckbox) {
+        autoRefreshCheckbox.addEventListener('change', function () {
+            if (autoRefreshToggle) {
+                autoRefreshToggle.classList.toggle('active', this.checked);
+            }
 
-            if (autoRefreshCheckbox.checked) {
+            if (this.checked) {
                 startAutoRefresh();
                 showToast(`Auto Refresh enabled (${autoRefreshDelay}s)`, 2000);
             } else {

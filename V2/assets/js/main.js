@@ -1126,7 +1126,7 @@ function exportToPDF() {
         // Generate table
         doc.autoTable({
             startY: yPos + 5,
-            head: [['Course', 'Section', 'Faculty', 'Seats(T/C)', 'Left', 'Days', 'Time', 'Room']],
+            head: [['Code', 'Sec', 'Faculty', 'Seats(T/C)', 'Left', 'Days', 'Time', 'Room']],
             body: tableData,
             theme: 'striped',
             headStyles: {
@@ -1137,8 +1137,7 @@ function exportToPDF() {
             },
             bodyStyles: {
                 fontSize: 8,
-                overflow: 'linebreak',
-                cellWidth: 'wrap'
+                overflow: 'linebreak'
             },
             alternateRowStyles: {
                 fillColor: [240, 240, 245]

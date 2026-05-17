@@ -363,11 +363,11 @@ nav a.logout-link:hover {
 @keyframes fadeInScale {
     from {
         opacity: 0;
-        transform: scale(0.95) translateY(20px);
+        transform: translateY(10px);
     }
     to {
         opacity: 1;
-        transform: scale(1) translateY(0);
+        transform: translateY(0);
     }
 }
 
@@ -888,13 +888,13 @@ nav a.logout-link:hover {
 }
 
 .courses-section {
-    animation: fadeIn 0.5s ease;
+    animation: fadeIn 0.2s ease;
 }
 
 @keyframes fadeIn {
     from {
         opacity: 0;
-        transform: translateY(15px);
+        transform: translateY(8px);
     }
     to {
         opacity: 1;
@@ -2724,4 +2724,46 @@ details[open] .details-chevron {
     .floating-refresh { right: 1.5rem; }
     .scroll-to-top { right: 4rem; }
     .floating-refresh:hover { transform: scale(1.05); }
+}
+
+/* Auto-refresh settings button responsive */
+#auto-refresh-settings-container {
+    bottom: 6.5rem;
+    right: 2rem;
+}
+
+#auto-refresh-settings-btn {
+    width: 38px;
+    height: 38px;
+}
+
+#auto-refresh-settings-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+@media (max-width: 640px) {
+    #auto-refresh-settings-container {
+        bottom: 5rem;
+        right: 1rem;
+    }
+    #auto-refresh-settings-btn {
+        width: 34px;
+        height: 34px;
+    }
+    #auto-refresh-settings-btn svg {
+        width: 14px;
+        height: 14px;
+    }
+}
+
+@media (max-width: 480px) {
+    #auto-refresh-settings-container {
+        bottom: 4.5rem;
+        right: 0.75rem;
+    }
+    #auto-refresh-settings-btn {
+        width: 32px;
+        height: 32px;
+    }
 }

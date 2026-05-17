@@ -692,6 +692,7 @@ async function fetchDepartmentsQueue(departments, semesterId) {
 let lastFilteredCourses = [];
 
 function applyFiltersAndDisplay() {
+    const currentScrollY = window.scrollY;
     let filteredCourses = [...allCourses];
 
     const availableOnlyToggle = document.getElementById('available-only-toggle');
@@ -735,6 +736,9 @@ function applyFiltersAndDisplay() {
 
     const pageInfo = document.getElementById('page-info');
     if (pageInfo) pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
+    
+    // Restore scroll position silently to prevent jumping
+    window.scrollTo(0, currentScrollY);
 }
 
 function sortCourses(courses, sortBy) {
@@ -758,17 +762,17 @@ function displayCourses(courses) {
         return;
     }
 
-    const fragment = document.createDocumentFragment();
-    courses.forEach((course, index) => {
-        const row = document.createElement('tr');
-        // Limit animation stagger to first 15 rows for low-end devices
-        if (index < 15) {
-            row.style.animation = `fadeIn 0.2s ease forwards`;
-            row.style.animationDelay = `${Math.min(index * 0.01, 0.15)}s`;
-            row.style.opacity = '0';
-        } else {
-            row.style.opacity = '1';
-        }
+const fragment = document.createDocumentFragment();
+        courses.forEach((course, index) => {
+            const row = document.createElement('tr');
+            // Reduced animation for smooth scroll - only first 5 rows with minimal delay
+            if (index < 5) {
+                row.style.animation = `fadeIn 0.1s ease forwards`;
+                row.style.animationDelay = `${index * 0.02}s`;
+                row.style.opacity = '0';
+            } else {
+                row.style.opacity = '1';
+            }
 
         const seatsDisplay = `${course.SeatTaken}/${course.SeatCapacity}`;
         const seatsLeft = course.SeatsLeft;
@@ -900,12 +904,12 @@ function showSearchSuggestions() {
     // Convert to array and limit to 5
     const matches = Array.from(uniqueCourses.values()).slice(0, 5);
 
-    // Display suggestions with staggered animations
+    // Display suggestions with minimal animations for smooth performance
     if (matches.length > 0) {
         suggestionsEl.innerHTML = matches
             .map((course, index) => {
                 return `
-                    <div class="suggestion-item" data-tag="${course.code}" onclick="addSearchTag('${course.code}')" style="animation: fadeIn 0.3s ease forwards; animation-delay: ${index * 0.05}s; opacity: 0; cursor: pointer; padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.3s;">
+                    <div class="suggestion-item" data-tag="${course.code}" onclick="addSearchTag('${course.code}')" style="animation: fadeIn 0.15s ease forwards; opacity: 0; cursor: pointer; padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.15s;">
                         <strong style="color: var(--accent-primary);">${course.code}</strong> - <span style="font-size: 0.9em; color: var(--text-secondary);">${course.name}</span>
                     </div>
                 `;
@@ -914,7 +918,7 @@ function showSearchSuggestions() {
         suggestionsEl.classList.remove('hidden');
     } else {
         suggestionsEl.innerHTML = `
-            <div style="padding: 15px; text-align: center; color: var(--text-secondary); opacity: 0.7; animation: fadeIn 0.3s ease forwards;">
+            <div style="padding: 15px; text-align: center; color: var(--text-secondary); opacity: 0.7;">
                 No matches found
             </div>
         `;
@@ -1022,15 +1026,48 @@ function refreshCourses() {
     if (refreshBtn) refreshBtn.classList.add('refreshing');
     if (floatingRefreshBtn) floatingRefreshBtn.classList.add('refreshing');
 
-    showSuccess('Refreshing courses...', 'success-message');
-    setTimeout(() => hideMessage('success-message'), 1000);
+    // Silent background refresh
+    const selectedDeptStr = sessionStorage.getItem('selectedDepartmentId');
+    const selectedSemId = sessionStorage.getItem('selectedSemesterId');
 
-    loadCourses();
+    if (selectedDeptStr && selectedSemId) {
+        const deptIds = selectedDeptStr.split(',');
+        const departments = deptIds.map(id => {
+            const option = availableDepartments.find(d => d.AcademicDepartmentId === id);
+            return {
+                id: id,
+                name: option ? trimDepartmentPrefix(option.AcademicDepartmentName) : `Dept ${id}`
+            };
+        });
 
-    setTimeout(() => {
+        // Store old courses to prevent clearing UI during fetch
+        let newCourses = [];
+        let completedFetches = 0;
+
+        departments.forEach(dept => {
+            fetchWithRetry(`${API_BASE_URL}/api/courses?semester=${selectedSemId}&department=${dept.id}`, {
+                credentials: 'include'
+            }, `Fetching ${dept.name}`).then(result => {
+                if (result && result.data && Array.isArray(result.data)) {
+                    newCourses = newCourses.concat(result.data);
+                }
+            }).catch(e => console.error(e)).finally(() => {
+                completedFetches++;
+                if (completedFetches === departments.length) {
+                    // All fetched, update UI seamlessly
+                    allCourses = newCourses;
+                    // Maintain current page and apply filters
+                    applyFiltersAndDisplay();
+                    
+                    if (refreshBtn) refreshBtn.classList.remove('refreshing');
+                    if (floatingRefreshBtn) floatingRefreshBtn.classList.remove('refreshing');
+                }
+            });
+        });
+    } else {
         if (refreshBtn) refreshBtn.classList.remove('refreshing');
         if (floatingRefreshBtn) floatingRefreshBtn.classList.remove('refreshing');
-    }, 2500);
+    }
 }
 
 /**
@@ -1080,7 +1117,21 @@ function exportToPDF() {
         let deptName = sessionStorage.getItem('selectedDepartmentName') || 'Multiple';
         const semName = sessionStorage.getItem('selectedSemesterName') || 'Unknown';
 
-        deptName = trimDepartmentPrefix(deptName);
+        // Use actual successfully loaded department names
+        if (loadedDeptIds && loadedDeptIds.size > 0) {
+            const loadedDeptNames = [];
+            loadedDeptIds.forEach(deptId => {
+                const dept = availableDepartments.find(d => String(d.AcademicDepartmentId) === String(deptId));
+                if (dept) {
+                    loadedDeptNames.push(trimDepartmentPrefix(dept.AcademicDepartmentName));
+                }
+            });
+            if (loadedDeptNames.length > 0) {
+                deptName = loadedDeptNames.join(', ');
+            }
+        } else {
+            deptName = trimDepartmentPrefix(deptName);
+        }
 
         // Add title
         doc.setFontSize(18);
@@ -1508,7 +1559,11 @@ function initAutoRefreshV2() {
 function startV2AutoRefresh() {
     stopV2AutoRefresh();
     v2AutoRefreshInterval = setInterval(() => {
+        const currentScrollY = window.pageYOffset;
         refreshCourses();
+        setTimeout(() => {
+            window.scrollTo(0, currentScrollY);
+        }, 100);
     }, v2AutoRefreshDelay * 1000);
 }
 

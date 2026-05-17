@@ -157,7 +157,7 @@ async function loadCourses(maintainScroll = false, useRetry = false) {
                 applyFilters();
 
                 if (maintainScroll) {
-                    setTimeout(() => window.scrollTo(0, scrollPosition), 50);
+                    window.scrollTo(0, scrollPosition);
                 }
             }
         } catch (error) {
@@ -176,7 +176,7 @@ async function loadCourses(maintainScroll = false, useRetry = false) {
                     applyFilters();
 
                     if (maintainScroll) {
-                        setTimeout(() => window.scrollTo(0, scrollPosition), 50);
+                        window.scrollTo(0, scrollPosition);
                     }
 
                     showToast('Courses refreshed successfully', 2000);
@@ -270,8 +270,8 @@ function selectCourseFilter(course, event) {
     showToast(course ? `Filtered by: ${course}` : 'Showing all courses', 1500);
 }
 
-// Apply all filters and sorting
 function applyFilters() {
+    const currentScrollY = window.scrollY;
     let courses = [...allCourses];
 
     // Apply search filter
@@ -308,6 +308,7 @@ function applyFilters() {
     filteredCourses = courses;
     updateResultCount(courses.length);
     renderCourseTable();
+    window.scrollTo(0, currentScrollY);
 }
 
 // Get availability status class and color
@@ -881,11 +882,11 @@ function exportToPDF() {
         },
         columnStyles: {
             0: { cellWidth: 30, halign: 'center', fontStyle: 'bold', textColor: [90, 143, 216] },
-            1: { cellWidth: 16, halign: 'center' },
-            2: { cellWidth: 26, halign: 'left' },    // Faculty minimal width
-            3: { cellWidth: 18, halign: 'center' },
-            4: { cellWidth: 14, halign: 'center' },
-            5: { cellWidth: 18, halign: 'center' },
+            1: { cellWidth: 20, halign: 'center' },   // Section - increased from 16
+            2: { cellWidth: 26, halign: 'left' },     // Faculty minimal width
+            3: { cellWidth: 22, halign: 'center' },  // Capacity - increased from 18
+            4: { cellWidth: 18, halign: 'center' },  // Taken - increased from 14
+            5: { cellWidth: 22, halign: 'center' },  // Available - increased from 18
             6: { cellWidth: 38, halign: 'center' },  // Day more space
             7: { cellWidth: 60, halign: 'center' },  // Time more space
             8: { cellWidth: 46, halign: 'center' }   // Room more space
@@ -1068,8 +1069,15 @@ function initAutoRefresh() {
 function startAutoRefresh() {
     stopAutoRefresh();
     autoRefreshInterval = setInterval(() => {
+        const currentScrollY = window.pageYOffset;
         const refreshBtn = document.getElementById('refreshBtn');
-        if (refreshBtn) refreshBtn.click();
+        if (refreshBtn) {
+            refreshBtn.classList.add('refreshing');
+            loadCourses(true, true).then(() => {
+                window.scrollTo(0, currentScrollY);
+                refreshBtn.classList.remove('refreshing');
+            });
+        }
     }, autoRefreshDelay * 1000);
 }
 

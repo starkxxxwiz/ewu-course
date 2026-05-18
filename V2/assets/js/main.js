@@ -736,7 +736,7 @@ function applyFiltersAndDisplay() {
 
     const pageInfo = document.getElementById('page-info');
     if (pageInfo) pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
-    
+
     // Restore scroll position silently to prevent jumping
     window.scrollTo(0, currentScrollY);
 }
@@ -762,17 +762,17 @@ function displayCourses(courses) {
         return;
     }
 
-const fragment = document.createDocumentFragment();
-        courses.forEach((course, index) => {
-            const row = document.createElement('tr');
-            // Reduced animation for smooth scroll - only first 5 rows with minimal delay
-            if (index < 5) {
-                row.style.animation = `fadeIn 0.1s ease forwards`;
-                row.style.animationDelay = `${index * 0.02}s`;
-                row.style.opacity = '0';
-            } else {
-                row.style.opacity = '1';
-            }
+    const fragment = document.createDocumentFragment();
+    courses.forEach((course, index) => {
+        const row = document.createElement('tr');
+        // Reduced animation for smooth scroll - only first 5 rows with minimal delay
+        if (index < 5) {
+            row.style.animation = `fadeIn 0.1s ease forwards`;
+            row.style.animationDelay = `${index * 0.02}s`;
+            row.style.opacity = '0';
+        } else {
+            row.style.opacity = '1';
+        }
 
         const seatsDisplay = `${course.SeatTaken}/${course.SeatCapacity}`;
         const seatsLeft = course.SeatsLeft;
@@ -1150,18 +1150,22 @@ function exportToPDF() {
 
         // Department short name mapping
         const deptShortNames = {
-            'MBA': 'MBA',
+            'MBA and EMBA Program': 'MBA',
             'BA': 'BA',
-            'Civil': 'Civil',
+            'Civil Engineering': 'Civil',
             'CSE': 'CSE',
             'ECE': 'ECE',
-            'Economics': 'Economics',
+            'Economics': 'ECO',
             'EEE': 'EEE',
             'English': 'English',
-            'Information Studies': 'Information Studies',
+            'Information Studies': 'IS',
             'Law': 'Law',
-            'MPS': 'MPS',
-            'Pharmacy': 'Pharmacy'
+            'Social Relations': 'SR',
+            'Mathematical & Physical Sciences': 'MPS',
+            'Genetic Engineering and Biotechnology': 'GEB',
+            'Pharmacy': 'Pharmacy',
+            'Sociology': 'SOC',
+
         };
 
         function getShortDeptName(deptName) {
@@ -1206,63 +1210,72 @@ function exportToPDF() {
         const lightText = [255, 255, 255];
         const grayText = [150, 150, 160];
 
+        // Compact header - reduced to 28mm for more table space
+        const headerHeight = 28;
+
         // Header Background
         doc.setFillColor(darkBg[0], darkBg[1], darkBg[2]);
-        doc.rect(0, 0, pageWidth, 42, 'F');
+        doc.rect(0, 0, pageWidth, headerHeight, 'F');
 
         // Gradient line
         doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-        doc.rect(0, 42, pageWidth, 1.5, 'F');
+        doc.rect(0, headerHeight, pageWidth, 1, 'F');
 
-        // Title
+        // Title - smaller font
         doc.setFont('helvetica', 'bold');
-        doc.setFontSize(20);
+        doc.setFontSize(14);
         doc.setTextColor(lightText[0], lightText[1], lightText[2]);
-        doc.text('EWU Updated Faculty List', margin, 18);
+        doc.text('Updated Faculty List', margin, 12);
 
-        // Subtitle
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(10);
-        doc.setTextColor(grayText[0], grayText[1], grayText[2]);
-        doc.text('Generated from EWU Course Filter', margin, 26);
-
-        // Department & Semester info (left side)
+        // Department & Semester info (left side) - compact
         doc.setFont('helvetica', 'bold');
-        doc.setFontSize(9);
+        doc.setFontSize(8);
         doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-        doc.text('Department:', margin, 35);
+        doc.text('Dept:', margin, 20);
         doc.setTextColor(lightText[0], lightText[1], lightText[2]);
         doc.setFont('helvetica', 'normal');
-        doc.text(deptName, margin + 30, 35);
+        doc.text(deptName, margin + 12, 20);
 
-        // Info on right side
+        // Info on right side - compact
         doc.setFont('helvetica', 'bold');
-        doc.setFontSize(9);
+        doc.setFontSize(8);
         doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-        doc.text('Semester:', pageWidth - margin - 70, 16);
+        doc.text('Sem:', pageWidth - margin - 55, 12);
         doc.setTextColor(lightText[0], lightText[1], lightText[2]);
         doc.setFont('helvetica', 'normal');
-        doc.text(semName, pageWidth - margin - 40, 16);
+        doc.text(semName, pageWidth - margin - 35, 12);
 
         doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-        doc.text('Courses:', pageWidth - margin - 70, 24);
+        doc.text('Courses:', pageWidth - margin - 55, 18);
         doc.setTextColor(lightText[0], lightText[1], lightText[2]);
-        doc.text(`${coursesToExport.length} of ${allCourses.length}`, pageWidth - margin - 40, 24);
+        doc.text(`${coursesToExport.length}`, pageWidth - margin - 35, 18);
 
-        const date = new Date();
-        const dateStr = date.toLocaleString('en-US', {
+        // Format date/time in BD timezone with custom time format (2-24 for 2:24)
+        const now = new Date();
+        const bdOptions = {
             timeZone: 'Asia/Dhaka',
-            month: 'short',
-            day: 'numeric',
             year: 'numeric',
+            month: '2-digit',
+            day: '2-digit'
+        };
+        const bdDateParts = now.toLocaleString('en-US', bdOptions).split(', ')[0].split('/');
+        const bdDate = `${bdDateParts[2]}-${bdDateParts[0]}-${bdDateParts[1]}`;
+
+        const bdTimeOptions = {
+            timeZone: 'Asia/Dhaka',
             hour: '2-digit',
             minute: '2-digit',
-            hour12: true
-        });
+            hour12: false
+        };
+        const bdTimeStr = now.toLocaleString('en-US', bdTimeOptions);
+        const [bdHour, bdMinute] = bdTimeStr.split(':');
+        const bdTimeFormatted = `${parseInt(bdHour)}-${bdMinute}`;
+
+        const filenameDateTime = `${semName.replace(/\s+/g, '')}.${bdDate}.${bdTimeFormatted}`;
         doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-        doc.text('Generated:', pageWidth - margin - 70, 32);
+        doc.text('Time:', pageWidth - margin - 55, 24);
         doc.setTextColor(lightText[0], lightText[1], lightText[2]);
-        doc.text(dateStr, pageWidth - margin - 40, 32);
+        doc.text(bdTimeFormatted, pageWidth - margin - 35, 24);
 
         // Calculate column widths and table centering
         const columns = [
@@ -1295,10 +1308,10 @@ function exportToPDF() {
 
         // Generate table with centering and color coding
         doc.autoTable({
-            startY: 50,
+            startY: 30,
             head: [columns.map(c => c.header)],
             body: tableData,
-            margin: { top: 10, bottom: 20, left: tableMargin, right: tableMargin },
+            margin: { top: 5, bottom: 20, left: tableMargin, right: tableMargin },
             tableWidth: totalTableWidth,
             theme: 'striped',
             pageBreak: 'auto',
@@ -1326,7 +1339,7 @@ function exportToPDF() {
             columnStyles: {
                 0: { cellWidth: 28, halign: 'center', fontStyle: 'bold', textColor: [108, 99, 255] },
                 1: { cellWidth: 14, halign: 'center' },
-                2: { cellWidth: 26, halign: 'left' },
+                2: { cellWidth: 26, halign: 'center' },
                 3: { cellWidth: 22, halign: 'center' },
                 4: { cellWidth: 14, halign: 'center' },
                 5: { cellWidth: 55, halign: 'center' },
@@ -1380,15 +1393,10 @@ function exportToPDF() {
             doc.text(`Page ${i} of ${pageCount}`, pageWidth - margin, pageHeight - 5, { align: 'right' });
         }
 
-        // Generate filename - use "Updated_Faculty_List_timestamp" for multiple departments
-        let fileName;
-        const timestamp = date.toISOString().replace(/[:.]/g, '-').slice(0, 19);
-        
-        if (loadedDeptIds && loadedDeptIds.size > 1) {
-            fileName = `Updated_Faculty_List_${timestamp}.pdf`;
-        } else {
-            fileName = `EWU_${deptName.replace(/[^a-zA-Z0-9]/g, '_')}_${semName.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
-        }
+        // Generate filename - format: Updated_Faculty_List_Summer-2026.2026-05-18.12-58-37.pdf
+        const bdDateFilename = bdDate; // Already formatted as YYYY-MM-DD
+        const semNameClean = semName.replace(/\s+/g, '-');
+        const fileName = `Updated_Faculty_List_${semNameClean}.${bdDateFilename}.${bdTimeFormatted}.pdf`;
 
         // Save PDF
         doc.save(fileName);

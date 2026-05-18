@@ -1026,7 +1026,6 @@ function refreshCourses() {
     if (refreshBtn) refreshBtn.classList.add('refreshing');
     if (floatingRefreshBtn) floatingRefreshBtn.classList.add('refreshing');
 
-    // Silent background refresh
     const selectedDeptStr = sessionStorage.getItem('selectedDepartmentId');
     const selectedSemId = sessionStorage.getItem('selectedSemesterId');
 
@@ -1040,34 +1039,65 @@ function refreshCourses() {
             };
         });
 
-        // Store old courses to prevent clearing UI during fetch
-        let newCourses = [];
-        let completedFetches = 0;
-
-        departments.forEach(dept => {
-            fetchWithRetry(`${API_BASE_URL}/api/courses?semester=${selectedSemId}&department=${dept.id}`, {
-                credentials: 'include'
-            }, `Fetching ${dept.name}`).then(result => {
-                if (result && result.data && Array.isArray(result.data)) {
-                    newCourses = newCourses.concat(result.data);
-                }
-            }).catch(e => console.error(e)).finally(() => {
-                completedFetches++;
-                if (completedFetches === departments.length) {
-                    // All fetched, update UI seamlessly
-                    allCourses = newCourses;
-                    // Maintain current page and apply filters
-                    applyFiltersAndDisplay();
-                    
-                    if (refreshBtn) refreshBtn.classList.remove('refreshing');
-                    if (floatingRefreshBtn) floatingRefreshBtn.classList.remove('refreshing');
-                }
-            });
-        });
+        refreshDepartments(departments, selectedSemId);
     } else {
         if (refreshBtn) refreshBtn.classList.remove('refreshing');
         if (floatingRefreshBtn) floatingRefreshBtn.classList.remove('refreshing');
     }
+}
+
+async function refreshDepartments(departments, semesterId) {
+    const refreshBtn = document.getElementById('refresh-btn');
+    const floatingRefreshBtn = document.getElementById('floating-refresh');
+    const tbody = document.getElementById('courses-table-body');
+
+    let allNewCourses = [];
+    let completedFetches = 0;
+
+    for (let i = 0; i < departments.length; i++) {
+        const dept = departments[i];
+
+        try {
+            const response = await fetchWithRetry(`${API_BASE_URL}/courses`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                credentials: 'include',
+                body: JSON.stringify({
+                    departmentId: dept.id,
+                    semesterId: semesterId
+                })
+            }, `Refreshing ${dept.name}`);
+
+            const data = response.data;
+            if (data.status === 'success') {
+                const parsedCourses = (data.courses || []).map(course => {
+                    const { days, time } = parseSchedule(course.TimeSlotName);
+                    return { ...course, Days: days, Time: time, _deptId: String(dept.id) };
+                });
+                allNewCourses = [...allNewCourses, ...parsedCourses];
+            }
+        } catch (error) {
+            console.error(`Failed to refresh ${dept.name}:`, error);
+        }
+
+        completedFetches++;
+    }
+
+    if (allNewCourses.length > 0) {
+        allCourses = allNewCourses;
+        loadedDeptIds = new Set(departments.map(d => d.id));
+        currentPage = 1;
+        applyFiltersAndDisplay();
+
+        showSuccess(`Refreshed ${allNewCourses.length} courses`, 'success-message');
+        setTimeout(() => hideMessage('success-message'), 2000);
+    }
+
+    if (refreshBtn) refreshBtn.classList.remove('refreshing');
+    if (floatingRefreshBtn) floatingRefreshBtn.classList.remove('refreshing');
 }
 
 /**
@@ -1711,11 +1741,7 @@ function initAutoRefreshV2() {
 function startV2AutoRefresh() {
     stopV2AutoRefresh();
     v2AutoRefreshInterval = setInterval(() => {
-        const currentScrollY = window.pageYOffset;
         refreshCourses();
-        setTimeout(() => {
-            window.scrollTo(0, currentScrollY);
-        }, 100);
     }, v2AutoRefreshDelay * 1000);
 }
 

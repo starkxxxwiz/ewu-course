@@ -1114,50 +1114,139 @@ function exportToPDF() {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF('landscape');
 
+        const pageWidth = doc.internal.pageSize.width;
+        const pageHeight = doc.internal.pageSize.height;
+        const margin = 12;
+
+        // Department short name mapping
+        const deptShortNames = {
+            'MBA': 'MBA',
+            'BA': 'BA',
+            'Civil': 'Civil',
+            'CSE': 'CSE',
+            'ECE': 'ECE',
+            'Economics': 'Economics',
+            'EEE': 'EEE',
+            'English': 'English',
+            'Information Studies': 'Information Studies',
+            'Law': 'Law',
+            'MPS': 'MPS',
+            'Pharmacy': 'Pharmacy'
+        };
+
+        function getShortDeptName(deptName) {
+            if (!deptName) return deptName;
+            // Check for exact match first
+            if (deptShortNames[deptName]) {
+                return deptShortNames[deptName];
+            }
+            // Try to find partial match
+            for (const [key, value] of Object.entries(deptShortNames)) {
+                if (deptName.toLowerCase().includes(key.toLowerCase())) {
+                    return value;
+                }
+            }
+            return deptName;
+        }
+
         let deptName = sessionStorage.getItem('selectedDepartmentName') || 'Multiple';
         const semName = sessionStorage.getItem('selectedSemesterName') || 'Unknown';
 
-        // Use actual successfully loaded department names
+        // Use actual successfully loaded department names with short names
         if (loadedDeptIds && loadedDeptIds.size > 0) {
             const loadedDeptNames = [];
             loadedDeptIds.forEach(deptId => {
                 const dept = availableDepartments.find(d => String(d.AcademicDepartmentId) === String(deptId));
                 if (dept) {
-                    loadedDeptNames.push(trimDepartmentPrefix(dept.AcademicDepartmentName));
+                    const fullName = trimDepartmentPrefix(dept.AcademicDepartmentName);
+                    loadedDeptNames.push(getShortDeptName(fullName));
                 }
             });
             if (loadedDeptNames.length > 0) {
                 deptName = loadedDeptNames.join(', ');
             }
         } else {
-            deptName = trimDepartmentPrefix(deptName);
+            deptName = getShortDeptName(trimDepartmentPrefix(deptName));
         }
 
-        // Add title
-        doc.setFontSize(18);
-        doc.text('EWU Updated Faculty List', 14, 15);
+        // Colors
+        const primaryColor = [108, 99, 255];
+        const accentColor = [78, 205, 196];
+        const darkBg = [15, 15, 30];
+        const lightText = [255, 255, 255];
+        const grayText = [150, 150, 160];
 
-        // Add filter info
-        doc.setFontSize(11);
-        doc.text(`Department: ${deptName}`, 14, 22);
-        doc.text(`Semester: ${semName}`, 14, 28);
-        doc.text(`Showing: ${coursesToExport.length} of ${allCourses.length} courses`, 14, 34);
+        // Header Background
+        doc.setFillColor(darkBg[0], darkBg[1], darkBg[2]);
+        doc.rect(0, 0, pageWidth, 42, 'F');
 
-        // Add active filters
-        let yPos = 40;
-        if (availableOnlyToggle && availableOnlyToggle.checked) {
-            doc.text('Filter: Available Seats Only', 14, yPos);
-            yPos += 6;
-        }
-        if (searchTags.length > 0) {
-            doc.text(`Search Tags: ${searchTags.join(', ')}`, 14, yPos);
-            yPos += 6;
-        }
+        // Gradient line
+        doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+        doc.rect(0, 42, pageWidth, 1.5, 'F');
 
-        // Add generation date
-        const date = new Date().toLocaleString();
+        // Title
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(20);
+        doc.setTextColor(lightText[0], lightText[1], lightText[2]);
+        doc.text('EWU Updated Faculty List', margin, 18);
+
+        // Subtitle
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(10);
+        doc.setTextColor(grayText[0], grayText[1], grayText[2]);
+        doc.text('Generated from EWU Course Filter', margin, 26);
+
+        // Department & Semester info (left side)
+        doc.setFont('helvetica', 'bold');
         doc.setFontSize(9);
-        doc.text(`Generated: ${date}`, 14, yPos);
+        doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+        doc.text('Department:', margin, 35);
+        doc.setTextColor(lightText[0], lightText[1], lightText[2]);
+        doc.setFont('helvetica', 'normal');
+        doc.text(deptName, margin + 30, 35);
+
+        // Info on right side
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(9);
+        doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+        doc.text('Semester:', pageWidth - margin - 70, 16);
+        doc.setTextColor(lightText[0], lightText[1], lightText[2]);
+        doc.setFont('helvetica', 'normal');
+        doc.text(semName, pageWidth - margin - 40, 16);
+
+        doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+        doc.text('Courses:', pageWidth - margin - 70, 24);
+        doc.setTextColor(lightText[0], lightText[1], lightText[2]);
+        doc.text(`${coursesToExport.length} of ${allCourses.length}`, pageWidth - margin - 40, 24);
+
+        const date = new Date();
+        const dateStr = date.toLocaleString('en-US', {
+            timeZone: 'Asia/Dhaka',
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true
+        });
+        doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+        doc.text('Generated:', pageWidth - margin - 70, 32);
+        doc.setTextColor(lightText[0], lightText[1], lightText[2]);
+        doc.text(dateStr, pageWidth - margin - 40, 32);
+
+        // Calculate column widths and table centering
+        const columns = [
+            { header: 'Code', width: 28 },
+            { header: 'Sec', width: 14 },
+            { header: 'Faculty', width: 26 },
+            { header: 'Seats (T/C)', width: 22 },
+            { header: 'Left', width: 14 },
+            { header: 'Days', width: 55 },
+            { header: 'Time', width: 42 },
+            { header: 'Room', width: 40 }
+        ];
+        const totalTableWidth = columns.reduce((sum, col) => sum + col.width, 0);
+        const tableMargin = (pageWidth - totalTableWidth) / 2;
 
         // Prepare table data
         const tableData = coursesToExport.map(course => {
@@ -1174,39 +1263,102 @@ function exportToPDF() {
             ];
         });
 
-        // Generate table
+        // Generate table with centering and color coding
         doc.autoTable({
-            startY: yPos + 5,
-            head: [['Code', 'Sec', 'Faculty', 'Seats(T/C)', 'Left', 'Days', 'Time', 'Room']],
+            startY: 50,
+            head: [columns.map(c => c.header)],
             body: tableData,
+            margin: { top: 10, bottom: 20, left: tableMargin, right: tableMargin },
+            tableWidth: totalTableWidth,
             theme: 'striped',
+            pageBreak: 'auto',
+            rowPageBreak: 'avoid',
+            styles: {
+                fontSize: 8,
+                cellPadding: { top: 2.5, right: 2, bottom: 2.5, left: 2 },
+                lineColor: [220, 220, 230],
+                lineWidth: 0.1,
+                textColor: [60, 60, 70],
+                font: 'helvetica',
+                overflow: 'linebreak',
+                minCellHeight: 8,
+                halign: 'center',
+                valign: 'middle'
+            },
             headStyles: {
                 fillColor: [108, 99, 255],
                 textColor: 255,
-                fontSize: 9,
-                fontStyle: 'bold'
-            },
-            bodyStyles: {
+                fontStyle: 'bold',
                 fontSize: 8,
-                overflow: 'linebreak'
-            },
-            alternateRowStyles: {
-                fillColor: [240, 240, 245]
+                halign: 'center',
+                cellPadding: { top: 3, right: 2, bottom: 3, left: 2 }
             },
             columnStyles: {
-                0: { cellWidth: 28 },          // Course code
-                1: { cellWidth: 14 },          // Section
-                2: { cellWidth: 24, halign: 'left' }, // Faculty - minimal
-                3: { cellWidth: 22 },          // Seats T/C
-                4: { cellWidth: 14 },          // Left
-                5: { cellWidth: 55, halign: 'left' }, // Days - wide enough for SUNDAY, TUESDAY
-                6: { cellWidth: 42 },          // Time
-                7: { cellWidth: 40 }           // Room
+                0: { cellWidth: 28, halign: 'center', fontStyle: 'bold', textColor: [108, 99, 255] },
+                1: { cellWidth: 14, halign: 'center' },
+                2: { cellWidth: 26, halign: 'left' },
+                3: { cellWidth: 22, halign: 'center' },
+                4: { cellWidth: 14, halign: 'center' },
+                5: { cellWidth: 55, halign: 'center' },
+                6: { cellWidth: 42, halign: 'center' },
+                7: { cellWidth: 40, halign: 'center' }
+            },
+            alternateRowStyles: {
+                fillColor: [248, 249, 252]
+            },
+            bodyStyles: {
+                fillColor: [255, 255, 255]
+            },
+            didParseCell: function (data) {
+                // Color code seats left column (column index 4)
+                if (data.section === 'body' && data.column.index === 4) {
+                    const seatsLeft = parseInt(data.cell.raw);
+                    if (seatsLeft <= 0) {
+                        data.cell.styles.textColor = [239, 68, 68]; // Red
+                        data.cell.styles.fontStyle = 'bold';
+                    } else if (seatsLeft <= 5) {
+                        data.cell.styles.textColor = [245, 158, 11]; // Amber/Yellow
+                        data.cell.styles.fontStyle = 'bold';
+                    } else {
+                        data.cell.styles.textColor = [16, 185, 129]; // Green
+                        data.cell.styles.fontStyle = 'bold';
+                    }
+                }
             }
         });
 
-        // Generate filename
-        const fileName = `EWU_Courses_${deptName.replace(/\s+/g, '_')}_${semName.replace(/\s+/g, '_')}.pdf`;
+        // Footer on all pages
+        const pageCount = doc.internal.getNumberOfPages();
+        for (let i = 1; i <= pageCount; i++) {
+            doc.setPage(i);
+
+            // Footer background
+            doc.setFillColor(darkBg[0], darkBg[1], darkBg[2]);
+            doc.rect(0, pageHeight - 12, pageWidth, 12, 'F');
+
+            // Footer line
+            doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+            doc.rect(0, pageHeight - 12, pageWidth, 0.5, 'F');
+
+            // Footer text
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(8);
+            doc.setTextColor(grayText[0], grayText[1], grayText[2]);
+            doc.text('EWU Course Filter V2', margin, pageHeight - 5);
+
+            doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+            doc.text(`Page ${i} of ${pageCount}`, pageWidth - margin, pageHeight - 5, { align: 'right' });
+        }
+
+        // Generate filename - use "Updated_Faculty_List_timestamp" for multiple departments
+        let fileName;
+        const timestamp = date.toISOString().replace(/[:.]/g, '-').slice(0, 19);
+        
+        if (loadedDeptIds && loadedDeptIds.size > 1) {
+            fileName = `Updated_Faculty_List_${timestamp}.pdf`;
+        } else {
+            fileName = `EWU_${deptName.replace(/[^a-zA-Z0-9]/g, '_')}_${semName.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+        }
 
         // Save PDF
         doc.save(fileName);

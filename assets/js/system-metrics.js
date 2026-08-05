@@ -370,12 +370,20 @@
         }
     });
 
-    // 2. Log Analytics Visit
+    // 2. Log Analytics Visit (Throttled per session path)
     setTimeout(() => {
-        fetch(`${API_URL}/analytics`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ type: 'visit', path: window.location.pathname })
-        }).catch(() => { });
+        try {
+            const pathKey = `last_visit_ping_${window.location.pathname}`;
+            const lastPing = sessionStorage.getItem(pathKey);
+            const now = Date.now();
+            if (!lastPing || (now - parseInt(lastPing, 10)) > 60000) {
+                sessionStorage.setItem(pathKey, now.toString());
+                fetch(`${API_URL}/analytics`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ type: 'visit', path: window.location.pathname })
+                }).catch(() => { });
+            }
+        } catch (e) {}
     }, 1000);
 })();

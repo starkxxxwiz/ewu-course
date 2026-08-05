@@ -280,6 +280,8 @@ function hydrateView(viewName, data) {
     if (viewName === 'security') {
         renderBlocklistFull(data.blockedIPs || []);
         renderLogsFull(data.recentLogs || []);
+        renderBlockedUserIdsFull(data.blockedUserIds || []);
+        renderSuccessfulUserLoginsFull(data.successfulLogins || [], data.blockedUserIds || []);
         
         const sForm = document.getElementById('blockForm');
         if(sForm) {
@@ -288,6 +290,16 @@ function hydrateView(viewName, data) {
                 const ipInput = document.getElementById('secIpInput');
                 await modifyBlocklistCall('block', ipInput.value.trim());
                 ipInput.value = '';
+            };
+        }
+
+        const uForm = document.getElementById('blockUserForm');
+        if(uForm) {
+            uForm.onsubmit = async (e) => {
+                e.preventDefault();
+                const userInput = document.getElementById('secUserIdInput');
+                await modifyUserBlockCall('block', userInput.value.trim());
+                userInput.value = '';
             };
         }
     }
@@ -525,12 +537,126 @@ async function modifyBlocklistCall(action, ip) {
         if(data.success) {
             currentDataCache.blockedIPs = data.blockedIPs;
             renderBlocklistFull(data.blockedIPs);
+            showAdminToast(action === 'block' ? `Blocked IP ${ip}` : `Unblocked IP ${ip}`);
         } else {
-            alert(data.error || 'Operation denied by gateway.');
+            showAdminToast(data.error || 'Operation denied by gateway.', false);
         }
     } catch(e) {
-        alert('Transmission error.');
+        showAdminToast('Transmission error.', false);
     }
+}
+
+async function clearLogsCall() {
+    const token = localStorage.getItem('adminToken');
+    try {
+        const res = await fetch(`${API_URL}/admin/clear-logs`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }
+        });
+        if (res.status === 401 || res.status === 403) { handleLogout(true); return; }
+        const data = await res.json();
+        if (data.success) {
+            if (currentDataCache) currentDataCache.recentLogs = [];
+            renderRealTimeLogs([]);
+            showAdminToast('Logs cleared permanently from server KV');
+        } else {
+            showAdminToast(data.error || 'Failed to clear logs', false);
+        }
+    } catch(e) {
+        showAdminToast('Transmission error', false);
+    }
+}
+
+async function modifyUserBlockCall(action, userId) {
+    if (!userId) return;
+    const token = localStorage.getItem('adminToken');
+    try {
+        const res = await fetch(`${API_URL}/admin/user-block`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ userId, action })
+        });
+        if (res.status === 401 || res.status === 403) { handleLogout(true); return; }
+        const data = await res.json();
+        if (data.success) {
+            if (currentDataCache) currentDataCache.blockedUserIds = data.blockedUserIds;
+            renderBlockedUserIdsFull(data.blockedUserIds);
+            if (currentDataCache) renderSuccessfulUserLoginsFull(currentDataCache.successfulLogins || [], data.blockedUserIds);
+            showAdminToast(action === 'block' ? `Locked User ID ${userId}` : `Unlocked User ID ${userId}`);
+        } else {
+            showAdminToast(data.error || 'Operation denied.', false);
+        }
+    } catch(e) {
+        showAdminToast('Transmission error.', false);
+    }
+}
+
+function renderBlockedUserIdsFull(userIds) {
+    const container = document.getElementById('secBlockedUserIdsList');
+    if (!container) return;
+    container.innerHTML = '';
+    if (!userIds || userIds.length === 0) {
+        container.innerHTML = '<div class="text-center text-gray-500 py-8 text-sm bg-gray-900/20 rounded-lg border border-dashed border-gray-700">No User IDs currently restricted. All student accounts active.</div>';
+        return;
+    }
+    userIds.forEach(uId => {
+        container.innerHTML += `
+            <div class="flex items-center justify-between p-3 rounded-lg bg-amber-500/5 border border-amber-500/10 hover:bg-amber-500/10 transition-all group shadow-sm">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-full bg-amber-500/20 flex items-center justify-center text-amber-400"><i class="ph ph-lock-key"></i></div>
+                    <span class="font-mono text-sm text-amber-200 font-semibold">${uId}</span>
+                </div>
+                <button data-userid="${uId}" class="btn-unblock-user text-gray-500 hover:text-white bg-gray-800 hover:bg-gray-700 px-3 py-1 rounded text-xs transition-colors flex items-center gap-1">
+                    <i class="ph ph-lock-key-open"></i> Unlock
+                </button>
+            </div>
+        `;
+    });
+
+    document.querySelectorAll('.btn-unblock-user').forEach(btn => {
+        btn.onclick = () => modifyUserBlockCall('unblock', btn.getAttribute('data-userid'));
+    });
+}
+
+function renderSuccessfulUserLoginsFull(logins, blockedUserIds = []) {
+    const tbody = document.getElementById('secUserLoginsTable');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    if (!logins || logins.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="px-5 py-8 text-center text-gray-500">No student login sessions recorded yet.</td></tr>';
+        return;
+    }
+
+    logins.forEach(item => {
+        const isBlocked = blockedUserIds.includes(item.userId);
+        const timeStr = item.time ? new Date(item.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'recently';
+        const dateStr = item.time ? new Date(item.time).toISOString().split('T')[0] : '';
+        
+        tbody.innerHTML += `
+            <tr class="hover:bg-white/[0.02] transition-colors">
+                <td class="px-5 py-3">
+                    <span class="font-mono text-sm text-green-300 font-semibold">${escapeHtml(item.userId)}</span>
+                </td>
+                <td class="px-5 py-3 font-mono text-xs text-purple-300">
+                    ${escapeHtml(item.ip || 'unknown')}
+                    <div class="text-[10px] text-gray-500">${dateStr} ${timeStr}</div>
+                </td>
+                <td class="px-5 py-3">
+                    <span class="px-2 py-0.5 rounded text-[10px] uppercase font-bold border bg-blue-500/10 text-blue-400 border-blue-500/20">${escapeHtml(item.version || 'V1')}</span>
+                </td>
+                <td class="px-5 py-3 text-right">
+                    ${isBlocked ? 
+                        `<span class="px-2.5 py-1 rounded bg-red-500/10 text-red-400 border border-red-500/20 text-xs font-semibold">Locked</span>` :
+                        `<button data-userid="${escapeHtml(item.userId)}" class="btn-block-user-inline px-2.5 py-1 rounded bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 text-xs transition-colors">Lock ID</button>`
+                    }
+                </td>
+            </tr>
+        `;
+    });
+
+    document.querySelectorAll('.btn-block-user-inline').forEach(btn => {
+        btn.onclick = () => modifyUserBlockCall('block', btn.getAttribute('data-userid'));
+    });
 }
 
 function updateClosureUI(active) {
@@ -696,9 +822,10 @@ function setupLogsViewListeners() {
     }
 
     if (clearViewBtn) {
-        clearViewBtn.onclick = () => {
-            if (currentDataCache) currentDataCache.recentLogs = [];
-            renderRealTimeLogs([]);
+        clearViewBtn.onclick = async () => {
+            if (confirm('Permanently clear all server activity logs?')) {
+                await clearLogsCall();
+            }
         };
     }
 

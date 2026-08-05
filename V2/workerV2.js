@@ -128,6 +128,22 @@ async function handleLogin(request) {
             });
         }
         
+        // Enforce User ID Blocklist if ADMIN_KV is available
+        if (typeof ADMIN_KV !== 'undefined') {
+            const blockedUserIdsStr = await ADMIN_KV.get('blocked_user_ids');
+            if (blockedUserIdsStr) {
+                try {
+                    const blockedUserIds = JSON.parse(blockedUserIdsStr);
+                    if (blockedUserIds.includes(username)) {
+                        return jsonResponse({
+                            status: 'failed',
+                            message: 'Your account has been restricted from logging in.'
+                        }, 403, request);
+                    }
+                } catch (e) {}
+            }
+        }
+
         // STEP 1: Initial GET request to retrieve hidden values and session
         const getResponse = await fetch(CONFIG.PORTAL_BASE_URL + '/', {
             method: 'GET',
@@ -194,6 +210,27 @@ async function handleLogin(request) {
         // STEP 6: Verify login success
         if (loginHtml.includes('View Profile')) {
             await logV2Event(request, 'login', { userId: username, timeTaken: Date.now() - startTime });
+
+            if (typeof ADMIN_KV !== 'undefined') {
+                try {
+                    const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+                    let loginsStr = await ADMIN_KV.get('successful_user_logins');
+                    let loginsArr = [];
+                    if (loginsStr) {
+                        try { loginsArr = JSON.parse(loginsStr); } catch (e) {}
+                    }
+                    loginsArr = loginsArr.filter(item => item.userId !== username);
+                    loginsArr.unshift({
+                        userId: username,
+                        ip: ip,
+                        time: new Date().toISOString(),
+                        version: 'V2'
+                    });
+                    if (loginsArr.length > 200) loginsArr = loginsArr.slice(0, 200);
+                    await ADMIN_KV.put('successful_user_logins', JSON.stringify(loginsArr));
+                } catch (e) {}
+            }
+
             // Login successful - set session cookie
             const headers = {
                 ...getCorsHeaders(request),
@@ -455,6 +492,17 @@ async function logV2Event(request, type, details = {}) {
         if (logsStr) {
             try { logsArr = JSON.parse(logsStr); } catch (e) {}
         }
+
+        // Deduplicate rapid repeat events (same IP, type, and path/userId within 10 seconds)
+        if (logsArr.length > 0) {
+            const last = logsArr[0];
+            const timeDiffMs = new Date(nowIso).getTime() - new Date(last.time).getTime();
+            const sameUserOrPath = (last.userId === logEntry.userId);
+            if (last.ip === ip && last.type === logEntry.type && sameUserOrPath && timeDiffMs < 10000) {
+                return;
+            }
+        }
+
         logsArr.unshift(logEntry);
         if (logsArr.length > 500) logsArr = logsArr.slice(0, 500);
         await ADMIN_KV.put('recent_logs', JSON.stringify(logsArr));

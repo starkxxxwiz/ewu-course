@@ -269,9 +269,11 @@ function hydrateView(viewName, data) {
         }
     }
 
-    if (viewName === 'logs') {
-        renderRealTimeLogs(data.recentLogs || []);
-        setupLogsViewListeners();
+    if (viewName === 'logs' || viewName === 'security') {
+        if (viewName === 'logs') {
+            renderRealTimeLogs(data.recentLogs || []);
+            setupLogsViewListeners();
+        }
         startLogsAutoPolling();
     } else {
         stopLogsAutoPolling();
@@ -280,7 +282,8 @@ function hydrateView(viewName, data) {
     if (viewName === 'security') {
         renderBlocklistFull(data.blockedIPs || []);
         renderBlockedUserIdsFull(data.blockedUserIds || []);
-        renderSuccessfulLoginsTable(data.successfulLogins || []);
+        const allLogins = extractAllSuccessfulLogins(data);
+        renderSuccessfulLoginsTable(allLogins);
         
         const sForm = document.getElementById('blockForm');
         if(sForm) {
@@ -609,6 +612,70 @@ function renderBlockedUserIdsFull(userArr) {
         `;
         list.appendChild(row);
     });
+}
+
+function extractAllSuccessfulLogins(data) {
+    if (!data) return [];
+    const map = {};
+
+    // 1. Process recentLogs (contains all historical & live login telemetry)
+    if (data.recentLogs && Array.isArray(data.recentLogs)) {
+        data.recentLogs.forEach(l => {
+            if (l.type === 'login' || (l.formatted && l.formatted.includes('logged in using'))) {
+                let uId = l.userId;
+                if (!uId && l.formatted) {
+                    const match = l.formatted.match(/logged in using\s+([^\s()]+)/);
+                    if (match) uId = match[1];
+                }
+                if (uId && uId !== 'credentials') {
+                    const isV2 = (l.formatted && l.formatted.includes('(V2)')) || (l.message && l.message.includes('(V2)'));
+                    const version = isV2 ? 'V2' : 'V1';
+                    if (!map[uId]) {
+                        map[uId] = {
+                            userId: uId,
+                            ip: l.ip || 'unknown',
+                            time: l.time,
+                            version: version,
+                            totalLogins: 1
+                        };
+                    } else {
+                        map[uId].totalLogins++;
+                        if (new Date(l.time) > new Date(map[uId].time)) {
+                            map[uId].time = l.time;
+                            map[uId].ip = l.ip || map[uId].ip;
+                            map[uId].version = version;
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // 2. Process explicit successfulLogins from KV
+    if (data.successfulLogins && Array.isArray(data.successfulLogins)) {
+        data.successfulLogins.forEach(item => {
+            if (item.userId) {
+                if (!map[item.userId]) {
+                    map[item.userId] = {
+                        userId: item.userId,
+                        ip: item.ip || 'unknown',
+                        time: item.time,
+                        version: item.version || 'V1',
+                        totalLogins: item.totalLogins || 1
+                    };
+                } else {
+                    map[item.userId].totalLogins = Math.max(map[item.userId].totalLogins, item.totalLogins || 1);
+                    if (new Date(item.time) >= new Date(map[item.userId].time)) {
+                        map[item.userId].time = item.time;
+                        map[item.userId].ip = item.ip || map[item.userId].ip;
+                        map[item.userId].version = item.version || map[item.userId].version;
+                    }
+                }
+            }
+        });
+    }
+
+    return Object.values(map).sort((a, b) => new Date(b.time) - new Date(a.time));
 }
 
 function renderSuccessfulLoginsTable(loginsArr) {

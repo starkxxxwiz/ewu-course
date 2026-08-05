@@ -456,10 +456,32 @@ async function handleFetchCourses(request) {
 // ===== UTILITY & TELEMETRY LOGGING FUNCTIONS =====
 
 async function logV2Event(request, type, details = {}) {
+    const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+    const userAgent = request.headers.get('User-Agent') || 'unknown';
+    
+    // Always forward telemetry to central analytics endpoint
+    try {
+        fetch('https://api.aftabkabir.me/api/analytics', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'CF-Connecting-IP': ip,
+                'User-Agent': userAgent
+            },
+            body: JSON.stringify({
+                type: type,
+                userId: details.userId || null,
+                timeTaken: details.timeTaken || null,
+                count: details.count || null,
+                level: details.level || (type === 'error' ? 'error' : 'info'),
+                version: 'V2',
+                message: details.message || (type === 'login' ? `logged in using ${details.userId || 'credentials'} (V2)` : null)
+            })
+        }).catch(() => {});
+    } catch(e) {}
+
     if (typeof ADMIN_KV === 'undefined') return;
     try {
-        const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
-        const userAgent = request.headers.get('User-Agent') || 'unknown';
         const nowIso = new Date().toISOString();
         const dateFormatted = nowIso.replace('T', ' ').substring(0, 19);
         const level = details.level || (type === 'error' ? 'error' : 'info');

@@ -503,6 +503,36 @@ async function handleAnalyticsEvent(request, env) {
     if (logsArr.length > 500) logsArr = logsArr.slice(0, 500);
     await env.ADMIN_KV.put('recent_logs', JSON.stringify(logsArr));
     
+    // If login event, update successful_user_logins KV array
+    if (data.type === 'login' && data.userId && data.userId !== 'credentials') {
+      try {
+        let loginsStr = await env.ADMIN_KV.get('successful_user_logins');
+        let loginsArr = [];
+        if (loginsStr) {
+          try { loginsArr = JSON.parse(loginsStr); } catch (e) {}
+        }
+
+        const username = data.userId;
+        const version = data.version || (data.message && data.message.includes('(V2)') ? 'V2' : 'V1');
+        const existingIndex = loginsArr.findIndex(item => item.userId === username);
+        let prevCount = 0;
+        if (existingIndex !== -1) {
+          prevCount = loginsArr[existingIndex].totalLogins || 1;
+          loginsArr.splice(existingIndex, 1);
+        }
+
+        loginsArr.unshift({
+          userId: username,
+          ip: ip,
+          time: nowIso,
+          version: version,
+          totalLogins: prevCount + 1
+        });
+        if (loginsArr.length > 200) loginsArr = loginsArr.slice(0, 200);
+        await env.ADMIN_KV.put('successful_user_logins', JSON.stringify(loginsArr));
+      } catch(e) {}
+    }
+
   } catch(e) {}
   return new Response('OK', { headers: getCorsHeaders(request) });
 }

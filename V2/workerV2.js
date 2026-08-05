@@ -128,7 +128,7 @@ async function handleLogin(request) {
             });
         }
         
-        // Enforce User ID Blocklist if ADMIN_KV is available
+        // Enforce User ID Blocklist
         if (typeof ADMIN_KV !== 'undefined') {
             const blockedUserIdsStr = await ADMIN_KV.get('blocked_user_ids');
             if (blockedUserIdsStr) {
@@ -210,7 +210,7 @@ async function handleLogin(request) {
         // STEP 6: Verify login success
         if (loginHtml.includes('View Profile')) {
             await logV2Event(request, 'login', { userId: username, timeTaken: Date.now() - startTime });
-
+            
             if (typeof ADMIN_KV !== 'undefined') {
                 try {
                     const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
@@ -493,12 +493,12 @@ async function logV2Event(request, type, details = {}) {
             try { logsArr = JSON.parse(logsStr); } catch (e) {}
         }
 
-        // Deduplicate rapid repeat events (same IP, type, and path/userId within 10 seconds)
+        // Deduplicate rapid repeat events (same IP, type, and path/userId within 15 seconds)
         if (logsArr.length > 0) {
             const last = logsArr[0];
             const timeDiffMs = new Date(nowIso).getTime() - new Date(last.time).getTime();
-            const sameUserOrPath = (last.userId === logEntry.userId);
-            if (last.ip === ip && last.type === logEntry.type && sameUserOrPath && timeDiffMs < 10000) {
+            const sameUserOrPath = (last.path === logEntry.path) && (last.userId === logEntry.userId);
+            if (last.ip === ip && last.type === logEntry.type && sameUserOrPath && timeDiffMs < 15000) {
                 return;
             }
         }

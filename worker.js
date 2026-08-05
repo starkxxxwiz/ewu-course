@@ -235,6 +235,8 @@ async function handleLogin(request, env) {
         } catch (e) {}
       }
 
+      // Set cookie on the browser with secure attributes
+      // **IMPORTANT**: Cookie must be set on api.aftabkabir.me domain
       const cookieHeader = `ASP.NET_SessionId=${loginResult.sessionId}; Path=/; Secure; HttpOnly; SameSite=None; Max-Age=3600`;
       
       return new Response(JSON.stringify({
@@ -479,12 +481,12 @@ async function handleAnalyticsEvent(request, env) {
       try { logsArr = JSON.parse(logsStr); } catch (e) {}
     }
 
-    // Deduplicate rapid repeat events (same IP, type, and path/userId within 10 seconds)
+    // Deduplicate rapid repeat events (same IP, type, and path/userId within 15 seconds)
     if (logsArr.length > 0) {
       const last = logsArr[0];
       const timeDiffMs = new Date(nowIso).getTime() - new Date(last.time).getTime();
-      const sameUserOrPath = (last.path === logEntry.path) && (last.userId === logEntry.userId);
-      if (last.ip === ip && last.type === logEntry.type && sameUserOrPath && timeDiffMs < 10000) {
+      const samePathOrUser = (last.path === logEntry.path) && (last.userId === logEntry.userId);
+      if (last.ip === ip && last.type === logEntry.type && samePathOrUser && timeDiffMs < 15000) {
         return new Response('OK', { headers: getCorsHeaders(request) });
       }
     }
@@ -554,6 +556,8 @@ async function handleAdminDashboard(request, env) {
   let analytics = {};
   let recentLogs = [];
   let blockedIPs = [];
+  let blockedUserIds = [];
+  let successfulLogins = [];
   let isClosed = false;
   let totalUniqueVisitors = 0;
   let customNotice = null;
@@ -586,16 +590,14 @@ async function handleAdminDashboard(request, env) {
       try { blockedIPs = JSON.parse(blockedStr); } catch(e){}
     }
 
-    const loginsStr = await env.ADMIN_KV.get('successful_user_logins');
-    let successfulLogins = [];
-    if (loginsStr) {
-      try { successfulLogins = JSON.parse(loginsStr); } catch(e){}
-    }
-
     const blockedUserIdsStr = await env.ADMIN_KV.get('blocked_user_ids');
-    let blockedUserIds = [];
     if (blockedUserIdsStr) {
       try { blockedUserIds = JSON.parse(blockedUserIdsStr); } catch(e){}
+    }
+
+    const loginsStr = await env.ADMIN_KV.get('successful_user_logins');
+    if (loginsStr) {
+      try { successfulLogins = JSON.parse(loginsStr); } catch(e){}
     }
   }
 
@@ -606,8 +608,8 @@ async function handleAdminDashboard(request, env) {
     analytics: analytics,
     recentLogs: recentLogs,
     blockedIPs: blockedIPs,
-    successfulLogins: successfulLogins,
-    blockedUserIds: blockedUserIds
+    blockedUserIds: blockedUserIds,
+    successfulLogins: successfulLogins
   }, 200, request);
 }
 
@@ -636,7 +638,7 @@ async function handleIpBlock(request, env) {
   }
 }
 
-async function handleUserBlock(request, env) {
+async function handleUserIdBlock(request, env) {
   if (!(await verifyAdminAuth(request, env))) return jsonResponse({ error: 'Unauthorized' }, 401, request);
   try {
     const { userId, action } = await request.json(); // action: 'block' or 'unblock'
@@ -664,10 +666,8 @@ async function handleUserBlock(request, env) {
 async function handleClearLogs(request, env) {
   if (!(await verifyAdminAuth(request, env))) return jsonResponse({ error: 'Unauthorized' }, 401, request);
   try {
-    if (env.ADMIN_KV) {
-      await env.ADMIN_KV.put('recent_logs', JSON.stringify([]));
-    }
-    return jsonResponse({ success: true, message: 'Logs cleared permanently' }, 200, request);
+    await env.ADMIN_KV.put('recent_logs', JSON.stringify([]));
+    return jsonResponse({ success: true, recentLogs: [] }, 200, request);
   } catch(e) {
     return jsonResponse({ error: 'Server error' }, 500, request);
   }
@@ -758,8 +758,8 @@ export default {
     if (url.pathname === '/api/admin/ip' && request.method === 'POST') {
       return handleIpBlock(request, env);
     }
-    if (url.pathname === '/api/admin/user-block' && request.method === 'POST') {
-      return handleUserBlock(request, env);
+    if (url.pathname === '/api/admin/block-userid' && request.method === 'POST') {
+      return handleUserIdBlock(request, env);
     }
     if (url.pathname === '/api/admin/clear-logs' && request.method === 'POST') {
       return handleClearLogs(request, env);

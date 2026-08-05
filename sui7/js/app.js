@@ -279,9 +279,8 @@ function hydrateView(viewName, data) {
 
     if (viewName === 'security') {
         renderBlocklistFull(data.blockedIPs || []);
-        renderLogsFull(data.recentLogs || []);
         renderBlockedUserIdsFull(data.blockedUserIds || []);
-        renderSuccessfulUserLoginsFull(data.successfulLogins || [], data.blockedUserIds || []);
+        renderSuccessfulLoginsTable(data.successfulLogins || []);
         
         const sForm = document.getElementById('blockForm');
         if(sForm) {
@@ -293,13 +292,13 @@ function hydrateView(viewName, data) {
             };
         }
 
-        const uForm = document.getElementById('blockUserForm');
+        const uForm = document.getElementById('userIdBlockForm');
         if(uForm) {
             uForm.onsubmit = async (e) => {
                 e.preventDefault();
-                const userInput = document.getElementById('secUserIdInput');
-                await modifyUserBlockCall('block', userInput.value.trim());
-                userInput.value = '';
+                const uInput = document.getElementById('secUserIdInput');
+                await modifyUserIdBlocklistCall('block', uInput.value.trim());
+                uInput.value = '';
             };
         }
     }
@@ -537,16 +536,40 @@ async function modifyBlocklistCall(action, ip) {
         if(data.success) {
             currentDataCache.blockedIPs = data.blockedIPs;
             renderBlocklistFull(data.blockedIPs);
-            showAdminToast(action === 'block' ? `Blocked IP ${ip}` : `Unblocked IP ${ip}`);
         } else {
-            showAdminToast(data.error || 'Operation denied by gateway.', false);
+            alert(data.error || 'Operation denied by gateway.');
         }
     } catch(e) {
-        showAdminToast('Transmission error.', false);
+        alert('Transmission error.');
+    }
+}
+
+async function modifyUserIdBlocklistCall(action, userId) {
+    if(!userId) return;
+    const token = localStorage.getItem('adminToken');
+    try {
+        const res = await fetch(`${API_URL}/admin/block-userid`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ userId, action })
+        });
+        if(res.status === 401 || res.status === 403) { handleLogout(true); return; }
+        const data = await res.json();
+        
+        if(data.success) {
+            if (currentDataCache) currentDataCache.blockedUserIds = data.blockedUserIds;
+            renderBlockedUserIdsFull(data.blockedUserIds || []);
+            showAdminToast(`User ID ${userId} ${action === 'block' ? 'restricted' : 'unblocked'} successfully!`, true);
+        } else {
+            alert(data.error || 'Operation denied by gateway.');
+        }
+    } catch(e) {
+        alert('Transmission error.');
     }
 }
 
 async function clearLogsCall() {
+    if (!confirm('Are you sure you want to permanently purge all recorded telemetry logs from KV?')) return;
     const token = localStorage.getItem('adminToken');
     try {
         const res = await fetch(`${API_URL}/admin/clear-logs`, {
@@ -558,104 +581,66 @@ async function clearLogsCall() {
         if (data.success) {
             if (currentDataCache) currentDataCache.recentLogs = [];
             renderRealTimeLogs([]);
-            showAdminToast('Logs cleared permanently from server KV');
-        } else {
-            showAdminToast(data.error || 'Failed to clear logs', false);
+            showAdminToast('Telemetry logs purged permanently from KV store!', true);
         }
-    } catch(e) {
-        showAdminToast('Transmission error', false);
+    } catch (e) {
+        alert('Failed to clear logs.');
     }
 }
 
-async function modifyUserBlockCall(action, userId) {
-    if (!userId) return;
-    const token = localStorage.getItem('adminToken');
-    try {
-        const res = await fetch(`${API_URL}/admin/user-block`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-            body: JSON.stringify({ userId, action })
-        });
-        if (res.status === 401 || res.status === 403) { handleLogout(true); return; }
-        const data = await res.json();
-        if (data.success) {
-            if (currentDataCache) currentDataCache.blockedUserIds = data.blockedUserIds;
-            renderBlockedUserIdsFull(data.blockedUserIds);
-            if (currentDataCache) renderSuccessfulUserLoginsFull(currentDataCache.successfulLogins || [], data.blockedUserIds);
-            showAdminToast(action === 'block' ? `Locked User ID ${userId}` : `Unlocked User ID ${userId}`);
-        } else {
-            showAdminToast(data.error || 'Operation denied.', false);
-        }
-    } catch(e) {
-        showAdminToast('Transmission error.', false);
-    }
-}
+function renderBlockedUserIdsFull(userArr) {
+    const list = document.getElementById('secBlockedUserIdList');
+    if (!list) return;
+    list.innerHTML = '';
 
-function renderBlockedUserIdsFull(userIds) {
-    const container = document.getElementById('secBlockedUserIdsList');
-    if (!container) return;
-    container.innerHTML = '';
-    if (!userIds || userIds.length === 0) {
-        container.innerHTML = '<div class="text-center text-gray-500 py-8 text-sm bg-gray-900/20 rounded-lg border border-dashed border-gray-700">No User IDs currently restricted. All student accounts active.</div>';
+    if (!userArr || userArr.length === 0) {
+        list.innerHTML = '<div class="text-center text-gray-500 py-6 text-xs">No restricted User IDs.</div>';
         return;
     }
-    userIds.forEach(uId => {
-        container.innerHTML += `
-            <div class="flex items-center justify-between p-3 rounded-lg bg-amber-500/5 border border-amber-500/10 hover:bg-amber-500/10 transition-all group shadow-sm">
-                <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 rounded-full bg-amber-500/20 flex items-center justify-center text-amber-400"><i class="ph ph-lock-key"></i></div>
-                    <span class="font-mono text-sm text-amber-200 font-semibold">${uId}</span>
-                </div>
-                <button data-userid="${uId}" class="btn-unblock-user text-gray-500 hover:text-white bg-gray-800 hover:bg-gray-700 px-3 py-1 rounded text-xs transition-colors flex items-center gap-1">
-                    <i class="ph ph-lock-key-open"></i> Unlock
-                </button>
-            </div>
-        `;
-    });
 
-    document.querySelectorAll('.btn-unblock-user').forEach(btn => {
-        btn.onclick = () => modifyUserBlockCall('unblock', btn.getAttribute('data-userid'));
+    userArr.forEach(id => {
+        const row = document.createElement('div');
+        row.className = 'flex items-center justify-between p-2.5 rounded-lg bg-gray-900/60 border border-gray-800 hover:border-amber-500/30 transition-colors';
+        row.innerHTML = `
+            <span class="font-mono text-xs font-semibold text-amber-300">${escapeHtml(id)}</span>
+            <button onclick="modifyUserIdBlocklistCall('unblock', '${escapeHtml(id)}')" class="px-2.5 py-1 rounded text-xs bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 border border-amber-500/30 transition-colors">
+                Unblock
+            </button>
+        `;
+        list.appendChild(row);
     });
 }
 
-function renderSuccessfulUserLoginsFull(logins, blockedUserIds = []) {
+function renderSuccessfulLoginsTable(loginsArr) {
     const tbody = document.getElementById('secUserLoginsTable');
     if (!tbody) return;
     tbody.innerHTML = '';
-    if (!logins || logins.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" class="px-5 py-8 text-center text-gray-500">No student login sessions recorded yet.</td></tr>';
+
+    if (!loginsArr || loginsArr.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="px-5 py-8 text-center text-gray-500">No active login records found.</td></tr>';
         return;
     }
 
-    logins.forEach(item => {
-        const isBlocked = blockedUserIds.includes(item.userId);
-        const timeStr = item.time ? new Date(item.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'recently';
+    loginsArr.forEach(item => {
+        const timeStr = item.time ? new Date(item.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : 'N/A';
         const dateStr = item.time ? new Date(item.time).toISOString().split('T')[0] : '';
-        
-        tbody.innerHTML += `
-            <tr class="hover:bg-white/[0.02] transition-colors">
-                <td class="px-5 py-3">
-                    <span class="font-mono text-sm text-green-300 font-semibold">${escapeHtml(item.userId)}</span>
-                </td>
-                <td class="px-5 py-3 font-mono text-xs text-purple-300">
-                    ${escapeHtml(item.ip || 'unknown')}
-                    <div class="text-[10px] text-gray-500">${dateStr} ${timeStr}</div>
-                </td>
-                <td class="px-5 py-3">
-                    <span class="px-2 py-0.5 rounded text-[10px] uppercase font-bold border bg-blue-500/10 text-blue-400 border-blue-500/20">${escapeHtml(item.version || 'V1')}</span>
-                </td>
-                <td class="px-5 py-3 text-right">
-                    ${isBlocked ? 
-                        `<span class="px-2.5 py-1 rounded bg-red-500/10 text-red-400 border border-red-500/20 text-xs font-semibold">Locked</span>` :
-                        `<button data-userid="${escapeHtml(item.userId)}" class="btn-block-user-inline px-2.5 py-1 rounded bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 text-xs transition-colors">Lock ID</button>`
-                    }
-                </td>
-            </tr>
-        `;
-    });
+        const isBlocked = (currentDataCache?.blockedUserIds || []).includes(item.userId);
 
-    document.querySelectorAll('.btn-block-user-inline').forEach(btn => {
-        btn.onclick = () => modifyUserBlockCall('block', btn.getAttribute('data-userid'));
+        const row = document.createElement('tr');
+        row.className = 'hover:bg-white/[0.02] transition-colors border-b border-gray-800/40';
+        row.innerHTML = `
+            <td class="px-5 py-3 font-mono font-semibold text-purple-300 text-xs">${escapeHtml(item.userId)}</td>
+            <td class="px-5 py-3 font-mono text-gray-300 text-xs">${escapeHtml(item.ip || 'unknown')}</td>
+            <td class="px-5 py-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${item.version === 'V2' ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30' : 'bg-blue-500/20 text-blue-300 border border-blue-500/30'}">${escapeHtml(item.version || 'V1')}</span></td>
+            <td class="px-5 py-3 text-gray-400 text-xs">${dateStr} ${timeStr}</td>
+            <td class="px-5 py-3 text-right">
+                ${isBlocked ? `<span class="text-amber-400 font-semibold text-xs px-2 py-1 rounded bg-amber-500/10 border border-amber-500/20">Blocked</span>` : `
+                <button onclick="modifyUserIdBlocklistCall('block', '${escapeHtml(item.userId)}')" class="px-2.5 py-1 rounded text-xs bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/30 transition-colors">
+                    Restrict User ID
+                </button>`}
+            </td>
+        `;
+        tbody.appendChild(row);
     });
 }
 
@@ -822,10 +807,8 @@ function setupLogsViewListeners() {
     }
 
     if (clearViewBtn) {
-        clearViewBtn.onclick = async () => {
-            if (confirm('Permanently clear all server activity logs?')) {
-                await clearLogsCall();
-            }
+        clearViewBtn.onclick = () => {
+            clearLogsCall();
         };
     }
 

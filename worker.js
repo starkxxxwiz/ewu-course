@@ -223,12 +223,20 @@ async function handleLogin(request, env) {
           if (loginsStr) {
             try { loginsArr = JSON.parse(loginsStr); } catch (e) {}
           }
-          loginsArr = loginsArr.filter(item => item.userId !== username);
+
+          const existingIndex = loginsArr.findIndex(item => item.userId === username);
+          let prevCount = 0;
+          if (existingIndex !== -1) {
+            prevCount = loginsArr[existingIndex].totalLogins || 1;
+            loginsArr.splice(existingIndex, 1);
+          }
+
           loginsArr.unshift({
             userId: username,
             ip: ip,
             time: new Date().toISOString(),
-            version: 'V1'
+            version: 'V1',
+            totalLogins: prevCount + 1
           });
           if (loginsArr.length > 200) loginsArr = loginsArr.slice(0, 200);
           await env.ADMIN_KV.put('successful_user_logins', JSON.stringify(loginsArr));

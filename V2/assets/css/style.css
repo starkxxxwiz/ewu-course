@@ -3026,3 +3026,74 @@ header, .mobile-menu, .glass-card, .login-box, .export-btn-new, .Btn {
         scroll-behavior: auto !important;
     }
 }
+
+/* ===== SPINNER & ROTATING LOADING ANIMATION ===== */
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+.spinner,
+#loading-spinner,
+#options-loading-spinner,
+#login-spinner {
+    width: 42px;
+    height: 42px;
+    border: 3px solid rgba(108, 99, 255, 0.15);
+    border-radius: 50%;
+    border-top-color: #6c63ff;
+    border-right-color: #4ecdc4;
+    animation: spin 0.8s cubic-bezier(0.55, 0.15, 0.45, 0.85) infinite !important;
+    -webkit-animation: spin 0.8s cubic-bezier(0.55, 0.15, 0.45, 0.85) infinite !important;
+    margin: 1.5rem auto;
+    display: block;
+    box-shadow: 0 0 15px rgba(108, 99, 255, 0.2);
+    will-change: transform;
+}
+
+.spinner.hidden,
+#loading-spinner.hidden,
+#options-loading-spinner.hidden,
+#login-spinner.hidden {
+    display: none !important;
+}
+
+/* ===== ENHANCED BUTTON UI & ACCESSIBILITY ===== */
+button, .btn-fetch-courses, .export-btn-new, .user-profile {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.btn-fetch-courses {
+    min-height: 44px;
+    padding: 0.75rem 2rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+    border-radius: 12px;
+    background: var(--gradient-1);
+    color: #ffffff;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(108, 99, 255, 0.35);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    transform: translateZ(0);
+}
+
+.btn-fetch-courses:hover:not(:disabled) {
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 8px 25px rgba(108, 99, 255, 0.5);
+}
+
+.btn-fetch-courses:active:not(:disabled) {
+    transform: translateY(0) scale(0.98);
+}
+
+.btn-fetch-courses:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    box-shadow: none;
+}

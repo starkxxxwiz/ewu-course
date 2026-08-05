@@ -617,7 +617,7 @@ function renderSuccessfulLoginsTable(loginsArr) {
     tbody.innerHTML = '';
 
     if (!loginsArr || loginsArr.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" class="px-5 py-8 text-center text-gray-500">No active login records found.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" class="px-5 py-8 text-center text-gray-500">No active login records found.</td></tr>';
         return;
     }
 
@@ -625,6 +625,7 @@ function renderSuccessfulLoginsTable(loginsArr) {
         const timeStr = item.time ? new Date(item.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : 'N/A';
         const dateStr = item.time ? new Date(item.time).toISOString().split('T')[0] : '';
         const isBlocked = (currentDataCache?.blockedUserIds || []).includes(item.userId);
+        const count = item.totalLogins || 1;
 
         const row = document.createElement('tr');
         row.className = 'hover:bg-white/[0.02] transition-colors border-b border-gray-800/40';
@@ -632,6 +633,7 @@ function renderSuccessfulLoginsTable(loginsArr) {
             <td class="px-5 py-3 font-mono font-semibold text-purple-300 text-xs">${escapeHtml(item.userId)}</td>
             <td class="px-5 py-3 font-mono text-gray-300 text-xs">${escapeHtml(item.ip || 'unknown')}</td>
             <td class="px-5 py-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${item.version === 'V2' ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30' : 'bg-blue-500/20 text-blue-300 border border-blue-500/30'}">${escapeHtml(item.version || 'V1')}</span></td>
+            <td class="px-5 py-3"><span class="px-2 py-0.5 rounded text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">${count} ${count === 1 ? 'login' : 'logins'}</span></td>
             <td class="px-5 py-3 text-gray-400 text-xs">${dateStr} ${timeStr}</td>
             <td class="px-5 py-3 text-right">
                 ${isBlocked ? `<span class="text-amber-400 font-semibold text-xs px-2 py-1 rounded bg-amber-500/10 border border-amber-500/20">Blocked</span>` : `

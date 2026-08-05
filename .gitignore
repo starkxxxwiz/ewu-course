@@ -1,33 +1,48 @@
 # Node modules
 node_modules/
-npm-debug.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
-# Mac OS
+# Mac OS & Windows OS temporary files
 .DS_Store
-
-# Windows
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
+desktop.ini
+*.stackdump
 
-# Environment variables
+# Environment variables & local secrets
 .env
-.env.local
+.env.*
+*.env
+data.env
 
-# Build output
+# Build outputs & Temp caches
 dist/
 build/
+out/
+.tmp/
+*.tmp
 
-# Editor directories and files
+# Editor & IDE settings
 .vscode/
 .idea/
+.gemini/
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+*.swp
 
-# Cloudflare Wrangler
+# Cloudflare Wrangler & Serverless Caches
 .wrangler/
+.mf/
 
-# Logs
+# Application Logs
 logs
 *.log

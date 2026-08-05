@@ -5,14 +5,14 @@ Welcome to the **EWU Course Schedule Tool**! This web application, developed by 
 ## 🎯 Purpose of the Website
 The main objective of this tool is to provide an accessible, fast, and highly responsive dashboard for checking the availability, timing, and classroom allocations of your **ewu course schedule**. It optimizes the advising process and reduces friction when students are planning their semesters, making it easy to check the **ewu faculty**, **ewu faculty list**, and the complete **ewu department faculty list**.
 
-## ✨ Features
+## ✨ Key Features
 - **Modern Dashboard (Main & V2)**: Choose between our classic experience and the enhanced V2 dashboard designed with a premium Glassmorphism UI.
-- **Auto-Refresh System**: A robust, built-in auto-refresh feature allowing students to automatically poll for the latest course seat capacities without manually reloading the page. It includes a custom, configurable delay interval and state persistence.
-- **Find EWU Course Schedules & Faculty**: Rapidly search and filter courses by **ewu faculty**, seat availability, timings, and class codes. Look up specific professors easily.
-- **Dynamic Sorting**: Check available capacity for classes seamlessly.
-- **Mobile & Low-End Device Optimized**: Highly responsive across smartphones, tablets, and desktops. Includes specific CSS hardware acceleration and animation throttling targeting low-end mobile devices to ensure a lag-free experience.
-- **Export to PDF**: Easily export your planned courses directly into a clean, physical copy. The PDF generator now features intelligent pagination, customized column widths for faculty names and schedules, and responsive row heights.
-- **Secure Sessions**: Directly hooks into standard login mechanisms to fetch private routines.
+- **Low-End Device & Mobile Performance**: Optimized CSS hardware acceleration (`transform: translateZ(0)`), reduced motion fallbacks (`@media (prefers-reduced-motion)`), and lightweight blur calculations for smooth, lag-free performance on budget smartphones and devices.
+- **Smart Multi-Token & Normalized Search**: Advanced search capabilities across V1 and V2 dashboards supporting space and hyphen normalization (e.g., searching `CSE 101`, `CSE-101`, or `CSE101` produces identical results) along with multi-keyword matching.
+- **Streamlined V2 PDF Export**: Export your course routine to a beautifully aligned PDF featuring a ultra-compact 6mm header/footer layout to maximize data rows per page.
+- **Real-Time Notice System**: Instant deployment of Whole Page Banners and Upper Notice Banners with live edge synchronization, toast notifications, and dismiss capabilities.
+- **Auto-Refresh System**: A robust, built-in auto-refresh feature allowing students to automatically poll for the latest course seat capacities without manually reloading the page. Includes custom delay intervals (5–300s) and state persistence.
+- **Secure Sessions**: Directly hooks into portal authentication to fetch individual advisements and course routines securely.
 
 ## 📖 Basic Usage Instructions
 1. Navigate to the homepage.

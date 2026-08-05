@@ -199,73 +199,176 @@
 
     }
 
-    function injectUpperBanner(config) {
-        const p = window.location.pathname;
-        if (config.pages !== '*' && !config.pages.split(',').map(s => s.trim()).includes(p)) return;
-
-        const position = config.position || 'fixed';
-        const sizeClass = config.fontSize || '0.875rem';
-        const glowClass = config.glow ? 'box-shadow: 0 0 20px rgba(139, 92, 246, 0.5); border-bottom: 1px solid rgba(139, 92, 246, 0.4);' : 'box-shadow: 0 4px 20px rgba(0,0,0,0.3); border-bottom: 1px solid rgba(255,255,255,0.05);';
-
-        let innerHtml = `<span style="font-size: ${sizeClass}; font-weight: 500;">${config.content}</span>`;
-        if (config.marquee) {
-            innerHtml = `<marquee scrollamount="5" style="font-size: ${sizeClass}; font-weight: 500; width: 100%;">${config.content}</marquee>`;
-        }
-
-        const banner = document.createElement('div');
-        banner.style.cssText = `
-            position: ${position};
-            top: 0; left: 0; right: 0;
-            background: rgba(17, 24, 39, 0.85);
-            backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-            color: #f3f4f6;
-            z-index: 999999;
-            padding: 0.75rem 1.5rem;
-            text-align: center;
-            display: flex; align-items: center; justify-content: center;
-            font-family: system-ui, -apple-system, sans-serif;
-            ${glowClass}
-        `;
-        banner.innerHTML = innerHtml;
-        document.body.prepend(banner);
-
-        // Add padding to body so fixed banner doesn't overlap content
-        if (position === 'fixed') {
-            document.body.style.paddingTop = `calc(${banner.offsetHeight}px + ${document.body.style.paddingTop || '0px'})`;
+    function removeUpperBanner() {
+        const existing = document.getElementById('sysNoticeUpperBanner');
+        if (existing) {
+            if (existing.dataset.addedPadding) {
+                const currentPad = parseFloat(document.body.style.paddingTop || 0);
+                const addedPad = parseFloat(existing.dataset.addedPadding || 0);
+                document.body.style.paddingTop = `${Math.max(0, currentPad - addedPad)}px`;
+            }
+            existing.remove();
         }
     }
 
-    // 1. Check Site Status (Closure & Block logic)
-    fetch(`${API_URL}/status`)
-        .then(res => res.json())
-        .then(data => {
-            if (data.blocked) {
-                injectScreen('blocked');
-                return;
-            } else if (data.closed) {
-                injectScreen('maintenance');
-                return;
-            }
+    function injectUpperBanner(config) {
+        removeUpperBanner();
 
-            // Custom Notice injection
-            if (data.customNotice) {
-                if (data.customNotice.wpb && data.customNotice.wpb.enabled) {
-                    injectScreen('wpb', data.customNotice.wpb);
-                    return; // Prevents the rest of the site from executing
+        const p = window.location.pathname;
+        if (config.pages && config.pages !== '*' && !config.pages.split(',').map(s => s.trim()).includes(p)) return;
+
+        const placement = config.position || 'after-header'; // 'after-header' or 'fixed-top'
+        let fontSizeVal = '0.875rem';
+        if (config.fontSize === 'text-xs') fontSizeVal = '0.75rem';
+        if (config.fontSize === 'text-base') fontSizeVal = '1rem';
+        if (config.fontSize === 'text-lg') fontSizeVal = '1.125rem';
+        
+        let fontFamilyVal = config.fontFamily || 'Inter, system-ui, sans-serif';
+        if (config.fontFamily === 'Roboto') fontFamilyVal = "'Roboto', sans-serif";
+        if (config.fontFamily === 'Poppins') fontFamilyVal = "'Poppins', sans-serif";
+        if (config.fontFamily === 'monospace') fontFamilyVal = "ui-monospace, SFMono-Regular, Menlo, monospace";
+        if (config.fontFamily === 'serif') fontFamilyVal = "Georgia, Cambria, serif";
+
+        let fontWeightVal = '500';
+        let fontStyleVal = 'normal';
+        if (config.fontStyle === 'italic') fontStyleVal = 'italic';
+        if (config.fontStyle === 'semibold') fontWeightVal = '600';
+        if (config.fontStyle === 'bold') fontWeightVal = '700';
+
+        const animType = config.animation || (config.marquee ? 'scroll-left' : 'none');
+
+        const glowStyle = config.glow ? 'box-shadow: 0 0 20px rgba(139, 92, 246, 0.4); border-bottom: 1px solid rgba(139, 92, 246, 0.35);' : 'box-shadow: 0 4px 16px rgba(0,0,0,0.25); border-bottom: 1px solid rgba(255,255,255,0.06);';
+
+        let contentSpan = `<span style="font-size: ${fontSizeVal}; font-family: ${fontFamilyVal}; font-weight: ${fontWeightVal}; font-style: ${fontStyleVal}; color: #f3f4f6;">${config.content || ''}</span>`;
+        
+        if (animType === 'scroll-left') {
+            contentSpan = `<marquee direction="left" scrollamount="5" style="font-size: ${fontSizeVal}; font-family: ${fontFamilyVal}; font-weight: ${fontWeightVal}; font-style: ${fontStyleVal}; width: 100%; flex: 1; color: #f3f4f6;">${config.content || ''}</marquee>`;
+        } else if (animType === 'scroll-right') {
+            contentSpan = `<marquee direction="right" scrollamount="5" style="font-size: ${fontSizeVal}; font-family: ${fontFamilyVal}; font-weight: ${fontWeightVal}; font-style: ${fontStyleVal}; width: 100%; flex: 1; color: #f3f4f6;">${config.content || ''}</marquee>`;
+        } else if (animType === 'pulse') {
+            contentSpan = `<span style="font-size: ${fontSizeVal}; font-family: ${fontFamilyVal}; font-weight: ${fontWeightVal}; font-style: ${fontStyleVal}; color: #f3f4f6; animation: sysNoticePulse 2s ease-in-out infinite;">${config.content || ''}</span>`;
+        } else if (animType === 'bounce') {
+            contentSpan = `<span style="display: inline-block; font-size: ${fontSizeVal}; font-family: ${fontFamilyVal}; font-weight: ${fontWeightVal}; font-style: ${fontStyleVal}; color: #f3f4f6; animation: sysNoticeBounce 1.5s ease infinite;">${config.content || ''}</span>`;
+        }
+
+        const banner = document.createElement('div');
+        banner.id = 'sysNoticeUpperBanner';
+        
+        if (placement === 'fixed-top') {
+            banner.style.cssText = `
+                position: fixed; top: 0; left: 0; right: 0;
+                background: rgba(17, 24, 39, 0.94);
+                backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+                z-index: 999999;
+                padding: 0.55rem 1.25rem;
+                display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+                ${glowStyle}
+            `;
+        } else {
+            // Post-header notice bar (relative/sticky after header)
+            banner.style.cssText = `
+                position: relative; width: 100%;
+                background: rgba(17, 24, 39, 0.88);
+                backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+                z-index: 990;
+                padding: 0.6rem 1.5rem;
+                display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+                ${glowStyle}
+            `;
+        }
+
+        // Add inline keyframes if needed
+        if (!document.getElementById('sysNoticeKeyframes')) {
+            const kf = document.createElement('style');
+            kf.id = 'sysNoticeKeyframes';
+            kf.innerHTML = `
+                @keyframes sysNoticePulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.7; transform: scale(1.02); } }
+                @keyframes sysNoticeBounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+            `;
+            document.head.appendChild(kf);
+        }
+
+        const contentContainer = document.createElement('div');
+        contentContainer.style.cssText = 'flex: 1; display: flex; align-items: center; justify-content: center; text-align: center; overflow: hidden;';
+        contentContainer.innerHTML = contentSpan;
+
+        const closeBtn = document.createElement('button');
+        closeBtn.innerHTML = '✕';
+        closeBtn.style.cssText = 'background: rgba(255,255,255,0.1); border: none; color: #9ca3af; border-radius: 50%; width: 22px; height: 22px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 11px; transition: all 0.2s; flex-shrink: 0;';
+        closeBtn.onmouseover = () => { closeBtn.style.background = 'rgba(255,255,255,0.25)'; closeBtn.style.color = '#fff'; };
+        closeBtn.onmouseout = () => { closeBtn.style.background = 'rgba(255,255,255,0.1)'; closeBtn.style.color = '#9ca3af'; };
+        closeBtn.onclick = () => removeUpperBanner();
+
+        banner.appendChild(contentContainer);
+        banner.appendChild(closeBtn);
+
+        // Insertion logic: Place after <header> if placement is 'after-header'
+        const headerEl = document.querySelector('header');
+        if (placement === 'after-header' && headerEl) {
+            headerEl.insertAdjacentElement('afterend', banner);
+        } else {
+            document.body.prepend(banner);
+            if (placement === 'fixed-top') {
+                const h = banner.offsetHeight;
+                banner.dataset.addedPadding = h;
+                const currentPad = parseFloat(document.body.style.paddingTop || 0);
+                document.body.style.paddingTop = `${currentPad + h}px`;
+            }
+        }
+    }
+
+    // Check Site Status (Closure, Block, & Notice logic)
+    function checkStatus() {
+        fetch(`${API_URL}/status`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.blocked) {
+                    injectScreen('blocked');
+                    return;
+                } else if (data.closed) {
+                    injectScreen('maintenance');
+                    return;
                 }
-                if (data.customNotice.unb && data.customNotice.unb.enabled) {
-                    const checkBody = setInterval(() => {
+
+                // Custom Notice injection
+                if (data.customNotice) {
+                    if (data.customNotice.wpb && data.customNotice.wpb.enabled) {
+                        injectScreen('wpb', data.customNotice.wpb);
+                        return;
+                    }
+                    if (data.customNotice.unb && data.customNotice.unb.enabled) {
                         if (document.body) {
                             injectUpperBanner(data.customNotice.unb);
-                            clearInterval(checkBody);
+                        } else {
+                            const checkBody = setInterval(() => {
+                                if (document.body) {
+                                    injectUpperBanner(data.customNotice.unb);
+                                    clearInterval(checkBody);
+                                }
+                            }, 50);
                         }
-                    }, 50);
+                    } else {
+                        removeUpperBanner();
+                    }
+                } else {
+                    removeUpperBanner();
                 }
-            }
-        })
-        .catch(err => {
-            console.warn('Status proxy degraded:', err);
-        });
+            })
+            .catch(err => {
+                console.warn('Status proxy degraded:', err);
+            });
+    }
+
+    // Initial check
+    checkStatus();
+
+    // Re-check status every 30s or when tab regains focus for instant edge updates
+    setInterval(checkStatus, 30000);
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+            checkStatus();
+        }
+    });
 
     // 2. Log Analytics Visit
     setTimeout(() => {

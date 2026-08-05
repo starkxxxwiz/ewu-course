@@ -397,22 +397,54 @@ async function handleAnalyticsEvent(request, env) {
     }
     await env.ADMIN_KV.put(key, JSON.stringify(stats));
 
-    // Log the event with IP
+    // Format structured log entry
     const userAgent = request.headers.get('User-Agent') || 'unknown';
+    const nowIso = new Date().toISOString();
+    const dateFormatted = nowIso.replace('T', ' ').substring(0, 19);
+
+    let logMessage = data.message || '';
+    let level = data.level || (data.type === 'error' ? 'error' : 'info');
+
+    if (!logMessage) {
+      if (data.type === 'visit') {
+        logMessage = `visited ${data.path || '/'}`;
+      } else if (data.type === 'login') {
+        const durationStr = data.timeTaken ? ` - ${data.timeTaken}ms` : '';
+        logMessage = `logged in using ${data.userId || 'credentials'}${durationStr}`;
+      } else if (data.type === 'fetch_courses') {
+        logMessage = `fetched ${data.count || 0} courses`;
+      } else if (data.type === 'export_pdf') {
+        logMessage = `exported ${data.count || 0} courses`;
+      } else if (data.type === 'logout') {
+        logMessage = `logged out`;
+      } else {
+        logMessage = `triggered ${data.type || 'action'}`;
+      }
+    }
+
+    const formattedLog = `[${dateFormatted}] [${level}] user [${ip}] ${logMessage}`;
+
     const logEntry = {
-      time: new Date().toISOString(),
-      type: data.type,
+      id: crypto.randomUUID(),
+      time: nowIso,
+      level: level,
+      type: data.type || 'visit',
       ip: ip,
+      userId: data.userId || null,
+      timeTaken: data.timeTaken || null,
+      count: data.count || null,
+      path: data.path || null,
       userAgent: userAgent,
-      path: data.path || '/'
+      formatted: formattedLog
     };
+
     let logsStr = await env.ADMIN_KV.get('recent_logs');
     let logsArr = [];
     if (logsStr) {
       try { logsArr = JSON.parse(logsStr); } catch (e) {}
     }
     logsArr.unshift(logEntry);
-    if (logsArr.length > 200) logsArr = logsArr.slice(0, 200); // Increased log size
+    if (logsArr.length > 500) logsArr = logsArr.slice(0, 500);
     await env.ADMIN_KV.put('recent_logs', JSON.stringify(logsArr));
     
   } catch(e) {}

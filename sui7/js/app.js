@@ -253,14 +253,28 @@ function hydrateView(viewName, data) {
         if (el('unbToggle')) {
             el('unbToggle').checked = notice.unb?.enabled || false;
             el('unbContent').value = notice.unb?.content || '';
+            el('unbFontFamily').value = notice.unb?.fontFamily || 'Inter';
+            el('unbFontStyle').value = notice.unb?.fontStyle || 'normal';
             el('unbFontSize').value = notice.unb?.fontSize || 'text-sm';
-            el('unbPosition').value = notice.unb?.position || 'fixed';
+            el('unbAnimation').value = notice.unb?.animation || 'none';
+            el('unbPosition').value = notice.unb?.position || 'after-header';
             el('unbPages').value = notice.unb?.pages || '*';
-            el('unbMarquee').checked = notice.unb?.marquee || false;
             el('unbGlow').checked = notice.unb?.glow || false;
 
             el('unbSaveBtn').onclick = () => saveNoticeConfig(data);
         }
+
+        if (el('globalNoticeSaveBtn')) {
+            el('globalNoticeSaveBtn').onclick = () => saveNoticeConfig(data);
+        }
+    }
+
+    if (viewName === 'logs') {
+        renderRealTimeLogs(data.recentLogs || []);
+        setupLogsViewListeners();
+        startLogsAutoPolling();
+    } else {
+        stopLogsAutoPolling();
     }
 
     if (viewName === 'security') {
@@ -313,40 +327,73 @@ function renderMiniLogs(logs) {
     });
 }
 
+function showAdminToast(message, isSuccess = true) {
+    const toast = document.getElementById('noticeStatusToast');
+    const text = document.getElementById('noticeStatusText');
+    const icon = document.getElementById('noticeStatusIcon');
+
+    if (toast && text && icon) {
+        text.textContent = message;
+        if (isSuccess) {
+            toast.className = 'text-sm px-4 py-2.5 rounded-xl border flex items-center gap-2 transition-all bg-green-500/10 text-green-400 border-green-500/30';
+            icon.className = 'ph ph-check-circle text-lg text-green-400';
+        } else {
+            toast.className = 'text-sm px-4 py-2.5 rounded-xl border flex items-center gap-2 transition-all bg-red-500/10 text-red-400 border-red-500/30';
+            icon.className = 'ph ph-warning-circle text-lg text-red-400';
+        }
+        toast.classList.remove('hidden');
+        setTimeout(() => {
+            toast.classList.add('hidden');
+        }, 4000);
+    } else {
+        alert(message);
+    }
+}
+
 async function saveNoticeConfig(data) {
     const el = id => document.getElementById(id);
     const notice = {
         wpb: {
-            enabled: el('wpbToggle').checked,
-            content: el('wpbContent').value,
-            fontSize: el('wpbFontSize').value,
-            fontWeight: el('wpbFontWeight').value,
-            icon: el('wpbIcon').value,
-            align: el('wpbAlign').value
+            enabled: el('wpbToggle') ? el('wpbToggle').checked : false,
+            content: el('wpbContent') ? el('wpbContent').value : '',
+            fontSize: el('wpbFontSize') ? el('wpbFontSize').value : 'text-base',
+            fontWeight: el('wpbFontWeight') ? el('wpbFontWeight').value : 'font-normal',
+            icon: el('wpbIcon') ? el('wpbIcon').value : '',
+            align: el('wpbAlign') ? el('wpbAlign').value : 'text-center'
         },
         unb: {
-            enabled: el('unbToggle').checked,
-            content: el('unbContent').value,
-            fontSize: el('unbFontSize').value,
-            position: el('unbPosition').value,
-            pages: el('unbPages').value,
-            marquee: el('unbMarquee').checked,
-            glow: el('unbGlow').checked
+            enabled: el('unbToggle') ? el('unbToggle').checked : false,
+            content: el('unbContent') ? el('unbContent').value : '',
+            fontFamily: el('unbFontFamily') ? el('unbFontFamily').value : 'Inter',
+            fontStyle: el('unbFontStyle') ? el('unbFontStyle').value : 'normal',
+            fontSize: el('unbFontSize') ? el('unbFontSize').value : 'text-sm',
+            animation: el('unbAnimation') ? el('unbAnimation').value : 'none',
+            position: el('unbPosition') ? el('unbPosition').value : 'after-header',
+            pages: el('unbPages') ? el('unbPages').value : '*',
+            glow: el('unbGlow') ? el('unbGlow').checked : false
         }
     };
     
     try {
         const token = localStorage.getItem('adminToken');
-        await fetch(`${API_URL}/admin/config`, {
+        const res = await fetch(`${API_URL}/admin/config`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
             body: JSON.stringify({ customNotice: notice })
         });
-        data.customNotice = notice;
-        currentDataCache.customNotice = notice;
-        alert('Notice Configuration updated successfully across all edge nodes.');
+
+        if (res.status === 401 || res.status === 403) {
+            handleLogout(true);
+            return;
+        }
+
+        if (!res.ok) throw new Error('Gateway rejected config save');
+
+        if (data) data.customNotice = notice;
+        if (currentDataCache) currentDataCache.customNotice = notice;
+        showAdminToast('Notice Configuration saved & deployed live across all edge nodes!', true);
     } catch(err) {
-        alert('Edge synchronization failed for Custom Notice.');
+        showAdminToast('Edge synchronization failed for Custom Notice.', false);
     }
 }
 
@@ -594,9 +641,159 @@ function updatePageHeaders(path) {
         case 'user-analytics': t.textContent = 'User Analytics'; s.textContent = 'Deep dive into origin footprints.'; break;
         case 'site-analytics': t.textContent = 'Site Analytics'; s.textContent = 'Performance and density ratios.'; break;
         case 'control': t.textContent = 'Command & Control'; s.textContent = 'Global emergency switches.'; break;
+        case 'logs': t.textContent = 'Real-Time Audit Logs'; s.textContent = 'Live user event streaming & telemetry inspection.'; break;
         case 'security': t.textContent = 'Access Management'; s.textContent = 'Packet firewalls and event inspection.'; break;
         case 'settings': t.textContent = 'Dashboard Settings'; s.textContent = 'Local console interface preferences.'; break;
     }
+}
+
+// ================= REAL-TIME LOGS STREAM =================
+let logsAutoPollingInterval = null;
+let currentLogsFilterLevel = 'all';
+let currentLogsSearchQuery = '';
+
+function startLogsAutoPolling() {
+    stopLogsAutoPolling();
+    logsAutoPollingInterval = setInterval(() => {
+        refreshDashboardData();
+    }, 4000);
+}
+
+function stopLogsAutoPolling() {
+    if (logsAutoPollingInterval) {
+        clearInterval(logsAutoPollingInterval);
+        logsAutoPollingInterval = null;
+    }
+}
+
+function setupLogsViewListeners() {
+    const searchInput = document.getElementById('logsSearchInput');
+    const autoRefreshBtn = document.getElementById('logsAutoRefreshBtn');
+    const clearViewBtn = document.getElementById('logsClearViewBtn');
+    const filterBtns = document.querySelectorAll('.log-level-filter');
+
+    if (searchInput) {
+        searchInput.oninput = (e) => {
+            currentLogsSearchQuery = e.target.value.toLowerCase().trim();
+            if (currentDataCache) renderRealTimeLogs(currentDataCache.recentLogs || []);
+        };
+    }
+
+    if (autoRefreshBtn) {
+        autoRefreshBtn.onclick = () => {
+            if (logsAutoPollingInterval) {
+                stopLogsAutoPolling();
+                autoRefreshBtn.classList.remove('bg-blue-500/20', 'text-blue-300', 'border-blue-500/30');
+                autoRefreshBtn.classList.add('bg-gray-800', 'text-gray-400');
+                document.getElementById('logsLiveBadge')?.classList.add('hidden');
+            } else {
+                startLogsAutoPolling();
+                autoRefreshBtn.classList.add('bg-blue-500/20', 'text-blue-300', 'border-blue-500/30');
+                autoRefreshBtn.classList.remove('bg-gray-800', 'text-gray-400');
+                document.getElementById('logsLiveBadge')?.classList.remove('hidden');
+            }
+        };
+    }
+
+    if (clearViewBtn) {
+        clearViewBtn.onclick = () => {
+            if (currentDataCache) currentDataCache.recentLogs = [];
+            renderRealTimeLogs([]);
+        };
+    }
+
+    filterBtns.forEach(btn => {
+        btn.onclick = () => {
+            filterBtns.forEach(b => {
+                b.classList.remove('active', 'bg-blue-500/20', 'text-blue-300', 'border-blue-500/30');
+                b.classList.add('text-gray-400');
+            });
+            btn.classList.add('active', 'bg-blue-500/20', 'text-blue-300', 'border-blue-500/30');
+            btn.classList.remove('text-gray-400');
+            currentLogsFilterLevel = btn.getAttribute('data-level') || 'all';
+            if (currentDataCache) renderRealTimeLogs(currentDataCache.recentLogs || []);
+        };
+    });
+}
+
+function renderRealTimeLogs(logs) {
+    const feed = document.getElementById('logsTerminalFeed');
+    const countEl = document.getElementById('logsCountText');
+    if (!feed) return;
+
+    if (!logs || logs.length === 0) {
+        feed.innerHTML = `
+            <div class="p-8 text-center text-gray-500 font-sans">
+                <i class="ph ph-check-circle text-2xl mb-2 text-green-400 inline-block"></i>
+                <p class="font-medium">No activity logs recorded.</p>
+                <p class="text-xs mt-1 text-gray-600">Events will appear live as users interact with the app.</p>
+            </div>
+        `;
+        if (countEl) countEl.textContent = '0';
+        return;
+    }
+
+    let filtered = logs.filter(log => {
+        const levelMatch = currentLogsFilterLevel === 'all' || (log.level || 'info') === currentLogsFilterLevel;
+        if (!levelMatch) return false;
+
+        if (currentLogsSearchQuery) {
+            const rawStr = JSON.stringify(log).toLowerCase();
+            const formatted = (log.formatted || '').toLowerCase();
+            return rawStr.includes(currentLogsSearchQuery) || formatted.includes(currentLogsSearchQuery);
+        }
+        return true;
+    });
+
+    if (countEl) countEl.textContent = filtered.length;
+
+    if (filtered.length === 0) {
+        feed.innerHTML = `
+            <div class="p-8 text-center text-gray-500 font-sans">
+                <i class="ph ph-magnifying-glass text-2xl mb-2 inline-block opacity-40"></i>
+                <p class="font-medium">No logs match your filter criteria.</p>
+            </div>
+        `;
+        return;
+    }
+
+    const fragment = document.createDocumentFragment();
+    filtered.slice(0, 250).forEach(log => {
+        const row = document.createElement('div');
+        row.className = 'py-1.5 px-3 rounded hover:bg-white/[0.04] transition-colors flex items-start gap-2.5 leading-relaxed font-mono text-[11px] md:text-xs border-b border-gray-900/50';
+
+        const timeStr = log.time ? new Date(log.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '00:00:00';
+        const dateStr = log.time ? new Date(log.time).toISOString().split('T')[0] : '';
+        const level = (log.level || 'info').toLowerCase();
+        
+        let levelBadgeClass = 'bg-blue-500/10 text-blue-400 border-blue-500/20';
+        if (level === 'success') levelBadgeClass = 'bg-green-500/10 text-green-400 border-green-500/20';
+        if (level === 'warning' || level === 'warn') levelBadgeClass = 'bg-amber-500/10 text-amber-400 border-amber-500/20';
+        if (level === 'error') levelBadgeClass = 'bg-red-500/10 text-red-400 border-red-500/20';
+
+        let formattedMsg = log.formatted;
+        if (!formattedMsg) {
+          const ipStr = log.ip || 'unknown';
+          let msg = log.path ? `visited ${log.path}` : (log.type || 'action');
+          formattedMsg = `[${dateStr} ${timeStr}] [${level}] user [${ipStr}] ${msg}`;
+        }
+
+        row.innerHTML = `
+            <span class="text-gray-500 flex-shrink-0 select-none">${dateStr} ${timeStr}</span>
+            <span class="px-1.5 py-0.5 rounded text-[10px] uppercase font-bold border ${levelBadgeClass} flex-shrink-0">${level}</span>
+            <span class="text-purple-300 font-semibold flex-shrink-0">user [${log.ip || 'unknown'}]</span>
+            <span class="text-gray-300 break-all flex-1">${escapeHtml(formattedMsg.replace(/\[\d{4}-\d{2}-\d{2}[^\]]*\]\s*\[[^\]]+\]\s*user\s*\[[^\]]+\]\s*/, ''))}</span>
+        `;
+        fragment.appendChild(row);
+    });
+
+    feed.innerHTML = '';
+    feed.appendChild(fragment);
+}
+
+function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
 // ================= BOOT =================

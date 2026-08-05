@@ -26,6 +26,16 @@ body {
     border: 1px solid rgba(255, 255, 255, 0.1);
     box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4), 
                 0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+    transform: translateZ(0);
+    will-change: transform;
+}
+
+@media (max-width: 768px) {
+    .glass-card {
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+    }
 }
 
 /* ===== INPUT STYLES ===== */

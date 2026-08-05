@@ -46,7 +46,7 @@ Wrangler is **optional but highly recommended**. While it is entirely possible t
 ## 3. Managing the Application
 
 ### Accessing the Admin Panel
-1. The admin panel lives universally at `/sui7/index.html`.
+1. The admin panel lives securely at the designated administrative portal endpoint.
 2. Login securely using the username and raw password matching the hash you compiled earlier.
 
 ### Tracking Analytics & IPs

@@ -700,13 +700,32 @@ function applyFiltersAndDisplay() {
         filteredCourses = filteredCourses.filter(course => course.SeatsLeft > 0);
     }
 
-    if (searchTags.length > 0) {
+    const searchInput = document.getElementById('search-input');
+    const activeInputValue = searchInput ? searchInput.value.trim() : '';
+
+    if (searchTags.length > 0 || activeInputValue) {
         filteredCourses = filteredCourses.filter(course => {
-            const searchString = [
-                course.CourseCode, course.Section, course.ShortName,
+            const cleanCode = cleanCourseCode(course.CourseCode);
+            const codeNorm = cleanCode.toLowerCase().replace(/[\s\-_]/g, '');
+            const rawSearchStr = [
+                cleanCode, course.CourseCode, course.Section, course.ShortName,
                 course.Days, course.Time, course.RoomCode
             ].join(' ').toLowerCase();
-            return searchTags.some(tag => searchString.includes(tag.toLowerCase()));
+
+            const matchesTags = searchTags.length === 0 || searchTags.some(tag => {
+                const tagNorm = tag.toLowerCase().replace(/[\s\-_]/g, '');
+                return (tagNorm && codeNorm.includes(tagNorm)) || rawSearchStr.includes(tag.toLowerCase());
+            });
+
+            let matchesActiveInput = true;
+            if (activeInputValue) {
+                const inputNorm = activeInputValue.toLowerCase().replace(/[\s\-_]/g, '');
+                const tokens = activeInputValue.toLowerCase().split(/\s+/).filter(Boolean);
+                matchesActiveInput = (inputNorm && codeNorm.includes(inputNorm)) ||
+                                     (tokens.length > 0 && tokens.every(token => rawSearchStr.includes(token)));
+            }
+
+            return matchesTags && matchesActiveInput;
         });
     }
 
@@ -875,6 +894,7 @@ function showSearchSuggestions() {
     if (!searchInput || !suggestionsEl) return;
 
     const query = searchInput.value.toLowerCase().trim();
+    const queryNorm = query.replace(/[\s\-_]/g, '');
 
     if (!query) {
         suggestionsEl.classList.add('hidden');
@@ -886,12 +906,14 @@ function showSearchSuggestions() {
 
     allCourses.forEach(course => {
         const cleanCode = cleanCourseCode(course.CourseCode);
+        const codeNorm = cleanCode.toLowerCase().replace(/[\s\-_]/g, '');
         const searchString = [
             cleanCode,
-            course.ShortName
+            course.ShortName,
+            course.CourseCode
         ].join(' ').toLowerCase();
 
-        if (searchString.includes(query)) {
+        if ((queryNorm && codeNorm.includes(queryNorm)) || searchString.includes(query)) {
             if (!uniqueCourses.has(cleanCode)) {
                 uniqueCourses.set(cleanCode, {
                     code: cleanCode,
@@ -1143,6 +1165,10 @@ function exportToPDF() {
 
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF('landscape');
+        doc.setProperties({
+            title: 'Faculty list',
+            author: 'EWU Wiz'
+        });
 
         const pageWidth = doc.internal.pageSize.width;
         const pageHeight = doc.internal.pageSize.height;
@@ -1311,7 +1337,7 @@ function exportToPDF() {
             startY: 30,
             head: [columns.map(c => c.header)],
             body: tableData,
-            margin: { top: 5, bottom: 20, left: tableMargin, right: tableMargin },
+            margin: { top: 5, bottom: 10, left: tableMargin, right: tableMargin },
             tableWidth: totalTableWidth,
             theme: 'striped',
             pageBreak: 'auto',
@@ -1370,27 +1396,27 @@ function exportToPDF() {
             }
         });
 
-        // Footer on all pages
+        // Compact Footer on all pages
         const pageCount = doc.internal.getNumberOfPages();
         for (let i = 1; i <= pageCount; i++) {
             doc.setPage(i);
 
-            // Footer background
+            // Sleek, compact footer background (6mm)
             doc.setFillColor(darkBg[0], darkBg[1], darkBg[2]);
-            doc.rect(0, pageHeight - 12, pageWidth, 12, 'F');
+            doc.rect(0, pageHeight - 6, pageWidth, 6, 'F');
 
-            // Footer line
+            // Thin accent top line
             doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-            doc.rect(0, pageHeight - 12, pageWidth, 0.5, 'F');
+            doc.rect(0, pageHeight - 6, pageWidth, 0.3, 'F');
 
             // Footer text
             doc.setFont('helvetica', 'normal');
-            doc.setFontSize(8);
+            doc.setFontSize(7.5);
             doc.setTextColor(grayText[0], grayText[1], grayText[2]);
-            doc.text('EWU Course Filter V2', margin, pageHeight - 5);
+            doc.text('EWU Course Filter V2', margin, pageHeight - 2);
 
             doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-            doc.text(`Page ${i} of ${pageCount}`, pageWidth - margin, pageHeight - 5, { align: 'right' });
+            doc.text(`Page ${i} of ${pageCount}`, pageWidth - margin, pageHeight - 2, { align: 'right' });
         }
 
         // Generate filename - format: Updated_Faculty_List_Summer-2026.2026-05-18.12-58-37.pdf
@@ -1400,6 +1426,17 @@ function exportToPDF() {
 
         // Save PDF
         doc.save(fileName);
+
+        // Emit analytics telemetry
+        fetch(`https://api.aftabkabir.me/api/analytics`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                type: 'export_pdf',
+                count: coursesToExport.length,
+                message: `exported ${coursesToExport.length} courses to PDF`
+            })
+        }).catch(() => {});
 
         // Show success message
         showSuccess('PDF exported successfully!', 'success-message');
@@ -1617,10 +1654,18 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
 
-        // Multi-tag search input
+        // Multi-tag & Live search input
         const searchInput = document.getElementById('search-input');
         if (searchInput) {
-            searchInput.addEventListener('input', showSearchSuggestions);
+            let searchTimeout;
+            searchInput.addEventListener('input', () => {
+                showSearchSuggestions();
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    currentPage = 1;
+                    applyFiltersAndDisplay();
+                }, 100);
+            });
             searchInput.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') {
                     e.preventDefault();

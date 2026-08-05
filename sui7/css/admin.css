@@ -125,3 +125,40 @@ input:checked + .slider:before { transform: translateX(24px); }
     color: #3b82f6;
     border-color: rgba(59, 130, 246, 0.2);
 }
+
+.glass, .glass-card, .btn-glow {
+    transform: translateZ(0);
+    will-change: transform;
+}
+
+/* Touch targets and mobile scrollbars */
+@media (max-width: 768px) {
+    .glass, .glass-card {
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+    }
+    
+    .nav-link {
+        padding-top: 0.75rem;
+        padding-bottom: 0.75rem;
+    }
+
+    button, input, select {
+        min-height: 40px;
+    }
+}
+
+/* Responsive Table Wrapper */
+.responsive-table-container {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}

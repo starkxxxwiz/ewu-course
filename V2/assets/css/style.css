@@ -2858,6 +2858,133 @@ details[open] .details-chevron {
         height: 34px;
     }
     #auto-refresh-settings-btn svg {
+@media (max-width: 768px) {
+    .floating-btn {
+        width: 48px;
+        height: 48px;
+        bottom: 1.5rem;
+    }
+    .floating-refresh { right: 1.5rem; }
+    .scroll-to-top { right: 4rem; }
+    .floating-refresh:hover { transform: scale(1.05); }
+}
+
+/* Auto-refresh settings button responsive */
+#auto-refresh-settings-container {
+    bottom: 6.5rem;
+    right: 2rem;
+}
+
+#auto-refresh-settings-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    animation: subtlePulse 3s ease-in-out infinite;
+}
+
+@keyframes subtlePulse {
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(108, 99, 255, 0.4);
+    }
+    50% {
+        box-shadow: 0 0 0 8px rgba(108, 99, 255, 0);
+    }
+}
+
+#auto-refresh-settings-btn:hover {
+    transform: scale(1.1) rotate(90deg);
+    box-shadow: 0 4px 15px rgba(108, 99, 255, 0.5);
+}
+
+#auto-refresh-settings-btn:active {
+    transform: scale(1.05) rotate(180deg);
+}
+
+#auto-refresh-settings-btn svg {
+    width: 18px;
+    height: 18px;
+    stroke: currentColor;
+    transition: all 0.3s ease;
+}
+
+#auto-refresh-settings-btn:hover svg {
+    transform: rotate(90deg);
+}
+
+#auto-refresh-menu {
+    transform-origin: bottom right;
+}
+
+#auto-refresh-menu.show {
+    animation: slideInRight 0.2s ease forwards;
+}
+
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(20px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+    }
+}
+
+@media (max-width: 640px) {
+    #auto-refresh-settings-container {
+        bottom: 5.5rem;
+        right: 1rem;
+    }
+    #auto-refresh-settings-btn {
+        width: 38px;
+        height: 38px;
+    }
+    #auto-refresh-settings-btn svg {
+        width: 16px;
+        height: 16px;
+    }
+}
+
+@media (max-width: 480px) {
+    #auto-refresh-settings-container {
+        bottom: 5rem;
+        right: 0.75rem;
+    }
+    #auto-refresh-settings-btn {
+        width: 36px;
+        height: 36px;
+    }
+    #auto-refresh-settings-btn svg {
+        width: 15px;
+        height: 15px;
+    }
+}
+
+#auto-refresh-settings-btn {
+    width: 38px;
+    height: 38px;
+}
+
+#auto-refresh-settings-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+@media (max-width: 640px) {
+    #auto-refresh-settings-container {
+        bottom: 5rem;
+        right: 1rem;
+    }
+    #auto-refresh-settings-btn {
+        width: 34px;
+        height: 34px;
+    }
+    #auto-refresh-settings-btn svg {
         width: 14px;
         height: 14px;
     }
@@ -2871,5 +2998,31 @@ details[open] .details-chevron {
     #auto-refresh-settings-btn {
         width: 32px;
         height: 32px;
+    }
+}
+
+/* ===== LOW-END DEVICE & REDUCED MOTION PERFORMANCE OPTIMIZATIONS ===== */
+header, .mobile-menu, .glass-card, .login-box, .export-btn-new, .Btn {
+    transform: translateZ(0);
+    will-change: transform;
+}
+
+@media (max-width: 768px) {
+    header {
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+    }
+    .mobile-menu, .login-box {
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
     }
 }

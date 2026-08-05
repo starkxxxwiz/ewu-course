@@ -276,14 +276,18 @@ function applyFilters() {
 
     // Apply search filter
     if (currentSearch) {
-        const search = currentSearch.toLowerCase();
-        courses = courses.filter(c =>
-            c.CourseCode.toLowerCase().includes(search) ||
-            c.ShortName.toLowerCase().includes(search) ||
-            c.RoomName.toLowerCase().includes(search) ||
-            c.TimeSlotName.toLowerCase().includes(search) ||
-            c.SectionName.toLowerCase().includes(search)
-        );
+        const searchNorm = currentSearch.toLowerCase().replace(/[\s\-_]/g, '');
+        const searchTokens = currentSearch.toLowerCase().split(/\s+/).filter(Boolean);
+        courses = courses.filter(c => {
+            const codeNorm = (c.CourseCode || '').toLowerCase().replace(/[\s\-_]/g, '');
+            const targetStr = [
+                c.CourseCode, c.ShortName, c.RoomName,
+                c.TimeSlotName, c.SectionName
+            ].join(' ').toLowerCase();
+
+            return (searchNorm && codeNorm.includes(searchNorm)) ||
+                   (searchTokens.length > 0 && searchTokens.every(token => targetStr.includes(token)));
+        });
     }
 
     // Apply course filter
@@ -526,20 +530,22 @@ function showSearchSuggestions(query) {
     if (!searchSuggestions) return;
 
     const queryLower = query.toLowerCase();
+    const queryNorm = queryLower.replace(/[\s\-_]/g, '');
 
     // Intelligent matching with priority scoring
     const scoredMatches = allCourses.map(c => {
         let score = 0;
         const courseCodeLower = c.CourseCode.toLowerCase();
+        const courseCodeNorm = courseCodeLower.replace(/[\s\-_]/g, '');
         const shortNameLower = c.ShortName.toLowerCase();
         const roomNameLower = c.RoomName.toLowerCase();
         const timeSlotLower = c.TimeSlotName.toLowerCase();
         const sectionLower = c.SectionName.toLowerCase();
 
         // Course code exact match (highest priority)
-        if (courseCodeLower === queryLower) score += 100;
-        else if (courseCodeLower.startsWith(queryLower)) score += 60;
-        else if (courseCodeLower.includes(queryLower)) score += 30;
+        if (courseCodeLower === queryLower || courseCodeNorm === queryNorm) score += 100;
+        else if (courseCodeLower.startsWith(queryLower) || courseCodeNorm.startsWith(queryNorm)) score += 60;
+        else if (courseCodeLower.includes(queryLower) || courseCodeNorm.includes(queryNorm)) score += 30;
 
         // Faculty name matching
         if (shortNameLower.startsWith(queryLower)) score += 40;
@@ -767,6 +773,10 @@ document.getElementById('refreshBtn')?.addEventListener('click', async function 
 function exportToPDF() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF('landscape', 'mm', 'a4');
+    doc.setProperties({
+        title: 'Faculty list',
+        author: 'EWU Wiz'
+    });
 
     const pageWidth = doc.internal.pageSize.width;
     const pageHeight = doc.internal.pageSize.height;
@@ -948,6 +958,17 @@ function exportToPDF() {
     // Generate filename with date
     const fileName = 'EWU_Courses_' + new Date().toISOString().slice(0, 10) + '.pdf';
     doc.save(fileName);
+
+    // Emit analytics telemetry
+    fetch(`${API_BASE_URL}/api/analytics`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            type: 'export_pdf',
+            count: filteredCourses.length,
+            message: `exported ${filteredCourses.length} courses to PDF`
+        })
+    }).catch(() => {});
 
     showToast('PDF exported successfully!', 2500);
 }

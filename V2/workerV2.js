@@ -9,7 +9,10 @@
 
 // ===== CONFIGURATION =====
 const CONFIG = {
-    ALLOWED_ORIGIN: 'https://aftabkabir.me',
+    ALLOWED_ORIGINS: [
+        'https://aftabkabir.me',
+        'https://www.aftabkabir.me'
+    ],
     PORTAL_BASE_URL: 'https://portal.ewubd.edu',
     SESSION_COOKIE_NAME: 'ASP.NET_SessionId',
     COOKIE_PATH: '/V2/api/',
@@ -18,11 +21,13 @@ const CONFIG = {
 };
 
 // ===== CORS HEADERS =====
-function getCorsHeaders() {
+function getCorsHeaders(request) {
+    const origin = request ? request.headers.get('Origin') : null;
+    const allowedOrigin = (origin && CONFIG.ALLOWED_ORIGINS.includes(origin)) ? origin : CONFIG.ALLOWED_ORIGINS[0];
     return {
-        'Access-Control-Allow-Origin': CONFIG.ALLOWED_ORIGIN,
+        'Access-Control-Allow-Origin': allowedOrigin,
         'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, X-Requested-With',
+        'Access-Control-Allow-Headers': 'Content-Type, X-Requested-With, Cookie, Authorization',
         'Access-Control-Allow-Credentials': 'true',
         'Access-Control-Max-Age': '86400'
     };
@@ -40,7 +45,7 @@ async function handleRequest(request) {
     if (request.method === 'OPTIONS') {
         return new Response(null, {
             status: 204,
-            headers: getCorsHeaders()
+            headers: getCorsHeaders(request)
         });
     }
     
@@ -110,6 +115,7 @@ async function handleApiRequest(request, url) {
 
 // ===== LOGIN HANDLER =====
 async function handleLogin(request) {
+    const startTime = Date.now();
     try {
         const body = await request.json();
         const { username, password } = body;
@@ -187,9 +193,10 @@ async function handleLogin(request) {
         
         // STEP 6: Verify login success
         if (loginHtml.includes('View Profile')) {
+            await logV2Event(request, 'login', { userId: username, timeTaken: Date.now() - startTime });
             // Login successful - set session cookie
             const headers = {
-                ...getCorsHeaders(),
+                ...getCorsHeaders(request),
                 'Content-Type': 'application/json',
                 'Set-Cookie': `${CONFIG.SESSION_COOKIE_NAME}=${sessionId}; Path=${CONFIG.COOKIE_PATH}; Secure; HttpOnly; SameSite=None; Max-Age=1800`
             };
@@ -200,37 +207,42 @@ async function handleLogin(request) {
             }), { status: 200, headers });
             
         } else if (loginHtml.includes('Username or password is incorrect')) {
+            await logV2Event(request, 'error', { level: 'error', message: `failed V2 login using ${username}: Invalid credentials` });
             return jsonResponse({
                 status: 'failed',
                 message: 'Username or password is incorrect'
-            });
+            }, 200, request);
             
         } else if (loginHtml.includes('Invalid answer')) {
+            await logV2Event(request, 'error', { level: 'error', message: `failed V2 login using ${username}: Captcha mismatch` });
             return jsonResponse({
                 status: 'failed',
                 message: 'Portal verification failed. Please try again.'
-            });
+            }, 200, request);
             
         } else {
+            await logV2Event(request, 'error', { level: 'error', message: `failed V2 login using ${username}: Unknown portal response` });
             return jsonResponse({
                 status: 'failed',
                 message: 'Could not determine login status. Please try again.'
-            });
+            }, 200, request);
         }
         
     } catch (error) {
         console.error('Login error:', error);
+        await logV2Event(request, 'error', { level: 'error', message: `V2 login exception: ${error.message}` });
         return jsonResponse({
             status: 'failed',
             message: error.message
-        });
+        }, 200, request);
     }
 }
 
 // ===== LOGOUT HANDLER =====
 async function handleLogout(request) {
+    await logV2Event(request, 'logout', { message: 'logged out (V2)' });
     const headers = {
-        ...getCorsHeaders(),
+        ...getCorsHeaders(request),
         'Content-Type': 'application/json',
         'Set-Cookie': `${CONFIG.SESSION_COOKIE_NAME}=; Path=${CONFIG.COOKIE_PATH}; Secure; HttpOnly; SameSite=None; Max-Age=0`
     };
@@ -378,6 +390,8 @@ async function handleFetchCourses(request) {
             };
         });
         
+        await logV2Event(request, 'fetch_courses', { count: filteredCourses.length, message: `fetched ${filteredCourses.length} courses (V2)` });
+
         return jsonResponse({
             status: 'success',
             message: 'Courses fetched successfully',
@@ -394,7 +408,58 @@ async function handleFetchCourses(request) {
     }
 }
 
-// ===== UTILITY FUNCTIONS =====
+// ===== UTILITY & TELEMETRY LOGGING FUNCTIONS =====
+
+async function logV2Event(request, type, details = {}) {
+    if (typeof ADMIN_KV === 'undefined') return;
+    try {
+        const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+        const userAgent = request.headers.get('User-Agent') || 'unknown';
+        const nowIso = new Date().toISOString();
+        const dateFormatted = nowIso.replace('T', ' ').substring(0, 19);
+        const level = details.level || (type === 'error' ? 'error' : 'info');
+
+        let logMessage = details.message || '';
+        if (!logMessage) {
+            if (type === 'login') {
+                const durationStr = details.timeTaken ? ` - ${details.timeTaken}ms` : '';
+                logMessage = `logged in using ${details.userId || 'credentials'} (V2)${durationStr}`;
+            } else if (type === 'fetch_courses') {
+                logMessage = `fetched ${details.count || 0} courses (V2)`;
+            } else if (type === 'fetch_options') {
+                logMessage = `fetched options (V2)`;
+            } else if (type === 'logout') {
+                logMessage = `logged out (V2)`;
+            } else {
+                logMessage = `triggered ${type} (V2)`;
+            }
+        }
+
+        const formattedLog = `[${dateFormatted}] [${level}] user [${ip}] ${logMessage}`;
+
+        const logEntry = {
+            id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
+            time: nowIso,
+            level: level,
+            type: type,
+            ip: ip,
+            userId: details.userId || null,
+            timeTaken: details.timeTaken || null,
+            count: details.count || null,
+            userAgent: userAgent,
+            formatted: formattedLog
+        };
+
+        let logsStr = await ADMIN_KV.get('recent_logs');
+        let logsArr = [];
+        if (logsStr) {
+            try { logsArr = JSON.parse(logsStr); } catch (e) {}
+        }
+        logsArr.unshift(logEntry);
+        if (logsArr.length > 500) logsArr = logsArr.slice(0, 500);
+        await ADMIN_KV.put('recent_logs', JSON.stringify(logsArr));
+    } catch (e) {}
+}
 
 /**
  * Get session cookie from request
@@ -408,11 +473,11 @@ function getSessionCookie(request) {
 /**
  * Create JSON response with CORS headers
  */
-function jsonResponse(data, status = 200) {
+function jsonResponse(data, status = 200, request = null) {
     return new Response(JSON.stringify(data, null, 2), {
         status,
         headers: {
-            ...getCorsHeaders(),
+            ...getCorsHeaders(request),
             'Content-Type': 'application/json'
         }
     });

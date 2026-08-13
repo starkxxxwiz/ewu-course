@@ -789,36 +789,36 @@ function exportToPDF() {
     const lightText = [255, 255, 255];
     const grayText = [150, 150, 160];
 
-    // Header Background
+    // Header Background (Reduced to 20mm height)
     doc.setFillColor(darkBg[0], darkBg[1], darkBg[2]);
-    doc.rect(0, 0, pageWidth, 38, 'F');
+    doc.rect(0, 0, pageWidth, 20, 'F');
 
-    // Gradient line
+    // Gradient line (Reduced thickness to 1.0mm)
     doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-    doc.rect(0, 38, pageWidth, 1.5, 'F');
+    doc.rect(0, 20, pageWidth, 1.0, 'F');
 
-    // Title
+    // Title (Reduced font size to 14 and adjusted Y coordinate to 12)
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(20);
+    doc.setFontSize(14);
     doc.setTextColor(lightText[0], lightText[1], lightText[2]);
-    doc.text('EWU Updated Faculty List', margin, 18);
+    doc.text('EWU Updated Faculty List', margin, 12);
 
-    // Subtitle
+    // Subtitle (Reduced font size to 8.5 and adjusted Y coordinate to 17)
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(10);
+    doc.setFontSize(8.5);
     doc.setTextColor(grayText[0], grayText[1], grayText[2]);
-    doc.text('Generated from recommended course', margin, 26);
+    doc.text('Generated from recommended course', margin, 17);
 
-    // User Info (right side)
+    // User Info (right side - adjusted Y coordinates to fit 20mm height and reduced font size)
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(9);
+    doc.setFontSize(8.5);
     doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-    doc.text('Student ID:', pageWidth - margin - 55, 16);
+    doc.text('Student ID:', pageWidth - margin - 55, 9);
     doc.setTextColor(lightText[0], lightText[1], lightText[2]);
-    doc.text(currentUserId, pageWidth - margin - 30, 16);
+    doc.text(currentUserId, pageWidth - margin - 30, 9);
 
     doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-    doc.text('Generated:', pageWidth - margin - 55, 23);
+    doc.text('Generated:', pageWidth - margin - 55, 13);
     doc.setTextColor(lightText[0], lightText[1], lightText[2]);
     const dateStr = new Date().toLocaleString('en-US', {
         timeZone: 'Asia/Dhaka',
@@ -829,12 +829,12 @@ function exportToPDF() {
         minute: '2-digit',
         hour12: true
     });
-    doc.text(dateStr, pageWidth - margin - 30, 23);
+    doc.text(dateStr, pageWidth - margin - 30, 13);
 
     doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-    doc.text('Total Courses:', pageWidth - margin - 55, 30);
+    doc.text('Total Courses:', pageWidth - margin - 55, 17);
     doc.setTextColor(lightText[0], lightText[1], lightText[2]);
-    doc.text(String(filteredCourses.length), pageWidth - margin - 30, 30);
+    doc.text(String(filteredCourses.length), pageWidth - margin - 30, 17);
 
     // Prepare table data without text truncation to allow wrapping
     const tableData = filteredCourses.map((course) => {
@@ -855,30 +855,29 @@ function exportToPDF() {
     });
 
     // Calculate table width for centering
-    const totalTableWidth = 30 + 16 + 26 + 18 + 14 + 18 + 38 + 60 + 46; // Sum = 266mm
+    const totalTableWidth = 30 + 20 + 26 + 22 + 18 + 22 + 38 + 60 + 46; // Sum = 282mm
     const tableMargin = (pageWidth - totalTableWidth) / 2; // Center the table
 
     // Add table with professional styling - CENTER ALIGNED
-    // First page: 12 rows (startY=46, bottom=20, rowHeight~10.5mm → 46+(12*10.5)=172 < 210-20=190 ✓)
-    // Subsequent pages: 15 rows (top=21mm, bottom=20, available=210-41=169 > 15*10.5=157.5 ✓)
+    // Enforce exactly 20 courses per page by setting top margin, startY to 25mm, and bottom margin to 47mm (leaving exactly 138mm height)
     doc.autoTable({
         head: [['Course', 'Section', 'Faculty', 'Capacity', 'Taken', 'Available', 'Day', 'Time', 'Room']],
         body: tableData,
-        startY: 46,
-        margin: { top: 21, bottom: 20, left: tableMargin, right: tableMargin },
+        startY: 25,
+        margin: { top: 25, bottom: 47, left: tableMargin, right: tableMargin },
         tableWidth: totalTableWidth,
         theme: 'plain',
         pageBreak: 'auto',
         rowPageBreak: 'avoid',
         styles: {
-            fontSize: 9,
-            cellPadding: { top: 3, right: 3, bottom: 3, left: 3 },
+            fontSize: 8.5,
+            cellPadding: { top: 1.8, right: 3, bottom: 1.8, left: 3 },
             lineColor: [30, 30, 40],
             lineWidth: 0.1,
             textColor: [60, 60, 70],
             font: 'helvetica',
             overflow: 'linebreak', // Allow text wrapping
-            minCellHeight: 10,
+            minCellHeight: 6.5,
             halign: 'center',
             valign: 'middle'
         },
@@ -886,20 +885,20 @@ function exportToPDF() {
             fillColor: [25, 25, 35],
             textColor: [90, 143, 216],
             fontStyle: 'bold',
-            fontSize: 9,
+            fontSize: 8.5,
             halign: 'center',
-            cellPadding: { top: 4, right: 3, bottom: 4, left: 3 }
+            cellPadding: { top: 2.2, right: 3, bottom: 2.2, left: 3 }
         },
         columnStyles: {
             0: { cellWidth: 30, halign: 'center', fontStyle: 'bold', textColor: [90, 143, 216] },
-            1: { cellWidth: 20, halign: 'center' },   // Section - increased from 16
-            2: { cellWidth: 26, halign: 'left' },     // Faculty minimal width
-            3: { cellWidth: 22, halign: 'center' },  // Capacity - increased from 18
-            4: { cellWidth: 18, halign: 'center' },  // Taken - increased from 14
-            5: { cellWidth: 22, halign: 'center' },  // Available - increased from 18
-            6: { cellWidth: 38, halign: 'center' },  // Day more space
-            7: { cellWidth: 60, halign: 'center' },  // Time more space
-            8: { cellWidth: 46, halign: 'center' }   // Room more space
+            1: { cellWidth: 20, halign: 'center' },   // Section
+            2: { cellWidth: 26, halign: 'left' },     // Faculty
+            3: { cellWidth: 22, halign: 'center' },   // Capacity
+            4: { cellWidth: 18, halign: 'center' },   // Taken
+            5: { cellWidth: 22, halign: 'center' },   // Available
+            6: { cellWidth: 38, halign: 'center' },   // Day
+            7: { cellWidth: 60, halign: 'center' },   // Time
+            8: { cellWidth: 46, halign: 'center' }    // Room
         },
         alternateRowStyles: {
             fillColor: [248, 249, 252]

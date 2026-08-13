@@ -1,7 +1,23 @@
 // ES Module App Initialization
 const API_URL = 'https://api.aftabkabir.me/api';
 let trafficChartInstance = null;
-let currentSettings = { animations: true };
+
+// Initialize settings from localStorage if available
+let currentSettings = { animations: true, lowEndMode: false };
+try {
+    const savedSettings = localStorage.getItem('adminSettings');
+    if (savedSettings) {
+        currentSettings = { ...currentSettings, ...JSON.parse(savedSettings) };
+    }
+} catch(e) {}
+
+// Apply performance mode immediately
+if (currentSettings.lowEndMode) {
+    document.documentElement.classList.add('performance-mode');
+} else {
+    document.documentElement.classList.remove('performance-mode');
+}
+
 let currentDataCache = null; // Store fetched data
 
 // ================= ROUTING & STATE =================
@@ -304,6 +320,24 @@ function hydrateView(viewName, data) {
                 uInput.value = '';
             };
         }
+
+        const unblockAllIpsBtn = document.getElementById('unblockAllIpsBtn');
+        if(unblockAllIpsBtn) {
+            unblockAllIpsBtn.onclick = async () => {
+                if(confirm('Are you sure you want to unblock all IPs?')) {
+                    await modifyBlocklistCall('unblock-all');
+                }
+            };
+        }
+
+        const unblockAllUserIdsBtn = document.getElementById('unblockAllUserIdsBtn');
+        if(unblockAllUserIdsBtn) {
+            unblockAllUserIdsBtn.onclick = async () => {
+                if(confirm('Are you sure you want to unblock all User IDs?')) {
+                    await modifyUserIdBlocklistCall('unblock-all');
+                }
+            };
+        }
     }
 
     if (viewName === 'settings') {
@@ -312,9 +346,30 @@ function hydrateView(viewName, data) {
             sAnim.checked = currentSettings.animations;
             sAnim.onchange = (e) => {
                 currentSettings.animations = e.target.checked;
+                saveSettings();
+            }
+        }
+
+        const sLowEnd = document.getElementById('setLowEndMode');
+        if(sLowEnd) {
+            sLowEnd.checked = currentSettings.lowEndMode;
+            sLowEnd.onchange = (e) => {
+                currentSettings.lowEndMode = e.target.checked;
+                saveSettings();
+                if (currentSettings.lowEndMode) {
+                    document.documentElement.classList.add('performance-mode');
+                } else {
+                    document.documentElement.classList.remove('performance-mode');
+                }
             }
         }
     }
+}
+
+function saveSettings() {
+    try {
+        localStorage.setItem('adminSettings', JSON.stringify(currentSettings));
+    } catch(e) {}
 }
 
 // ================= RENDER COMPONENTS =================
@@ -525,7 +580,7 @@ function renderBlocklistFull(ips) {
 }
 
 async function modifyBlocklistCall(action, ip) {
-    if(!ip) return;
+    if(action !== 'unblock-all' && !ip) return;
     const token = localStorage.getItem('adminToken');
     try {
         const res = await fetch(`${API_URL}/admin/ip`, {
@@ -539,6 +594,11 @@ async function modifyBlocklistCall(action, ip) {
         if(data.success) {
             currentDataCache.blockedIPs = data.blockedIPs;
             renderBlocklistFull(data.blockedIPs);
+            
+            const elB = document.getElementById('ovBlocks');
+            if(elB) elB.textContent = data.blockedIPs.length;
+            
+            showAdminToast(`IP ${action === 'unblock-all' ? 'list cleared' : (action === 'block' ? 'blocked' : 'unblocked')} successfully!`, true);
         } else {
             alert(data.error || 'Operation denied by gateway.');
         }
@@ -548,7 +608,7 @@ async function modifyBlocklistCall(action, ip) {
 }
 
 async function modifyUserIdBlocklistCall(action, userId) {
-    if(!userId) return;
+    if(action !== 'unblock-all' && !userId) return;
     const token = localStorage.getItem('adminToken');
     try {
         const res = await fetch(`${API_URL}/admin/block-userid`, {
@@ -562,7 +622,11 @@ async function modifyUserIdBlocklistCall(action, userId) {
         if(data.success) {
             if (currentDataCache) currentDataCache.blockedUserIds = data.blockedUserIds;
             renderBlockedUserIdsFull(data.blockedUserIds || []);
-            showAdminToast(`User ID ${userId} ${action === 'block' ? 'restricted' : 'unblocked'} successfully!`, true);
+            
+            const allLogins = extractAllSuccessfulLogins(currentDataCache);
+            renderSuccessfulLoginsTable(allLogins);
+            
+            showAdminToast(`User ID ${action === 'unblock-all' ? 'list cleared' : (action === 'block' ? 'restricted' : 'unblocked')} successfully!`, true);
         } else {
             alert(data.error || 'Operation denied by gateway.');
         }
@@ -779,7 +843,7 @@ function renderChart(dates, analyticsObj) {
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            animation: currentSettings.animations ? undefined : false,
+            animation: (currentSettings.animations && !currentSettings.lowEndMode) ? undefined : false,
             interaction: { mode: 'index', intersect: false },
             plugins: {
                 legend: { labels: { color: '#9ca3af', usePointStyle: true, boxWidth: 6 } },
@@ -984,3 +1048,8 @@ function router() {
 
 window.addEventListener('hashchange', router);
 document.addEventListener('DOMContentLoaded', router);
+
+// Expose functions globally for inline HTML event handlers
+window.modifyUserIdBlocklistCall = modifyUserIdBlocklistCall;
+window.modifyBlocklistCall = modifyBlocklistCall;
+window.copyText = (text) => { navigator.clipboard.writeText(text); };

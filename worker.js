@@ -654,8 +654,8 @@ async function handleAdminDashboard(request, env) {
 async function handleIpBlock(request, env) {
   if (!(await verifyAdminAuth(request, env))) return jsonResponse({ error: 'Unauthorized' }, 401, request);
   try {
-    const { ip, action } = await request.json(); // action: 'block' or 'unblock'
-    if (!ip) return jsonResponse({ error: 'IP required' }, 400, request);
+    const { ip, action } = await request.json(); // action: 'block', 'unblock', or 'unblock-all'
+    if (action !== 'unblock-all' && !ip) return jsonResponse({ error: 'IP required' }, 400, request);
     
     let blockedIPs = [];
     const blockedStr = await env.ADMIN_KV.get('blocked_ips');
@@ -667,6 +667,8 @@ async function handleIpBlock(request, env) {
       blockedIPs.push(ip);
     } else if (action === 'unblock') {
       blockedIPs = blockedIPs.filter(i => i !== ip);
+    } else if (action === 'unblock-all') {
+      blockedIPs = [];
     }
     
     await env.ADMIN_KV.put('blocked_ips', JSON.stringify(blockedIPs));
@@ -679,8 +681,8 @@ async function handleIpBlock(request, env) {
 async function handleUserIdBlock(request, env) {
   if (!(await verifyAdminAuth(request, env))) return jsonResponse({ error: 'Unauthorized' }, 401, request);
   try {
-    const { userId, action } = await request.json(); // action: 'block' or 'unblock'
-    if (!userId) return jsonResponse({ error: 'User ID required' }, 400, request);
+    const { userId, action } = await request.json(); // action: 'block', 'unblock', or 'unblock-all'
+    if (action !== 'unblock-all' && !userId) return jsonResponse({ error: 'User ID required' }, 400, request);
     
     let blockedUserIds = [];
     const blockedStr = await env.ADMIN_KV.get('blocked_user_ids');
@@ -692,6 +694,8 @@ async function handleUserIdBlock(request, env) {
       blockedUserIds.push(userId);
     } else if (action === 'unblock') {
       blockedUserIds = blockedUserIds.filter(id => id !== userId);
+    } else if (action === 'unblock-all') {
+      blockedUserIds = [];
     }
     
     await env.ADMIN_KV.put('blocked_user_ids', JSON.stringify(blockedUserIds));

@@ -258,6 +258,18 @@ async function handleLogin(request) {
                 message: 'Username or password is incorrect'
             }, 200, request);
             
+        } else if (loginHtml.includes('Advising is going on for Scheduled students')) {
+            let msg = 'Advising is going on for Scheduled students. Please try during your schedule time.';
+            const match = loginHtml.match(/<span[^>]*class=["']error["'][^>]*>([\s\S]*?)<\/span>/i);
+            if (match && match[1] && match[1].includes('Advising is going on for Scheduled students')) {
+                msg = match[1].trim().replace(/\s+/g, ' ');
+            }
+            await logV2Event(request, 'error', { level: 'error', message: `failed V2 login using ${username}: Advising schedule restriction` });
+            return jsonResponse({
+                status: 'failed',
+                message: msg
+            }, 200, request);
+            
         } else if (loginHtml.includes('Invalid answer')) {
             await logV2Event(request, 'error', { level: 'error', message: `failed V2 login using ${username}: Captcha mismatch` });
             return jsonResponse({

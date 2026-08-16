@@ -60,15 +60,18 @@ async function attemptLogin(username, password) {
 
     const data = await response.json();
 
-    // Check for invalid credentials (don't retry these)
-    if (data.status === 'error' && (
-        data.message?.toLowerCase().includes('invalid') || 
-        data.message?.toLowerCase().includes('incorrect') ||
-        data.message?.toLowerCase().includes('wrong')
+    // Check for invalid credentials or blocked access (don't retry these)
+    const errorMsg = data.message || data.error || '';
+    if ((data.status === 'error' || data.error) && (
+        errorMsg.toLowerCase().includes('invalid') || 
+        errorMsg.toLowerCase().includes('incorrect') ||
+        errorMsg.toLowerCase().includes('wrong') ||
+        errorMsg.toLowerCase().includes('restricted') ||
+        errorMsg.toLowerCase().includes('blocked')
     )) {
         return { 
             status: 'invalid_credentials', 
-            message: data.message 
+            message: errorMsg 
         };
     }
 

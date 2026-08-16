@@ -161,6 +161,16 @@ async function performLogin(username, password, formData) {
         success: false,
         message: 'Username or password is incorrect'
       };
+    } else if (html.includes('Advising is going on for Scheduled students')) {
+      let msg = 'Advising is going on for Scheduled students. Please try during your schedule time.';
+      const match = html.match(/<span[^>]*class=["']error["'][^>]*>([\s\S]*?)<\/span>/i);
+      if (match && match[1] && match[1].includes('Advising is going on for Scheduled students')) {
+        msg = match[1].trim().replace(/\s+/g, ' ');
+      }
+      return {
+        success: false,
+        message: msg
+      };
     } else if (html.includes('Invalid answer')) {
       return {
         success: false,
@@ -749,7 +759,7 @@ export default {
         const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
         const isClosed = (await env.ADMIN_KV.get('site_closure_mode')) === 'true';
         if (isClosed) {
-          return jsonResponse({ error: 'Site is currently closed due to maintenance.' }, 503, request);
+          return jsonResponse({ status: 'error', message: 'Site is currently closed due to maintenance.' }, 503, request);
         }
         
         const blockedStr = await env.ADMIN_KV.get('blocked_ips');
@@ -757,7 +767,7 @@ export default {
           try {
             const blockedIPs = JSON.parse(blockedStr);
             if (blockedIPs.includes(ip)) {
-              return jsonResponse({ error: 'Your IP is blocked.' }, 403, request);
+              return jsonResponse({ status: 'error', message: 'Your IP is blocked.' }, 403, request);
             }
           } catch(e) {}
         }

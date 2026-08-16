@@ -536,19 +536,17 @@ class RetryEngine {
         
         // Check for explicit failure status
         if (data.status === 'failed' || data.status === 'error') {
-            const message = data.message || '';
+            const message = (data.message || data.error || '').toLowerCase();
             
-            // Check for non-retryable errors (banned user, invalid credentials)
+            // Check for non-retryable errors (banned user, invalid credentials, blocked access)
             // These should be shown to user immediately, not retried
             if (message.includes('suspended') ||
                 message.includes('banned') ||
                 message.includes('blocked') ||
-                message.includes('Invalid credentials') ||
-                message.includes('invalid credentials') ||
-                message.includes('Incorrect') ||
+                message.includes('restricted') ||
+                message.includes('invalid') ||
                 message.includes('incorrect') ||
-                message.includes('Wrong password') ||
-                message.includes('wrong password')) {
+                message.includes('wrong')) {
                 console.warn('[RetryEngine] Non-retryable error:', message);
                 // Mark as special error type
                 data._noRetry = true;

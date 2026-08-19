@@ -68,14 +68,14 @@ async function handleApiRequest(request, url) {
         if (typeof ADMIN_KV !== 'undefined') {
             const isClosed = await ADMIN_KV.get('site_closure_mode') === 'true';
             if (isClosed) {
-                return jsonResponse({ status: 'error', message: 'Site is currently closed due to maintenance.' }, 503);
+                return jsonResponse(request, { status: 'error', message: 'Site is currently closed due to maintenance.' }, 503);
             }
             const blockedStr = await ADMIN_KV.get('blocked_ips');
             if (blockedStr) {
                 try {
                     const blockedIPs = JSON.parse(blockedStr);
                     if (blockedIPs.includes(ip)) {
-                        return jsonResponse({ status: 'error', message: 'Your IP is blocked.' }, 403);
+                        return jsonResponse(request, { status: 'error', message: 'Your IP is blocked.' }, 403);
                     }
                 } catch(e) {}
             }
@@ -99,14 +99,14 @@ async function handleApiRequest(request, url) {
         }
         
         // Unknown route
-        return jsonResponse({ 
+        return jsonResponse(request, { 
             status: 'error', 
             message: 'Unknown API endpoint' 
         }, 404);
         
     } catch (error) {
         console.error('API Error:', error);
-        return jsonResponse({ 
+        return jsonResponse(request, { 
             status: 'error', 
             message: 'Internal server error: ' + error.message 
         }, 500);
@@ -122,7 +122,7 @@ async function handleLogin(request) {
         
         // Validate input
         if (!username || !password) {
-            return jsonResponse({
+            return jsonResponse(request, {
                 status: 'failed',
                 message: 'Username and password are required'
             });
@@ -135,10 +135,10 @@ async function handleLogin(request) {
                 try {
                     const blockedUserIds = JSON.parse(blockedUserIdsStr);
                     if (blockedUserIds.includes(username)) {
-                        return jsonResponse({
+                        return jsonResponse(request, {
                             status: 'failed',
                             message: 'Your account has been restricted from logging in.'
-                        }, 403, request);
+                        }, 403);
                     }
                 } catch (e) {}
             }
@@ -253,10 +253,10 @@ async function handleLogin(request) {
             
         } else if (loginHtml.includes('Username or password is incorrect')) {
             await logV2Event(request, 'error', { level: 'error', message: `failed V2 login using ${username}: Invalid credentials` });
-            return jsonResponse({
+            return jsonResponse(request, {
                 status: 'failed',
                 message: 'Username or password is incorrect'
-            }, 200, request);
+            }, 200);
             
         } else if (loginHtml.includes('Advising is going on for Scheduled students')) {
             let msg = 'Advising is going on for Scheduled students. Please try during your schedule time.';
@@ -265,33 +265,33 @@ async function handleLogin(request) {
                 msg = match[1].trim().replace(/\s+/g, ' ');
             }
             await logV2Event(request, 'error', { level: 'error', message: `failed V2 login using ${username}: Advising schedule restriction` });
-            return jsonResponse({
+            return jsonResponse(request, {
                 status: 'failed',
                 message: msg
-            }, 200, request);
+            }, 200);
             
         } else if (loginHtml.includes('Invalid answer')) {
             await logV2Event(request, 'error', { level: 'error', message: `failed V2 login using ${username}: Captcha mismatch` });
-            return jsonResponse({
+            return jsonResponse(request, {
                 status: 'failed',
                 message: 'Portal verification failed. Please try again.'
-            }, 200, request);
+            }, 200);
             
         } else {
             await logV2Event(request, 'error', { level: 'error', message: `failed V2 login using ${username}: Unknown portal response` });
-            return jsonResponse({
+            return jsonResponse(request, {
                 status: 'failed',
                 message: 'Could not determine login status. Please try again.'
-            }, 200, request);
+            }, 200);
         }
         
     } catch (error) {
         console.error('Login error:', error);
         await logV2Event(request, 'error', { level: 'error', message: `V2 login exception: ${error.message}` });
-        return jsonResponse({
+        return jsonResponse(request, {
             status: 'failed',
             message: error.message
-        }, 200, request);
+        }, 200);
     }
 }
 
@@ -317,7 +317,7 @@ async function handleFetchOptions(request) {
         const sessionId = getSessionCookie(request);
         
         if (!sessionId) {
-            return jsonResponse({
+            return jsonResponse(request, {
                 status: 'error',
                 message: 'Unauthorized. Please log in first.'
             }, 401);
@@ -359,7 +359,7 @@ async function handleFetchOptions(request) {
         const semesters = await semResponse.json();
         
         // Return formatted response
-        return jsonResponse({
+        return jsonResponse(request, {
             status: 'success',
             message: 'Options fetched successfully',
             departments: departments.map(dept => ({
@@ -374,7 +374,7 @@ async function handleFetchOptions(request) {
         
     } catch (error) {
         console.error('Fetch options error:', error);
-        return jsonResponse({
+        return jsonResponse(request, {
             status: 'error',
             message: error.message
         });
@@ -388,7 +388,7 @@ async function handleFetchCourses(request) {
         const sessionId = getSessionCookie(request);
         
         if (!sessionId) {
-            return jsonResponse({
+            return jsonResponse(request, {
                 status: 'error',
                 message: 'Unauthorized. Please log in first.'
             }, 401);
@@ -400,14 +400,14 @@ async function handleFetchCourses(request) {
         
         // Validate input
         if (!departmentId || !semesterId) {
-            return jsonResponse({
+            return jsonResponse(request, {
                 status: 'error',
                 message: 'Department ID and Semester ID are required'
             });
         }
         
         // Build API URL
-        const apiUrl = `${CONFIG.PORTAL_BASE_URL}/api/utility/GetAllOfferedCourses?deptid=${encodeURIComponent(departmentId)}&semesterid=${encodeURIComponent(semesterId)}`;
+        const apiUrl = `${CONFIG.PORTAL_BASE_URL}/api/utility/GetAllOfferedCoursesBySemAndDept?deptid=${encodeURIComponent(departmentId)}&semesterid=${encodeURIComponent(semesterId)}`;
         
         // Build cookie string
         const cookieString = `ASP.NET_SessionId=${sessionId}; perf_dv6Tr4n=1`;
@@ -449,7 +449,7 @@ async function handleFetchCourses(request) {
         
         await logV2Event(request, 'fetch_courses', { count: filteredCourses.length, message: `fetched ${filteredCourses.length} courses (V2)` });
 
-        return jsonResponse({
+        return jsonResponse(request, {
             status: 'success',
             message: 'Courses fetched successfully',
             courses: filteredCourses,
@@ -458,7 +458,7 @@ async function handleFetchCourses(request) {
         
     } catch (error) {
         console.error('Fetch courses error:', error);
-        return jsonResponse({
+        return jsonResponse(request, {
             status: 'error',
             message: error.message
         });
@@ -563,7 +563,7 @@ function getSessionCookie(request) {
 /**
  * Create JSON response with CORS headers
  */
-function jsonResponse(data, status = 200, request = null) {
+function jsonResponse(request, data, status = 200) {
     return new Response(JSON.stringify(data, null, 2), {
         status,
         headers: {

@@ -330,6 +330,7 @@ async function handleGetCourses(request) {
 
   if (!sessionId) {
     return jsonResponse({
+      success: false,
       error: 'Unauthorized'
     }, 401, request);
   }
@@ -349,6 +350,7 @@ async function handleGetCourses(request) {
     // Check for unauthorized response
     if (response.status === 401 || response.status === 403) {
       return jsonResponse({
+        success: false,
         error: 'Session expired'
       }, 401, request);
     }
@@ -358,11 +360,32 @@ async function handleGetCourses(request) {
     }
 
     const data = await response.json();
+    const rawList = Array.isArray(data) ? data : [];
+
+    const formattedCourses = rawList.map(course => ({
+      RoomName: course.RoomName || '',
+      RoomCode: course.RoomCode || '',
+      CourseCode: course.CourseCode || '',
+      SeatCapacity: typeof course.SeatCapacity === 'number' ? course.SeatCapacity : (parseInt(course.SeatCapacity) || 0),
+      SeatTaken: typeof course.SeatTaken === 'number' ? course.SeatTaken : (parseInt(course.SeatTaken) || 0),
+      ShortName: course.ShortName || '',
+      TimeSlotName: course.TimeSlotName || '',
+      CreditHour: typeof course.CreditHour === 'number' ? course.CreditHour : (parseInt(course.CreditHour) || 0),
+      NumberOfMissingGrades: typeof course.NumberOfMissingGrades === 'number' ? course.NumberOfMissingGrades : (parseInt(course.NumberOfMissingGrades) || 0),
+      RoutineId: course.RoutineId !== undefined ? course.RoutineId : null,
+      SectionId: course.SectionId !== undefined ? course.SectionId : null,
+      SectionName: course.SectionName !== undefined ? course.SectionName : '',
+      TimeSlotId: course.TimeSlotId !== undefined ? course.TimeSlotId : null
+    }));
     
-    return jsonResponse(data, 200, request);
+    return jsonResponse({
+      success: true,
+      courses: formattedCourses
+    }, 200, request);
   } catch (error) {
     console.error('handleGetCourses error:', error);
     return jsonResponse({
+      success: false,
       error: 'Failed to fetch courses'
     }, 500, request);
   }

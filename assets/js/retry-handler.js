@@ -13,6 +13,7 @@ class RetryHandler {
         this.shouldStop = false;
         this.widgetElement = null;
         this.isMinimized = false;
+        this.onStopCallback = null;
     }
 
     /**
@@ -26,7 +27,10 @@ class RetryHandler {
             onSuccess = () => {},
             onInvalidCredentials = () => {},
             onRetryAttempt = () => {},
-            operationName = 'Connection'
+            onStop = () => {},
+            operationName = 'Connection',
+            retryDelay = 1000,
+            timeoutMs = 45000
         } = options;
 
         this.reset();
@@ -34,6 +38,7 @@ class RetryHandler {
         this.startTime = Date.now();
         this.shouldStop = false;
         this.attemptNumber = 0;
+        this.onStopCallback = onStop;
 
         const attemptOperation = async () => {
             if (this.shouldStop) {
@@ -45,10 +50,15 @@ class RetryHandler {
             this.updateWidget('connecting', operationName);
 
             try {
-                // Call the async function with 60-second timeout
-                const result = await this.executeWithTimeout(asyncFunction, 60000);
+                // Call the async function and wait for the API response
+                const result = await this.executeWithTimeout(asyncFunction, timeoutMs);
                 
-                // Check if credentials are invalid
+                if (this.shouldStop) {
+                    this.cleanup();
+                    return;
+                }
+
+                // Check if credentials are invalid or account is blocked
                 if (result && result.status === 'invalid_credentials') {
                     this.showSuccessAndCleanup(false);
                     onInvalidCredentials(result);
@@ -61,25 +71,31 @@ class RetryHandler {
                 return;
 
             } catch (error) {
-                console.error(`Attempt ${this.attemptNumber} failed:`, error);
+                if (this.shouldStop) {
+                    this.cleanup();
+                    return;
+                }
+
+                const errorReason = error.message || 'Portal busy';
+                console.warn(`Attempt ${this.attemptNumber} failed:`, errorReason);
                 
                 // Show widget after first failure
                 if (this.attemptNumber === 1) {
                     this.createWidget();
                 }
 
-                // Update widget to show timeout/retry status
-                this.updateWidget('retrying', operationName);
+                // Update widget to show retry status
+                this.updateWidget('retrying', operationName, errorReason);
                 
                 // Notify about retry attempt
-                onRetryAttempt(this.attemptNumber, this.getElapsedTime());
+                onRetryAttempt(this.attemptNumber, this.getElapsedTime(), errorReason);
 
-                // Wait 60 seconds before next attempt (unless stopped)
+                // Wait briefly after getting response before launching the next attempt
                 await new Promise((resolve) => {
-                    this.retryTimeout = setTimeout(resolve, 60000);
+                    this.retryTimeout = setTimeout(resolve, retryDelay);
                 });
 
-                // Retry
+                // Auto retry immediately after response/delay
                 if (!this.shouldStop) {
                     await attemptOperation();
                 }
@@ -95,7 +111,7 @@ class RetryHandler {
     executeWithTimeout(asyncFunction, timeoutMs) {
         return new Promise(async (resolve, reject) => {
             const timeoutId = setTimeout(() => {
-                reject(new Error('Request timeout'));
+                reject(new Error('Request timeout. Retrying...'));
             }, timeoutMs);
 
             try {
@@ -126,10 +142,10 @@ class RetryHandler {
                         <span class="status-text">Connecting...</span>
                     </div>
                     <div class="retry-widget-actions">
-                        <button class="widget-btn minimize-btn" title="Minimize">
+                        <button class="widget-btn minimize-btn" title="Minimize" type="button">
                             <i class="fas fa-minus"></i>
                         </button>
-                        <button class="widget-btn stop-btn" title="Stop">
+                        <button class="widget-btn stop-btn" title="Stop" type="button">
                             <i class="fas fa-times"></i>
                         </button>
                     </div>
@@ -157,9 +173,9 @@ class RetryHandler {
         this.widgetElement = widget;
 
         // Setup event listeners
-        widget.querySelector('.minimize-btn').addEventListener('click', () => this.toggleMinimize());
-        widget.querySelector('.stop-btn').addEventListener('click', () => this.stop());
-        widget.querySelector('.retry-widget-minimized').addEventListener('click', () => this.toggleMinimize());
+        widget.querySelector('.minimize-btn').addEventListener('click', (e) => { e.preventDefault(); this.toggleMinimize(); });
+        widget.querySelector('.stop-btn').addEventListener('click', (e) => { e.preventDefault(); this.stop(); });
+        widget.querySelector('.retry-widget-minimized').addEventListener('click', (e) => { e.preventDefault(); this.toggleMinimize(); });
 
         // Start elapsed time counter
         this.startElapsedCounter();
@@ -171,7 +187,7 @@ class RetryHandler {
     /**
      * Update widget status
      */
-    updateWidget(status, operationName = 'Connection') {
+    updateWidget(status, operationName = 'Connection', errorReason = '') {
         if (!this.widgetElement) return;
 
         const statusText = this.widgetElement.querySelector('.status-text');
@@ -179,22 +195,22 @@ class RetryHandler {
         const attemptValue = this.widgetElement.querySelector('.attempt-value');
         const miniBadge = this.widgetElement.querySelector('.mini-badge');
 
-        attemptValue.textContent = this.attemptNumber;
-        miniBadge.textContent = this.attemptNumber;
+        if (attemptValue) attemptValue.textContent = this.attemptNumber;
+        if (miniBadge) miniBadge.textContent = this.attemptNumber;
 
         if (status === 'connecting') {
-            statusText.textContent = `${operationName}...`;
-            statusIcon.className = 'fas fa-circle-notch fa-spin status-icon status-connecting';
+            if (statusText) statusText.textContent = this.attemptNumber > 1 ? `${operationName} (Attempt ${this.attemptNumber})...` : `${operationName}...`;
+            if (statusIcon) statusIcon.className = 'fas fa-circle-notch fa-spin status-icon status-connecting';
             this.widgetElement.classList.remove('status-timeout', 'status-success');
             this.widgetElement.classList.add('status-connecting');
         } else if (status === 'retrying') {
-            statusText.textContent = 'Timeout - Retrying...';
-            statusIcon.className = 'fas fa-exclamation-triangle status-icon status-timeout';
+            if (statusText) statusText.textContent = `Auto-retrying (Attempt ${this.attemptNumber + 1})...`;
+            if (statusIcon) statusIcon.className = 'fas fa-sync-alt fa-spin status-icon status-timeout';
             this.widgetElement.classList.remove('status-connecting', 'status-success');
             this.widgetElement.classList.add('status-timeout');
         } else if (status === 'success') {
-            statusText.textContent = 'Success!';
-            statusIcon.className = 'fas fa-check-circle status-icon status-success';
+            if (statusText) statusText.textContent = 'Success!';
+            if (statusIcon) statusIcon.className = 'fas fa-check-circle status-icon status-success';
             this.widgetElement.classList.remove('status-connecting', 'status-timeout');
             this.widgetElement.classList.add('status-success');
         }
@@ -218,6 +234,7 @@ class RetryHandler {
      * Start elapsed time counter
      */
     startElapsedCounter() {
+        if (this.elapsedInterval) clearInterval(this.elapsedInterval);
         this.elapsedInterval = setInterval(() => {
             if (!this.widgetElement || !this.startTime) return;
             
@@ -258,8 +275,12 @@ class RetryHandler {
         this.shouldStop = true;
         if (this.retryTimeout) {
             clearTimeout(this.retryTimeout);
+            this.retryTimeout = null;
         }
         this.cleanup();
+        if (this.onStopCallback) {
+            this.onStopCallback();
+        }
     }
 
     /**

@@ -28,6 +28,8 @@ function showAlert(message, type = 'error') {
     const alertIcon = document.getElementById('alertIcon');
     const alertMessage = document.getElementById('alertMessage');
 
+    if (!alertBox || !alertIcon || !alertMessage) return;
+
     alertBox.classList.remove('hidden', 'bg-red-500/20', 'bg-green-500/20', 'bg-blue-500/20', 'border', 'border-red-400/30', 'border-green-400/30', 'border-blue-400/30', 'text-red-300', 'text-green-300', 'text-blue-300');
 
     if (type === 'error') {
@@ -46,45 +48,64 @@ function showAlert(message, type = 'error') {
 
 // Login attempt function (will be wrapped with retry logic)
 async function attemptLogin(username, password) {
-    const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-            username: username,
-            password: password
-        })
-    });
+    let response;
+    let data;
 
-    const data = await response.json();
+    try {
+        response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            credentials: 'include',
+            body: JSON.stringify({
+                username: username,
+                password: password
+            })
+        });
 
-    // Check for invalid credentials or blocked access (don't retry these)
-    const errorMsg = data.message || data.error || '';
-    if ((data.status === 'error' || data.error) && (
-        errorMsg.toLowerCase().includes('invalid') || 
-        errorMsg.toLowerCase().includes('incorrect') ||
-        errorMsg.toLowerCase().includes('wrong') ||
-        errorMsg.toLowerCase().includes('restricted') ||
-        errorMsg.toLowerCase().includes('blocked')
-    )) {
+        data = await response.json();
+    } catch (err) {
+        // Network timeout / connection error - throw to trigger immediate retry
+        throw new Error('Connection to portal failed. Retrying...');
+    }
+
+    const statusCode = response ? response.status : 500;
+    const errorMsg = (data && (data.message || data.error)) ? (data.message || data.error) : '';
+    const lowerMsg = errorMsg.toLowerCase();
+
+    // ONLY TWO TERMINAL CASES STOP THE AUTO RETRY:
+    // Case 1: Incorrect username or password
+    const isIncorrectCredentials = 
+        (lowerMsg.includes('username') || lowerMsg.includes('password') || lowerMsg.includes('credential')) &&
+        (lowerMsg.includes('incorrect') || lowerMsg.includes('wrong') || lowerMsg.includes('invalid password') || lowerMsg.includes('invalid username'));
+
+    // Case 2: User ID blocked by admin
+    const isBlocked = 
+        statusCode === 403 || 
+        lowerMsg.includes('restricted from logging in') || 
+        lowerMsg.includes('account has been restricted') || 
+        lowerMsg.includes('account has been blocked') ||
+        lowerMsg.includes('blocked');
+
+    if (isIncorrectCredentials || isBlocked) {
         return { 
             status: 'invalid_credentials', 
-            message: errorMsg 
+            message: errorMsg || (isBlocked ? 'Your account has been restricted from logging in.' : 'Username or password is incorrect')
         };
     }
 
     // Check for success
-    if (data.status === 'success') {
+    if (data && (data.status === 'success' || data.userId)) {
         return { 
             status: 'success', 
             data: data 
         };
     }
 
-    // Any other error should trigger retry
-    throw new Error(data.message || 'Login failed');
+    // ALL OTHER CASES (Advising is ongoing, Invalid answer/captcha, 500, portal busy, unknown response)
+    // -> Throw to trigger automatic next attempt
+    throw new Error(errorMsg || 'Login attempt failed. Retrying...');
 }
 
 // Handle form submission
@@ -105,18 +126,20 @@ document.getElementById('loginForm')?.addEventListener('submit', async function(
     // Disable button and show loading
     loginBtn.disabled = true;
     loginBtn.classList.add('opacity-75', 'cursor-not-allowed');
-    btnText.innerHTML = 'Signing in...';
+    btnText.innerHTML = '<i class="fas fa-circle-notch fa-spin mr-2"></i>Signing in...';
 
     // Use retry handler for login
     await retryHandler.executeWithRetry(
         () => attemptLogin(username, password),
         {
             operationName: 'Login',
+            retryDelay: 1000,
             onSuccess: (result) => {
                 showAlert('Login successful! Redirecting...', 'success');
+                btnText.innerHTML = '<i class="fas fa-check mr-2"></i>Redirecting...';
                 setTimeout(() => {
                     window.location.href = 'advise.html';
-                }, 1000);
+                }, 800);
             },
             onInvalidCredentials: (result) => {
                 showAlert(result.message || 'Invalid credentials. Please check your student ID and password.', 'error');
@@ -124,9 +147,16 @@ document.getElementById('loginForm')?.addEventListener('submit', async function(
                 loginBtn.classList.remove('opacity-75', 'cursor-not-allowed');
                 btnText.textContent = 'Sign In';
             },
-            onRetryAttempt: (attemptNum, elapsedTime) => {
-                console.log(`Login attempt ${attemptNum} failed. Elapsed time: ${elapsedTime}s`);
-                showAlert(`Connection timeout. Retrying automatically... (Attempt ${attemptNum})`, 'info');
+            onRetryAttempt: (attemptNum, elapsedTime, errorReason) => {
+                console.log(`Login attempt ${attemptNum} failed. Elapsed time: ${elapsedTime}s. Reason: ${errorReason}`);
+                showAlert(`${errorReason || 'Portal busy'}. Retrying automatically... (Attempt ${attemptNum + 1})`, 'info');
+                btnText.innerHTML = `<i class="fas fa-sync-alt fa-spin mr-2"></i>Retrying (Attempt ${attemptNum + 1})...`;
+            },
+            onStop: () => {
+                loginBtn.disabled = false;
+                loginBtn.classList.remove('opacity-75', 'cursor-not-allowed');
+                btnText.textContent = 'Sign In';
+                showAlert('Login process stopped.', 'info');
             }
         }
     );

@@ -129,9 +129,11 @@ async function attemptFetchCourses() {
         throw new Error(data.error);
     }
 
+    const courses = Array.isArray(data) ? data : (data.courses || []);
+
     return {
         status: 'success',
-        data: data
+        data: courses
     };
 }
 

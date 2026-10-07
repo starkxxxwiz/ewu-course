@@ -1,31 +1,70 @@
 /* ========================================
    EWU Course Schedule System - Main Styles
-   Version: 2.0
+   Version: 2.4 - Modern High-Fidelity UI
    ======================================== */
 
-/* ===== GLOBAL STYLES ===== */
-* {
-    font-family: 'Inter', sans-serif;
+/* ===== GLOBAL STYLES & RESET ===== */
+*, *::before, *::after {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+}
+
+:root {
+    --brand-primary: #D86C5A;
+    --brand-primary-hover: #c45745;
+    --brand-blue: #3b82f6;
+    --brand-indigo: #6366f1;
+    --brand-purple: #8b5cf6;
+    --bg-dark: #0a0a0f;
+    --bg-card: rgba(18, 18, 26, 0.75);
+    --border-glass: rgba(255, 255, 255, 0.08);
+}
+
+html {
+    scroll-behavior: smooth;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
 }
 
 body {
-    background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 50%, #0f0f1a 100%);
+    background: linear-gradient(135deg, #07070c 0%, #12121f 50%, #0a0a12 100%);
     background-attachment: fixed;
     min-height: 100vh;
-    color: #ffffff;
+    color: #f3f4f6;
+}
+
+/* Modern Scrollbars */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+}
+::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 3px;
+    transition: background 0.2s;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
 }
 
 /* ===== GLASS MORPHISM EFFECTS ===== */
 .glass-card {
-    background: rgba(26, 26, 46, 0.65);
+    background: linear-gradient(145deg, rgba(26, 26, 46, 0.7) 0%, rgba(15, 15, 26, 0.85) 100%);
     backdrop-filter: blur(24px);
     -webkit-backdrop-filter: blur(24px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4), 
-                0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow: 0 12px 36px 0 rgba(0, 0, 0, 0.45), 
+                0 0 0 1px rgba(255, 255, 255, 0.03) inset;
+    border-radius: 1rem;
     transform: translateZ(0);
     will-change: transform;
 }

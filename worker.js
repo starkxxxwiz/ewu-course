@@ -398,11 +398,6 @@ async function handleGetCourses(request) {
 }
 
 // ===== ADMIN & STATUS ROUTES =====
-async function hashSHA256(str) {
-  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
-  return Array.prototype.map.call(new Uint8Array(buf), x=>(('00'+x.toString(16)).slice(-2))).join('');
-}
-
 async function verifyAdminAuth(request, env) {
   const authHeader = request.headers.get('Authorization');
   if (!authHeader || !authHeader.startsWith('Bearer ')) return false;

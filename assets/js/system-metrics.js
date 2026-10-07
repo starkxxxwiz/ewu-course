@@ -317,65 +317,146 @@
         }
     }
 
-    // Check Site Status (Closure, Block, & Notice logic)
-    function checkStatus() {
-        fetch(`${API_URL}/status`)
-            .then(res => res.json())
-            .then(data => {
-                if (data.blocked) {
-                    injectScreen('blocked');
-                    return;
-                } else if (data.closed) {
-                    injectScreen('maintenance');
-                    return;
-                }
+    // Cache keys and runtime memory state
+    const CACHE_KEY_DATA = '_sys_status_data';
+    const CACHE_KEY_ETAG = '_sys_status_etag';
+    const CACHE_KEY_TIME = '_sys_status_ts';
+    const CACHE_TTL_MS = 45000; // 45 seconds client cache TTL
+    let lastCheckTime = 0;
+    let isFetching = false;
 
-                // Custom Notice injection
-                if (data.customNotice) {
-                    if (data.customNotice.wpb && data.customNotice.wpb.enabled) {
-                        injectScreen('wpb', data.customNotice.wpb);
-                        return;
-                    }
-                    if (data.customNotice.unb && data.customNotice.unb.enabled) {
+    function applyStatusData(data) {
+        if (!data) return;
+        if (data.blocked) {
+            injectScreen('blocked');
+            return;
+        } else if (data.closed) {
+            injectScreen('maintenance');
+            return;
+        }
+
+        // Custom Notice injection
+        if (data.customNotice) {
+            if (data.customNotice.wpb && data.customNotice.wpb.enabled) {
+                injectScreen('wpb', data.customNotice.wpb);
+                return;
+            }
+            if (data.customNotice.unb && data.customNotice.unb.enabled) {
+                if (document.body) {
+                    injectUpperBanner(data.customNotice.unb);
+                } else {
+                    const checkBody = setInterval(() => {
                         if (document.body) {
                             injectUpperBanner(data.customNotice.unb);
-                        } else {
-                            const checkBody = setInterval(() => {
-                                if (document.body) {
-                                    injectUpperBanner(data.customNotice.unb);
-                                    clearInterval(checkBody);
-                                }
-                            }, 50);
+                            clearInterval(checkBody);
                         }
-                    } else {
-                        removeUpperBanner();
-                    }
-                } else {
-                    removeUpperBanner();
+                    }, 50);
                 }
+            } else {
+                removeUpperBanner();
+            }
+        } else {
+            removeUpperBanner();
+        }
+    }
+
+    // Check Site Status (Closure, Block, & Notice logic with ETag and Smart Cache)
+    function checkStatus(force = false) {
+        const now = Date.now();
+        if (isFetching) return;
+        if (!force && (now - lastCheckTime < 15000)) return; // Anti-spam debounce
+
+        let cachedEtag = '';
+        try {
+            cachedEtag = sessionStorage.getItem(CACHE_KEY_ETAG) || '';
+        } catch (e) {}
+
+        const headers = {};
+        if (cachedEtag) {
+            headers['If-None-Match'] = cachedEtag;
+        }
+
+        isFetching = true;
+        fetch(`${API_URL}/status`, { headers })
+            .then(res => {
+                lastCheckTime = Date.now();
+                if (res.status === 304) {
+                    // Response not modified (0 bytes transferred) - update timestamp and retain current state
+                    try {
+                        sessionStorage.setItem(CACHE_KEY_TIME, lastCheckTime.toString());
+                    } catch (e) {}
+                    return null;
+                }
+                const newEtag = res.headers.get('ETag');
+                if (newEtag) {
+                    try {
+                        sessionStorage.setItem(CACHE_KEY_ETAG, newEtag);
+                    } catch (e) {}
+                }
+                return res.json();
+            })
+            .then(data => {
+                if (!data) return;
+                try {
+                    sessionStorage.setItem(CACHE_KEY_DATA, JSON.stringify(data));
+                    sessionStorage.setItem(CACHE_KEY_TIME, lastCheckTime.toString());
+                } catch (e) {}
+                applyStatusData(data);
             })
             .catch(err => {
                 console.warn('Status proxy degraded:', err);
+            })
+            .finally(() => {
+                isFetching = false;
             });
     }
 
-    // Initial check
-    checkStatus();
+    // Initial check: Fast-load from session cache if fresh
+    let appliedFromCache = false;
+    try {
+        const cachedRaw = sessionStorage.getItem(CACHE_KEY_DATA);
+        const cachedTime = parseInt(sessionStorage.getItem(CACHE_KEY_TIME) || '0', 10);
+        if (cachedRaw && (Date.now() - cachedTime < CACHE_TTL_MS)) {
+            const parsed = JSON.parse(cachedRaw);
+            applyStatusData(parsed);
+            appliedFromCache = true;
+        }
+    } catch (e) {}
 
-    // Re-check status every 30s or when tab regains focus for instant edge updates
-    setInterval(checkStatus, 30000);
+    // Initial network validation (instant revalidation if stale or not cached)
+    if (!appliedFromCache) {
+        checkStatus(true);
+    } else {
+        // Revalidate in background after brief delay
+        setTimeout(() => checkStatus(false), 2000);
+    }
+
+    // Adaptive polling: 90s interval, pauses when document is hidden/backgrounded
+    setInterval(() => {
+        if (!document.hidden) {
+            checkStatus(false);
+        }
+    }, 90000);
+
+    // Re-check when tab regains visibility if cache is older than 45s
     document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'visible') {
-            checkStatus();
+        if (document.visibilityState === 'visible' && (Date.now() - lastCheckTime > CACHE_TTL_MS)) {
+            checkStatus(false);
         }
     });
 
-    // 2. Log Analytics Visit
+    // 2. Log Analytics Visit (throttled per session path)
     setTimeout(() => {
+        const pathKey = `_visited_${window.location.pathname}`;
+        try {
+            if (sessionStorage.getItem(pathKey)) return; // Don't re-log duplicate visit in same session
+            sessionStorage.setItem(pathKey, '1');
+        } catch (e) {}
+
         fetch(`${API_URL}/analytics`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ type: 'visit', path: window.location.pathname })
         }).catch(() => { });
-    }, 1000);
+    }, 1200);
 })();

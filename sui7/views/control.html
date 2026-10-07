@@ -1,18 +1,26 @@
-<div class="glass-card p-8 min-h-[400px] view-transition-enter max-w-4xl mx-auto">
-    <div class="mb-8 border-b border-gray-800 pb-6">
-        <h3 class="text-xl font-semibold text-white flex items-center gap-2 mb-2">
-            <i class="ph ph-shield-check text-green-400"></i> Global Operations
-        </h3>
-        <p class="text-gray-400 text-sm">Control site accessibility for all remote users.</p>
+<div class="glass-card p-6 md:p-8 min-h-[400px] view-transition-enter max-w-5xl mx-auto">
+    <div class="mb-8 border-b border-gray-800 pb-6 flex flex-col md:flex-row justify-between md:items-center gap-4">
+        <div>
+            <h3 class="text-xl font-semibold text-white flex items-center gap-2 mb-1">
+                <i class="ph ph-shield-check text-green-400"></i> Global Operations & Perimeter Control
+            </h3>
+            <p class="text-gray-400 text-sm">Control site accessibility and publish global edge notices in real-time.</p>
+        </div>
+        <div class="flex items-center gap-2">
+            <span class="text-xs px-2.5 py-1 rounded bg-blue-500/10 text-blue-300 border border-blue-500/20 font-mono flex items-center gap-1">
+                <i class="ph ph-broadcast"></i> Instant Edge Propagation
+            </span>
+        </div>
     </div>
 
+    <!-- MAINTENANCE MODE -->
     <div class="p-6 rounded-2xl border flex flex-col md:flex-row items-start md:items-center justify-between gap-6 transition-all duration-300 shadow-lg mb-8" id="controlPanelWrapper">
         <div class="flex-1">
             <div class="font-semibold text-lg text-white flex items-center gap-2 mb-1">
                 Maintenance Mode (Site Closure)
             </div>
             <p class="text-sm text-gray-400 mb-3">
-                Immediately block all public traffic and display a beautiful aesthetic maintenance curtain. Existing connections will be dropped.
+                Immediately drops all public user connections with an aesthetic maintenance screen. Only authorized admin requests bypass the edge lockdown.
             </p>
             <div id="controlStatusBadge" class="text-xs py-1.5 px-3 rounded-md bg-green-500/10 text-green-400 font-medium inline-flex items-center gap-1.5 border border-green-500/20">
                 <span class="w-1.5 h-1.5 rounded-full bg-green-400"></span> Site is ONLINE
@@ -27,163 +35,186 @@
     </div>
 
     <!-- CUSTOM NOTICE SETTINGS -->
-    <div class="mb-6 border-b border-gray-800 pb-4 mt-10">
-        <h3 class="text-xl font-semibold text-white flex items-center gap-2 mb-2">
-            <i class="ph ph-megaphone text-blue-400"></i> Custom Notice
-        </h3>
-        <p class="text-gray-400 text-sm">Deploy global announcements across the frontend interface.</p>
+    <div class="mb-6 border-b border-gray-800 pb-4 mt-10 flex items-center justify-between">
+        <div>
+            <h3 class="text-xl font-semibold text-white flex items-center gap-2 mb-1">
+                <i class="ph ph-megaphone text-blue-400"></i> Global Custom Notice System
+            </h3>
+            <p class="text-gray-400 text-sm">Deploy tailored announcements or emergency banners across the client frontend.</p>
+        </div>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
         
         <!-- WHOLE PAGE BANNER -->
-        <div class="p-6 rounded-2xl border border-gray-800 bg-gray-900/40 relative">
-            <div class="flex justify-between items-center mb-4">
-                <h4 class="text-md font-semibold text-white flex items-center gap-2">
-                    <i class="ph ph-browser"></i> Whole Page Banner
-                </h4>
-                <label class="switch scale-90 origin-right">
-                    <input type="checkbox" id="wpbToggle">
-                    <span class="slider"></span>
-                </label>
+        <div class="p-6 rounded-2xl border border-gray-800 bg-gray-900/40 relative flex flex-col justify-between">
+            <div>
+                <div class="flex justify-between items-center mb-4">
+                    <h4 class="text-md font-semibold text-white flex items-center gap-2">
+                        <i class="ph ph-browser text-purple-400"></i> Whole Page Banner (WPB)
+                    </h4>
+                    <label class="switch scale-90 origin-right">
+                        <input type="checkbox" id="wpbToggle">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <p class="text-xs text-gray-400 mb-4">A full-page modal curtain replacing the user interface with custom rich content.</p>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-400 uppercase mb-1">Content / Announcement Message</label>
+                        <textarea id="wpbContent" class="glass-input w-full rounded-lg p-3 text-sm h-24" placeholder="Enter custom message to show to all users..."></textarea>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-400 uppercase mb-1">Font Size</label>
+                            <select id="wpbFontSize" class="glass-input w-full rounded-lg p-2 text-sm bg-gray-900/50 text-gray-300">
+                                <option value="text-base">Normal (base)</option>
+                                <option value="text-xl">Large (xl)</option>
+                                <option value="text-3xl">Extra Large (3xl)</option>
+                                <option value="text-5xl">Massive (5xl)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-400 uppercase mb-1">Font Weight</label>
+                            <select id="wpbFontWeight" class="glass-input w-full rounded-lg p-2 text-sm bg-gray-900/50 text-gray-300">
+                                <option value="font-normal">Normal (400)</option>
+                                <option value="font-semibold">Semi Bold (600)</option>
+                                <option value="font-bold">Bold (700)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-400 uppercase mb-1">Notice Icon</label>
+                            <select id="wpbIcon" class="glass-input w-full rounded-lg p-2 text-sm bg-gray-900/50 text-gray-300">
+                                <option value="">None (No Icon)</option>
+                                <option value="info">Info / General Notice</option>
+                                <option value="warning">Warning / Attention</option>
+                                <option value="danger">Danger / Critical</option>
+                                <option value="success">Success / Check</option>
+                                <option value="megaphone">Megaphone / Announcement</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-400 uppercase mb-1">Alignment</label>
+                            <select id="wpbAlign" class="glass-input w-full rounded-lg p-2 text-sm bg-gray-900/50 text-gray-300">
+                                <option value="text-center">Center</option>
+                                <option value="text-left">Left</option>
+                                <option value="text-right">Right</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <p class="text-xs text-gray-400 mb-4">A full-page overly that replaces the interface, similar to site closure but with custom content.</p>
-            
-            <div class="space-y-4">
-                <div>
-                    <label class="block text-xs font-semibold text-gray-400 uppercase mb-1">Content / Message</label>
-                    <textarea id="wpbContent" class="glass-input w-full rounded-lg p-3 text-sm h-24" placeholder="Enter custom message..."></textarea>
-                </div>
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-400 uppercase mb-1">Font Size</label>
-                        <select id="wpbFontSize" class="glass-input w-full rounded-lg p-2 text-sm bg-gray-900/50 text-gray-300">
-                            <option value="text-base">Normal</option>
-                            <option value="text-xl">Large (xl)</option>
-                            <option value="text-3xl">Extra Large (3xl)</option>
-                            <option value="text-5xl">Massive (5xl)</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-400 uppercase mb-1">Font Weight</label>
-                        <select id="wpbFontWeight" class="glass-input w-full rounded-lg p-2 text-sm bg-gray-900/50 text-gray-300">
-                            <option value="font-normal">Normal</option>
-                            <option value="font-semibold">Semi Bold</option>
-                            <option value="font-bold">Bold</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-400 uppercase mb-1">Notice Icon</label>
-                        <select id="wpbIcon" class="glass-input w-full rounded-lg p-2 text-sm bg-gray-900/50 text-gray-300">
-                            <option value="">None (No Icon)</option>
-                            <option value="info">Info / General Notice</option>
-                            <option value="warning">Warning / Attention</option>
-                            <option value="danger">Danger / Critical</option>
-                            <option value="success">Success / Check</option>
-                            <option value="megaphone">Megaphone / Announcement</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-400 uppercase mb-1">Alignment</label>
-                        <select id="wpbAlign" class="glass-input w-full rounded-lg p-2 text-sm bg-gray-900/50 text-gray-300">
-                            <option value="text-center">Center</option>
-                            <option value="text-left">Left</option>
-                            <option value="text-right">Right</option>
-                        </select>
-                    </div>
-                </div>
-                <button id="wpbSaveBtn" class="w-full btn-glow py-2.5 rounded-lg text-white font-medium text-sm mt-2">Apply Strategy</button>
-            </div>
+            <button id="wpbSaveBtn" class="w-full btn-glow py-2.5 rounded-lg text-white font-medium text-sm mt-5">Apply WPB Settings</button>
         </div>
 
         <!-- UPPER NOTICE BANNER -->
-        <div class="p-6 rounded-2xl border border-gray-800 bg-gray-900/40 relative">
-            <div class="flex justify-between items-center mb-4">
-                <h4 class="text-md font-semibold text-white flex items-center gap-2">
-                    <i class="ph ph-minus"></i> Upper Notice Banner
-                </h4>
-                <label class="switch scale-90 origin-right">
-                    <input type="checkbox" id="unbToggle">
-                    <span class="slider"></span>
-                </label>
-            </div>
-            <p class="text-xs text-gray-400 mb-4">A sleek one-line notice banner shown directly after the header part or fixed at top.</p>
-            
-            <div class="space-y-4">
-                <div>
-                    <label class="block text-xs font-semibold text-gray-400 uppercase mb-1">Announcement Text</label>
-                    <input type="text" id="unbContent" class="glass-input w-full rounded-lg p-2.5 text-sm" placeholder="System upgrade tonight at 12:00 AM">
-                </div>
-
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-400 uppercase mb-1">Font Family</label>
-                        <select id="unbFontFamily" class="glass-input w-full rounded-lg p-2 text-sm bg-gray-900/50 text-gray-300">
-                            <option value="Inter">Inter / System (Default)</option>
-                            <option value="Roboto">Roboto</option>
-                            <option value="Poppins">Poppins</option>
-                            <option value="monospace">Monospace (Code)</option>
-                            <option value="serif">Serif (Classic)</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-400 uppercase mb-1">Font Style</label>
-                        <select id="unbFontStyle" class="glass-input w-full rounded-lg p-2 text-sm bg-gray-900/50 text-gray-300">
-                            <option value="normal">Normal (400)</option>
-                            <option value="italic">Italic</option>
-                            <option value="semibold">Semi Bold (600)</option>
-                            <option value="bold">Bold (700)</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-400 uppercase mb-1">Font Size</label>
-                        <select id="unbFontSize" class="glass-input w-full rounded-lg p-2 text-sm bg-gray-900/50 text-gray-300">
-                            <option value="text-xs">Small (xs)</option>
-                            <option value="text-sm">Standard (sm)</option>
-                            <option value="text-base">Medium (base)</option>
-                            <option value="text-lg">Large (lg)</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-400 uppercase mb-1">Text Animation</label>
-                        <select id="unbAnimation" class="glass-input w-full rounded-lg p-2 text-sm bg-gray-900/50 text-gray-300">
-                            <option value="none">None (Static)</option>
-                            <option value="scroll-left">Scroll (Right to Left)</option>
-                            <option value="scroll-right">Scroll (Left to Right)</option>
-                            <option value="pulse">Pulse Glow</option>
-                            <option value="bounce">Subtle Bounce</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-400 uppercase mb-1">Placement</label>
-                        <select id="unbPosition" class="glass-input w-full rounded-lg p-2 text-sm bg-gray-900/50 text-gray-300">
-                            <option value="after-header">After Header Part (Recommended)</option>
-                            <option value="fixed-top">Fixed Top (Sticky)</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-400 uppercase mb-1">Pages to show</label>
-                        <input type="text" id="unbPages" class="glass-input w-full rounded-lg p-2 text-sm" placeholder="e.g. *, /index.html, /advise.html">
-                    </div>
-                </div>
-
-                <div class="flex flex-col gap-2 pt-2 border-t border-gray-800">
-                    <label class="flex items-center gap-2 text-sm text-gray-300">
-                        <input type="checkbox" id="unbGlow" class="rounded bg-gray-800 border-gray-700 text-brand-500"> Activate Cyber-Glow Effect
+        <div class="p-6 rounded-2xl border border-gray-800 bg-gray-900/40 relative flex flex-col justify-between">
+            <div>
+                <div class="flex justify-between items-center mb-4">
+                    <h4 class="text-md font-semibold text-white flex items-center gap-2">
+                        <i class="ph ph-minus text-blue-400"></i> Upper Notice Banner (UNB)
+                    </h4>
+                    <label class="switch scale-90 origin-right">
+                        <input type="checkbox" id="unbToggle">
+                        <span class="slider"></span>
                     </label>
                 </div>
-                <button id="unbSaveBtn" class="w-full btn-glow py-2.5 rounded-lg text-white font-medium text-sm mt-2">Deploy Upper Banner</button>
+                <p class="text-xs text-gray-400 mb-4">A sleek one-line notice bar shown directly below the navigation bar or fixed at top.</p>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-400 uppercase mb-1">Announcement Text</label>
+                        <input type="text" id="unbContent" class="glass-input w-full rounded-lg p-2.5 text-sm" placeholder="System maintenance scheduled tonight at 12:00 AM">
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-400 uppercase mb-1">Font Family</label>
+                            <select id="unbFontFamily" class="glass-input w-full rounded-lg p-2 text-sm bg-gray-900/50 text-gray-300">
+                                <option value="Inter">Inter / System (Default)</option>
+                                <option value="Roboto">Roboto</option>
+                                <option value="Poppins">Poppins</option>
+                                <option value="monospace">Monospace (Code)</option>
+                                <option value="serif">Serif (Classic)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-400 uppercase mb-1">Font Style</label>
+                            <select id="unbFontStyle" class="glass-input w-full rounded-lg p-2 text-sm bg-gray-900/50 text-gray-300">
+                                <option value="normal">Normal (400)</option>
+                                <option value="italic">Italic</option>
+                                <option value="semibold">Semi Bold (600)</option>
+                                <option value="bold">Bold (700)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-400 uppercase mb-1">Font Size</label>
+                            <select id="unbFontSize" class="glass-input w-full rounded-lg p-2 text-sm bg-gray-900/50 text-gray-300">
+                                <option value="text-xs">Small (xs)</option>
+                                <option value="text-sm">Standard (sm)</option>
+                                <option value="text-base">Medium (base)</option>
+                                <option value="text-lg">Large (lg)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-400 uppercase mb-1">Text Animation</label>
+                            <select id="unbAnimation" class="glass-input w-full rounded-lg p-2 text-sm bg-gray-900/50 text-gray-300">
+                                <option value="none">None (Static)</option>
+                                <option value="scroll-left">Scroll (Right to Left)</option>
+                                <option value="scroll-right">Scroll (Left to Right)</option>
+                                <option value="pulse">Pulse Glow</option>
+                                <option value="bounce">Subtle Bounce</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-400 uppercase mb-1">Placement</label>
+                            <select id="unbPosition" class="glass-input w-full rounded-lg p-2 text-sm bg-gray-900/50 text-gray-300">
+                                <option value="after-header">After Header Part (Recommended)</option>
+                                <option value="fixed-top">Fixed Top (Sticky)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-400 uppercase mb-1">Pages to show</label>
+                            <input type="text" id="unbPages" class="glass-input w-full rounded-lg p-2 text-sm" placeholder="e.g. *, /index.html, /advise.html">
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col gap-2 pt-2 border-t border-gray-800">
+                        <label class="flex items-center gap-2 text-sm text-gray-300 cursor-pointer select-none">
+                            <input type="checkbox" id="unbGlow" class="rounded bg-gray-800 border-gray-700 text-brand-500"> Activate Cyber-Glow Effect
+                        </label>
+                    </div>
+                </div>
             </div>
+            <button id="unbSaveBtn" class="w-full btn-glow py-2.5 rounded-lg text-white font-medium text-sm mt-5">Deploy Upper Banner</button>
         </div>
 
+    </div>
+
+    <!-- LIVE INTERACTIVE PREVIEW SIMULATOR -->
+    <div class="mt-10 p-6 rounded-2xl border border-gray-800 bg-gray-950/60 relative">
+        <div class="flex items-center justify-between mb-4">
+            <h4 class="text-sm font-semibold text-white flex items-center gap-2">
+                <i class="ph ph-eye text-brand-400"></i> Live Notice Preview Simulator
+            </h4>
+            <span class="text-[11px] text-gray-400 font-mono bg-gray-900 px-2 py-0.5 rounded border border-gray-800">Updates Instantly on Form Input</span>
+        </div>
+        
+        <!-- Simulator Viewport -->
+        <div class="rounded-xl border border-gray-800 bg-[#0b0f19] p-4 min-h-[140px] flex flex-col justify-center relative overflow-hidden">
+            <div id="simulatorNoticeContainer" class="w-full">
+                <div class="text-center text-xs text-gray-500 py-6">Enable Whole Page Banner or Upper Notice Banner to see interactive live preview here.</div>
+            </div>
+        </div>
     </div>
 
     <!-- GLOBAL NOTICE ACTIONS & CONFIRMATION -->

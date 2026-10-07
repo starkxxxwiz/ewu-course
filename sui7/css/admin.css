@@ -182,3 +182,24 @@ input:checked + .slider:before { transform: translateX(24px); }
     animation-iteration-count: 1 !important;
     transition-duration: 0.001s !important;
 }
+
+@keyframes popIn {
+    0%   { opacity: 0; transform: scale(0.96) translateY(-10px); }
+    100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+.animate-popIn {
+    animation: popIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Command Palette Active Item */
+.cmd-item {
+    transition: all 0.15s ease;
+}
+.cmd-item.selected, .cmd-item:hover {
+    background: rgba(59, 130, 246, 0.15);
+    border-color: rgba(59, 130, 246, 0.3);
+}
+
+/* Scrollbar thin utility */
+.scrollbar-thin::-webkit-scrollbar { width: 4px; }
+.scrollbar-thin::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 2px; }

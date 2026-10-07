@@ -1,27 +1,57 @@
-<div class="glass-card p-6 h-[500px] flex flex-col view-transition-enter">
-    <div class="flex items-center justify-between mb-6">
-        <h3 class="text-lg font-semibold text-white flex items-center gap-2">
-            <i class="ph ph-chart-line-up text-brand-500"></i> Traffic & Engagement Over Time
-        </h3>
+<div class="glass-card p-6 h-[460px] flex flex-col view-transition-enter">
+    <div class="flex items-center justify-between mb-4">
+        <div>
+            <h3 class="text-lg font-semibold text-white flex items-center gap-2">
+                <i class="ph ph-chart-line-up text-brand-500"></i> Edge Traffic & Action Velocity
+            </h3>
+            <p class="text-xs text-gray-400 mt-0.5">7-day telemetry analyzing daily unique users and action throughput.</p>
+        </div>
+        <div class="flex items-center gap-2">
+            <span class="text-xs px-2.5 py-1 rounded bg-blue-500/10 text-blue-300 border border-blue-500/20 font-mono">
+                <i class="ph ph-chart-bar"></i> 7-Day Window
+            </span>
+        </div>
     </div>
     <div class="flex-1 relative">
         <canvas id="trafficChart"></canvas>
     </div>
 </div>
 
-<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6 view-transition-enter" style="animation-delay: 0.1s;">
-    <div class="glass-card p-6">
-        <h3 class="text-lg font-semibold text-white flex items-center gap-2 mb-4">
-            <i class="ph ph-trend-up text-green-400"></i> Action Density
-        </h3>
-        <p class="text-gray-400 text-sm mb-4">Ratio of meaningful actions (fetches/clicks) against unique raw visits.</p>
-        <div class="relative h-4 rounded-full bg-gray-800 overflow-hidden">
-            <div id="engagementBar" class="absolute top-0 left-0 h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-1000 w-0"></div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6 view-transition-enter" style="animation-delay: 0.1s;">
+    <!-- Action Density -->
+    <div class="glass-card p-6 flex flex-col justify-between">
+        <div>
+            <h3 class="text-base font-semibold text-white flex items-center gap-2 mb-2">
+                <i class="ph ph-trend-up text-green-400"></i> Action Density Ratio
+            </h3>
+            <p class="text-gray-400 text-xs mb-4">Ratio of deep interactions (course fetches, exports, logins) to page visits.</p>
+            <div class="relative h-3.5 rounded-full bg-gray-800 overflow-hidden mb-2">
+                <div id="engagementBar" class="absolute top-0 left-0 h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-1000 w-0"></div>
+            </div>
+            <div class="flex justify-between text-xs text-gray-400">
+                <span>Raw Page Hits</span>
+                <span id="engagementText" class="font-semibold text-brand-300">0% Conversion</span>
+                <span>Active Operations</span>
+            </div>
         </div>
-        <div class="mt-2 flex justify-between text-xs text-gray-500">
-            <span>Visits</span>
-            <span id="engagementText">0% Conversion</span>
-            <span>Actions</span>
+        <div class="mt-4 pt-3 border-t border-gray-800/80 text-[11px] text-gray-500 flex justify-between">
+            <span>Health: <strong class="text-emerald-400">Optimal</strong></span>
+            <span>Edge State: <strong class="text-gray-300">Live</strong></span>
+        </div>
+    </div>
+
+    <!-- Top Visited Routes Breakdown -->
+    <div class="glass-card p-6 md:col-span-2 flex flex-col justify-between">
+        <div>
+            <div class="flex items-center justify-between mb-3">
+                <h3 class="text-base font-semibold text-white flex items-center gap-2">
+                    <i class="ph ph-compass text-purple-400"></i> Route Popularity & Endpoint Frequency
+                </h3>
+                <span class="text-[11px] text-gray-400 font-mono">From Telemetry Buffer</span>
+            </div>
+            <div id="routePopularityList" class="space-y-2.5">
+                <div class="text-center text-gray-500 text-xs py-4">Calculating endpoint distribution...</div>
+            </div>
         </div>
     </div>
 </div>

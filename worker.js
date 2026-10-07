@@ -40,6 +40,12 @@ function jsonResponse(data, status = 200, request) {
   });
 }
 
+// Helper: SHA-256 hash using Web Crypto API
+async function hashSHA256(str) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
 // Helper: Extract cookie value from Cookie header
 function getCookieValue(cookieHeader, name) {
   if (!cookieHeader) return null;
@@ -413,12 +419,28 @@ async function handleStatus(request, env) {
 
   let customNotice = null;
 
-  if(env.ADMIN_KV) {
+  if (env.ADMIN_KV) {
     isClosed = (await env.ADMIN_KV.get('site_closure_mode')) === 'true';
     
     const noticeStr = await env.ADMIN_KV.get('custom_notice');
     if (noticeStr) {
-      try { customNotice = JSON.parse(noticeStr); } catch(e){}
+      try {
+        const parsedNotice = JSON.parse(noticeStr);
+        // Only include notice components that are actively enabled to minimize payload & hide internals
+        const activeNotice = {};
+        let hasActive = false;
+        if (parsedNotice.wpb && parsedNotice.wpb.enabled) {
+          activeNotice.wpb = parsedNotice.wpb;
+          hasActive = true;
+        }
+        if (parsedNotice.unb && parsedNotice.unb.enabled) {
+          activeNotice.unb = parsedNotice.unb;
+          hasActive = true;
+        }
+        if (hasActive) {
+          customNotice = activeNotice;
+        }
+      } catch (e) {}
     }
 
     const blockedIPsStr = await env.ADMIN_KV.get('blocked_ips');
@@ -432,13 +454,49 @@ async function handleStatus(request, env) {
     }
   }
 
-  return jsonResponse({
+  const payload = {
     closed: isClosed,
-    blocked: isBlocked,
-    customNotice: customNotice,
-    ip: ip,
-    timestamp: Date.now()
-  }, 200, request);
+    blocked: isBlocked
+  };
+  if (customNotice) {
+    payload.customNotice = customNotice;
+  }
+
+  const payloadStr = JSON.stringify(payload);
+  
+  // Fast lightweight ETag
+  let hash = 0;
+  for (let i = 0; i < payloadStr.length; i++) {
+    hash = ((hash << 5) - hash) + payloadStr.charCodeAt(i);
+    hash |= 0;
+  }
+  const etag = `"${Math.abs(hash).toString(36)}"`;
+
+  const ifNoneMatch = request.headers.get('If-None-Match');
+  const corsHeaders = getCorsHeaders(request);
+
+  if (ifNoneMatch && ifNoneMatch === etag) {
+    return new Response(null, {
+      status: 304,
+      headers: {
+        'ETag': etag,
+        'Cache-Control': 'public, max-age=45, stale-while-revalidate=60',
+        'Vary': 'Origin, CF-Connecting-IP',
+        ...corsHeaders
+      }
+    });
+  }
+
+  return new Response(payloadStr, {
+    status: 200,
+    headers: {
+      'Content-Type': 'application/json',
+      'ETag': etag,
+      'Cache-Control': 'public, max-age=45, stale-while-revalidate=60',
+      'Vary': 'Origin, CF-Connecting-IP',
+      ...corsHeaders
+    }
+  });
 }
 
 async function handleAnalyticsEvent(request, env) {
@@ -687,8 +745,8 @@ async function handleAdminDashboard(request, env) {
 async function handleIpBlock(request, env) {
   if (!(await verifyAdminAuth(request, env))) return jsonResponse({ error: 'Unauthorized' }, 401, request);
   try {
-    const { ip, action } = await request.json(); // action: 'block', 'unblock', or 'unblock-all'
-    if (action !== 'unblock-all' && !ip) return jsonResponse({ error: 'IP required' }, 400, request);
+    const { ip, ips, action } = await request.json(); // action: 'block', 'unblock', or 'unblock-all'
+    if (action !== 'unblock-all' && !ip && !ips) return jsonResponse({ error: 'IP required' }, 400, request);
     
     let blockedIPs = [];
     const blockedStr = await env.ADMIN_KV.get('blocked_ips');
@@ -696,10 +754,20 @@ async function handleIpBlock(request, env) {
       try { blockedIPs = JSON.parse(blockedStr); } catch(e){}
     }
 
-    if (action === 'block' && !blockedIPs.includes(ip)) {
-      blockedIPs.push(ip);
+    // Support single IP, array of IPs, or comma/newline separated IPs
+    let targetIps = [];
+    if (ips && Array.isArray(ips)) {
+      targetIps = ips.map(s => String(s).trim()).filter(Boolean);
+    } else if (ip) {
+      targetIps = String(ip).split(/[\s,]+/).map(s => s.trim()).filter(Boolean);
+    }
+
+    if (action === 'block') {
+      targetIps.forEach(i => {
+        if (!blockedIPs.includes(i)) blockedIPs.push(i);
+      });
     } else if (action === 'unblock') {
-      blockedIPs = blockedIPs.filter(i => i !== ip);
+      blockedIPs = blockedIPs.filter(i => !targetIps.includes(i));
     } else if (action === 'unblock-all') {
       blockedIPs = [];
     }
@@ -714,8 +782,8 @@ async function handleIpBlock(request, env) {
 async function handleUserIdBlock(request, env) {
   if (!(await verifyAdminAuth(request, env))) return jsonResponse({ error: 'Unauthorized' }, 401, request);
   try {
-    const { userId, action } = await request.json(); // action: 'block', 'unblock', or 'unblock-all'
-    if (action !== 'unblock-all' && !userId) return jsonResponse({ error: 'User ID required' }, 400, request);
+    const { userId, userIds, action } = await request.json(); // action: 'block', 'unblock', or 'unblock-all'
+    if (action !== 'unblock-all' && !userId && !userIds) return jsonResponse({ error: 'User ID required' }, 400, request);
     
     let blockedUserIds = [];
     const blockedStr = await env.ADMIN_KV.get('blocked_user_ids');
@@ -723,10 +791,19 @@ async function handleUserIdBlock(request, env) {
       try { blockedUserIds = JSON.parse(blockedStr); } catch(e){}
     }
 
-    if (action === 'block' && !blockedUserIds.includes(userId)) {
-      blockedUserIds.push(userId);
+    let targetIds = [];
+    if (userIds && Array.isArray(userIds)) {
+      targetIds = userIds.map(s => String(s).trim()).filter(Boolean);
+    } else if (userId) {
+      targetIds = String(userId).split(/[\s,]+/).map(s => s.trim()).filter(Boolean);
+    }
+
+    if (action === 'block') {
+      targetIds.forEach(id => {
+        if (!blockedUserIds.includes(id)) blockedUserIds.push(id);
+      });
     } else if (action === 'unblock') {
-      blockedUserIds = blockedUserIds.filter(id => id !== userId);
+      blockedUserIds = blockedUserIds.filter(id => !targetIds.includes(id));
     } else if (action === 'unblock-all') {
       blockedUserIds = [];
     }

@@ -1,89 +1,136 @@
-<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 view-transition-enter">
-    <div class="glass-card p-6 flex flex-col justify-between relative overflow-hidden group">
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8 view-transition-enter">
+    <div class="glass-card p-5 flex flex-col justify-between relative overflow-hidden group">
         <div class="absolute -right-4 -top-4 text-blue-500/10 group-hover:text-blue-500/20 transition-colors"><i class="ph ph-users text-8xl"></i></div>
-        <div class="relative z-10 text-gray-400 font-medium mb-1 flex items-center gap-2"><i class="ph ph-users text-blue-400"></i> Unique Visitors (7 Days)</div>
+        <div class="relative z-10 text-gray-400 text-xs font-medium uppercase tracking-wider flex items-center gap-2"><i class="ph ph-users text-blue-400"></i> Unique Visitors (7D)</div>
         <div class="relative z-10 text-3xl font-bold text-white mt-2" id="ovUniqueVisits">--</div>
+        <div class="relative z-10 text-[11px] text-blue-400 mt-1 flex items-center gap-1"><i class="ph ph-chart-line-up"></i> Active 7-Day Window</div>
     </div>
     
-    <div class="glass-card p-6 flex flex-col justify-between relative overflow-hidden group">
+    <div class="glass-card p-5 flex flex-col justify-between relative overflow-hidden group">
         <div class="absolute -right-4 -top-4 text-purple-500/10 group-hover:text-purple-500/20 transition-colors"><i class="ph ph-cursor-click text-8xl"></i></div>
-        <div class="relative z-10 text-gray-400 font-medium mb-1 flex items-center gap-2"><i class="ph ph-cursor-click text-purple-400"></i> Total Actions (7 Days)</div>
+        <div class="relative z-10 text-gray-400 text-xs font-medium uppercase tracking-wider flex items-center gap-2"><i class="ph ph-cursor-click text-purple-400"></i> Total Actions (7D)</div>
         <div class="relative z-10 text-3xl font-bold text-white mt-2" id="ovActions">--</div>
+        <div class="relative z-10 text-[11px] text-purple-400 mt-1 flex items-center gap-1"><i class="ph ph-lightning"></i> API Invocations & Logins</div>
     </div>
 
-    <div class="glass-card p-6 flex flex-col justify-between relative overflow-hidden group">
+    <div class="glass-card p-5 flex flex-col justify-between relative overflow-hidden group">
+        <div class="absolute -right-4 -top-4 text-emerald-500/10 group-hover:text-emerald-500/20 transition-colors"><i class="ph ph-globe text-8xl"></i></div>
+        <div class="relative z-10 text-gray-400 text-xs font-medium uppercase tracking-wider flex items-center gap-2"><i class="ph ph-globe text-emerald-400"></i> Total Lifetime Visitors</div>
+        <div class="relative z-10 text-3xl font-bold text-white mt-2" id="ovTotalUnique">--</div>
+        <div class="relative z-10 text-[11px] text-emerald-400 mt-1 flex items-center gap-1"><i class="ph ph-infinity"></i> Persistent KV Identity Track</div>
+    </div>
+
+    <div class="glass-card p-5 flex flex-col justify-between relative overflow-hidden group">
         <div class="absolute -right-4 -top-4 text-red-500/10 group-hover:text-red-500/20 transition-colors"><i class="ph ph-shield-x text-8xl"></i></div>
-        <div class="relative z-10 text-gray-400 font-medium mb-1 flex items-center gap-2"><i class="ph ph-shield-slash text-red-400"></i> Blocked Entities</div>
+        <div class="relative z-10 text-gray-400 text-xs font-medium uppercase tracking-wider flex items-center gap-2"><i class="ph ph-shield-slash text-red-400"></i> Security Blocks</div>
         <div class="relative z-10 text-3xl font-bold text-white mt-2 flex items-baseline gap-2">
             <span id="ovBlocks">--</span>
-            <span class="text-xs text-red-400 font-normal">Active blocks</span>
+            <span class="text-xs text-red-400 font-normal">Restricted</span>
         </div>
+        <div class="relative z-10 text-[11px] text-red-400 mt-1 flex items-center gap-1"><i class="ph ph-prohibit"></i> Active IP & User restrictions</div>
+    </div>
+</div>
+
+<!-- QUICK ACTION TOOLBAR -->
+<div class="glass-card p-4 mb-8 flex flex-wrap items-center justify-between gap-3 view-transition-enter">
+    <div class="flex items-center gap-2 text-xs text-gray-300 font-medium">
+        <i class="ph ph-lightning text-amber-400 text-base"></i> Quick Actions:
+    </div>
+    <div class="flex flex-wrap items-center gap-2">
+        <a href="#/control" class="px-3 py-1.5 rounded-lg bg-gray-800/80 hover:bg-gray-700 text-xs text-gray-200 border border-gray-700/80 flex items-center gap-1.5 transition-all">
+            <i class="ph ph-faders text-brand-400"></i> Control Panel
+        </a>
+        <a href="#/logs" class="px-3 py-1.5 rounded-lg bg-gray-800/80 hover:bg-gray-700 text-xs text-gray-200 border border-gray-700/80 flex items-center gap-1.5 transition-all">
+            <i class="ph ph-terminal-window text-purple-400"></i> Live Stream Logs
+        </a>
+        <a href="#/security" class="px-3 py-1.5 rounded-lg bg-gray-800/80 hover:bg-gray-700 text-xs text-gray-200 border border-gray-700/80 flex items-center gap-1.5 transition-all">
+            <i class="ph ph-shield-slash text-red-400"></i> Manage Blocks
+        </a>
+        <button onclick="window.triggerExportLogsJSON && window.triggerExportLogsJSON()" class="px-3 py-1.5 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-xs text-blue-300 border border-blue-500/30 flex items-center gap-1.5 transition-all">
+            <i class="ph ph-download-simple"></i> Export Telemetry JSON
+        </button>
     </div>
 </div>
 
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 view-transition-enter" style="animation-delay: 0.1s;">
     <!-- System Health -->
-    <div class="glass-card p-6 flex flex-col">
-        <h3 class="text-lg font-semibold text-white flex items-center gap-2 mb-4">
-            <i class="ph ph-activity text-green-400"></i> System Status
-        </h3>
-        <div class="space-y-4">
-            <div class="flex items-center justify-between p-4 rounded-lg bg-gray-900/40 border border-gray-800">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-400">
-                        <i class="ph ph-globe-hemisphere-west text-xl"></i>
+    <div class="glass-card p-6 flex flex-col justify-between">
+        <div>
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-white flex items-center gap-2">
+                    <i class="ph ph-activity text-green-400"></i> Edge System Perimeter
+                </h3>
+                <span class="text-[11px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">All Healthy</span>
+            </div>
+            <div class="space-y-3">
+                <div class="flex items-center justify-between p-3.5 rounded-xl bg-gray-900/50 border border-gray-800/80">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-400">
+                            <i class="ph ph-globe-hemisphere-west text-lg"></i>
+                        </div>
+                        <div>
+                            <div class="text-xs font-semibold text-white">Frontend Gateway & Edge CDN</div>
+                            <div class="text-[11px] text-gray-400">Cloudflare Pages • SSL/HTTP3 Active</div>
+                        </div>
                     </div>
-                    <div>
-                        <div class="text-sm font-medium text-white">Frontend Gateway</div>
-                        <div class="text-xs text-gray-400">Cloudflare Pages</div>
+                    <div class="text-emerald-400 flex items-center gap-1 text-xs font-medium">
+                        <i class="ph ph-check-circle"></i> Operational
                     </div>
                 </div>
-                <div class="text-green-400 flex items-center gap-1.5 text-sm font-medium">
-                    <i class="ph ph-check-circle"></i> Operational
+
+                <div class="flex items-center justify-between p-3.5 rounded-xl bg-gray-900/50 border border-gray-800/80">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-lg bg-purple-500/10 flex items-center justify-center text-purple-400">
+                            <i class="ph ph-database text-lg"></i>
+                        </div>
+                        <div>
+                            <div class="text-xs font-semibold text-white">Worker KV & ETag Cache Gateway</div>
+                            <div class="text-[11px] text-gray-400">304 ETag Bandwidth Optimizer Enabled</div>
+                        </div>
+                    </div>
+                    <div class="text-emerald-400 flex items-center gap-1 text-xs font-medium">
+                        <i class="ph ph-check-circle"></i> Low Overhead
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between p-3.5 rounded-xl bg-gray-900/50 border border-gray-800/80">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-lg bg-orange-500/10 flex items-center justify-center text-orange-400">
+                            <i class="ph ph-plugs-connected text-lg"></i>
+                        </div>
+                        <div>
+                            <div class="text-xs font-semibold text-white">Target API (EWU BD Portal)</div>
+                            <div class="text-[11px] text-gray-400">Upstream routine proxy session</div>
+                        </div>
+                    </div>
+                    <div class="text-emerald-400 flex items-center gap-1 text-xs font-medium">
+                        <i class="ph ph-check-circle"></i> Connected
+                    </div>
                 </div>
             </div>
-            <div class="flex items-center justify-between p-4 rounded-lg bg-gray-900/40 border border-gray-800">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-400">
-                        <i class="ph ph-database text-xl"></i>
-                    </div>
-                    <div>
-                        <div class="text-sm font-medium text-white">KV Storage Edge</div>
-                        <div class="text-xs text-gray-400">Data persistence state</div>
-                    </div>
-                </div>
-                <div class="text-green-400 flex items-center gap-1.5 text-sm font-medium">
-                    <i class="ph ph-check-circle"></i> Connected
-                </div>
-            </div>
-            <div class="flex items-center justify-between p-4 rounded-lg bg-gray-900/40 border border-gray-800">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-full bg-orange-500/10 flex items-center justify-center text-orange-400">
-                        <i class="ph ph-plugs-connected text-xl"></i>
-                    </div>
-                    <div>
-                        <div class="text-sm font-medium text-white">Target API (EWU Portal)</div>
-                        <div class="text-xs text-gray-400">Upstream connection status</div>
-                    </div>
-                </div>
-                <div class="text-green-400 flex items-center gap-1.5 text-sm font-medium">
-                    <i class="ph ph-check-circle"></i> Stable
-                </div>
-            </div>
+        </div>
+
+        <div class="mt-4 pt-3 border-t border-gray-800/80 flex items-center justify-between text-[11px] text-gray-500">
+            <span>Status Protocol: <strong class="text-gray-300 font-mono">ETag / 304 Adaptive</strong></span>
+            <span>Security Layer: <strong class="text-emerald-400 font-mono">KV Guard v2</strong></span>
         </div>
     </div>
     
     <!-- Quick Logs -->
-    <div class="glass-card p-0 flex flex-col">
-        <div class="p-5 border-b border-gray-800 flex justify-between items-center">
-            <h3 class="text-lg font-semibold text-white flex items-center gap-2">
-                <i class="ph ph-clock-counter-clockwise text-gray-400"></i> Recent Activity
+    <div class="glass-card p-0 flex flex-col min-h-[360px]">
+        <div class="p-5 border-b border-gray-800 flex justify-between items-center bg-gray-900/40 rounded-t-xl">
+            <h3 class="text-base font-semibold text-white flex items-center gap-2">
+                <i class="ph ph-clock-counter-clockwise text-blue-400"></i> Recent Activity Stream
             </h3>
-            <a href="#/security" class="text-xs text-brand-400 hover:text-brand-300">View All</a>
+            <div class="flex items-center gap-2">
+                <a href="#/logs" class="text-xs text-brand-400 hover:text-brand-300 font-medium flex items-center gap-1">
+                    Live Stream <i class="ph ph-arrow-right"></i>
+                </a>
+            </div>
         </div>
         <div class="flex-1 overflow-auto p-2" id="ovLogs">
             <!-- Logs injected here -->
-            <div class="p-4 text-center text-gray-500">Loading logs...</div>
+            <div class="p-4 text-center text-gray-500 text-xs">Loading logs...</div>
         </div>
     </div>
 </div>

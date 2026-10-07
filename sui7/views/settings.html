@@ -1,16 +1,46 @@
-<div class="glass-card p-6 min-h-[400px] view-transition-enter max-w-2xl mx-auto">
-    <div class="mb-8 border-b border-gray-800 pb-6">
-        <h3 class="text-xl font-semibold text-white flex items-center gap-2 mb-2">
-            <i class="ph ph-gear text-gray-400"></i> Local Preferences
-        </h3>
-        <p class="text-gray-400 text-sm">Dashboard interface configurations.</p>
+<div class="glass-card p-6 md:p-8 min-h-[400px] view-transition-enter max-w-3xl mx-auto">
+    <div class="mb-8 border-b border-gray-800 pb-6 flex items-center justify-between">
+        <div>
+            <h3 class="text-xl font-semibold text-white flex items-center gap-2 mb-1">
+                <i class="ph ph-gear text-brand-400"></i> Local Preferences & Edge Console Config
+            </h3>
+            <p class="text-gray-400 text-sm">Fine-tune dashboard rendering speed, stream frequencies, and system alerts.</p>
+        </div>
     </div>
 
-    <div class="space-y-6">
-        <div class="p-4 rounded-xl border border-gray-800/50 bg-gray-900/30 flex items-center justify-between">
+    <div class="space-y-5">
+        <!-- Telemetry Polling Rate -->
+        <div class="p-4 rounded-xl border border-gray-800/80 bg-gray-900/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-                <div class="text-sm font-medium text-white mb-1">Smooth Chart Animations</div>
-                <div class="text-xs text-gray-500">Toggle Canvas transitions</div>
+                <div class="text-sm font-medium text-white mb-0.5">Background Refresh Rate</div>
+                <div class="text-xs text-gray-400">Controls how frequently live logs and telemetry buffer syncs with the edge gateway.</div>
+            </div>
+            <select id="setRefreshInterval" class="glass-input rounded-lg p-2 text-xs bg-gray-950 font-mono text-brand-300 w-36">
+                <option value="3000">Fast (3s)</option>
+                <option value="5000" selected>Balanced (5s)</option>
+                <option value="10000">Relaxed (10s)</option>
+                <option value="30000">Economy (30s)</option>
+                <option value="manual">Manual Only</option>
+            </select>
+        </div>
+
+        <!-- Audio Alert -->
+        <div class="p-4 rounded-xl border border-gray-800/80 bg-gray-900/30 flex items-center justify-between">
+            <div>
+                <div class="text-sm font-medium text-white mb-0.5">Auditory Security Pulse</div>
+                <div class="text-xs text-gray-400">Play subtle acoustic chime when security error or block event occurs.</div>
+            </div>
+            <label class="switch">
+                <input type="checkbox" id="setAudioAlerts">
+                <span class="slider"></span>
+            </label>
+        </div>
+
+        <!-- Smooth Animations -->
+        <div class="p-4 rounded-xl border border-gray-800/80 bg-gray-900/30 flex items-center justify-between">
+            <div>
+                <div class="text-sm font-medium text-white mb-0.5">Smooth Chart & Interface Transitions</div>
+                <div class="text-xs text-gray-400">Enable GPU-accelerated bezier animations for traffic canvases.</div>
             </div>
             <label class="switch">
                 <input type="checkbox" checked id="setAnimations">
@@ -18,26 +48,41 @@
             </label>
         </div>
 
-        <div class="p-4 rounded-xl border border-gray-800/50 bg-gray-900/30 flex items-center justify-between">
+        <!-- Performance Mode -->
+        <div class="p-4 rounded-xl border border-gray-800/80 bg-gray-900/30 flex items-center justify-between">
             <div>
-                <div class="text-sm font-medium text-white mb-1">Performance Mode (Low-End Devices)</div>
-                <div class="text-xs text-gray-500">Disable background blur, radial gradients, and animations for budget devices.</div>
+                <div class="text-sm font-medium text-white mb-0.5">Performance Mode (Low-End Hardware)</div>
+                <div class="text-xs text-gray-400">Disables glassmorphic backdrop filters and radial glow to maintain 60 FPS on budget devices.</div>
             </div>
             <label class="switch">
                 <input type="checkbox" id="setLowEndMode">
                 <span class="slider"></span>
             </label>
         </div>
-        
-        <div class="p-4 rounded-xl border border-gray-800/50 bg-gray-900/30 flex items-center justify-between opacity-60 pointer-events-none">
-            <div>
-                <div class="text-sm font-medium text-white mb-1">Theme Contrast</div>
-                <div class="text-xs text-gray-500">Locked to premium dark aesthetics.</div>
+    </div>
+
+    <!-- KEYBOARD SHORTCUTS REFERENCE -->
+    <div class="mt-8 pt-6 border-t border-gray-800">
+        <h4 class="text-sm font-semibold text-white mb-3 flex items-center gap-2">
+            <i class="ph ph-keyboard text-brand-400"></i> Keyboard Shortcuts Reference
+        </h4>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            <div class="p-2.5 rounded-lg bg-gray-900/40 border border-gray-800/80 flex items-center justify-between">
+                <span class="text-gray-300">Quick Command Palette</span>
+                <kbd class="bg-gray-800 text-gray-300 px-2 py-0.5 rounded font-mono border border-gray-700">Ctrl + K</kbd>
             </div>
-            <label class="switch">
-                <input type="checkbox" checked disabled>
-                <span class="slider"></span>
-            </label>
+            <div class="p-2.5 rounded-lg bg-gray-900/40 border border-gray-800/80 flex items-center justify-between">
+                <span class="text-gray-300">Direct Tab Jump</span>
+                <kbd class="bg-gray-800 text-gray-300 px-2 py-0.5 rounded font-mono border border-gray-700">1 - 7</kbd>
+            </div>
+            <div class="p-2.5 rounded-lg bg-gray-900/40 border border-gray-800/80 flex items-center justify-between">
+                <span class="text-gray-300">Refresh Edge Data</span>
+                <kbd class="bg-gray-800 text-gray-300 px-2 py-0.5 rounded font-mono border border-gray-700">R</kbd>
+            </div>
+            <div class="p-2.5 rounded-lg bg-gray-900/40 border border-gray-800/80 flex items-center justify-between">
+                <span class="text-gray-300">Dismiss Modal / Palette</span>
+                <kbd class="bg-gray-800 text-gray-300 px-2 py-0.5 rounded font-mono border border-gray-700">ESC</kbd>
+            </div>
         </div>
     </div>
 </div>

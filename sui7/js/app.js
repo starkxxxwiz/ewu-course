@@ -1,15 +1,24 @@
-// ES Module App Initialization
+// ==========================================
+// SUI7 Admin Command Center - Core Engine
+// ==========================================
+
 const API_URL = 'https://api.aftabkabir.me/api';
 let trafficChartInstance = null;
 
 // Initialize settings from localStorage if available
-let currentSettings = { animations: true, lowEndMode: false };
+let currentSettings = {
+    animations: true,
+    lowEndMode: false,
+    audioAlerts: false,
+    refreshInterval: 5000 // default 5 seconds
+};
+
 try {
     const savedSettings = localStorage.getItem('adminSettings');
     if (savedSettings) {
         currentSettings = { ...currentSettings, ...JSON.parse(savedSettings) };
     }
-} catch(e) {}
+} catch (e) {}
 
 // Apply performance mode immediately
 if (currentSettings.lowEndMode) {
@@ -18,22 +27,25 @@ if (currentSettings.lowEndMode) {
     document.documentElement.classList.remove('performance-mode');
 }
 
-let currentDataCache = null; // Store fetched data
+let currentDataCache = null;
+let isStreamPaused = false;
+let autoPollingInterval = null;
+let currentLogsFilterLevel = 'all';
+let currentLogsSearchQuery = '';
 
 // ================= ROUTING & STATE =================
 async function loadView(path) {
     const appEl = document.getElementById('app');
     const token = localStorage.getItem('adminToken');
-    
-    if(!token && path !== 'login') {
+
+    if (!token && path !== 'login') {
         window.location.hash = '#/login';
         return;
     }
 
     if (path === 'login') {
         const layoutMode = document.querySelector('#routerView') !== null;
-        if(layoutMode) {
-            // Full reset
+        if (layoutMode) {
             window.location.reload();
             return;
         }
@@ -50,9 +62,10 @@ async function loadView(path) {
         appEl.innerHTML = layoutHtml;
         routerView = document.getElementById('routerView');
         bindLayoutEvents();
+        initCommandPalette();
         updateNavActive(path);
-        
-        // Fetch core data once on initial load
+
+        // Fetch core telemetry on initial load
         await refreshDashboardData();
     } else {
         updateNavActive(path);
@@ -61,20 +74,20 @@ async function loadView(path) {
     // Load specific sub-view
     const viewPath = path === 'dashboard' ? 'overview' : path;
     const cleanPath = viewPath.replace('/', '');
-    
+
     try {
         const html = await fetch(`views/${cleanPath}.html`).then(r => {
-            if(!r.ok) throw new Error('View not found');
+            if (!r.ok) throw new Error('View not found');
             return r.text();
         });
         routerView.innerHTML = html;
         updatePageHeaders(cleanPath);
-        
+
         // Hydrate the view with cached data
-        if(currentDataCache) {
+        if (currentDataCache) {
             hydrateView(cleanPath, currentDataCache);
         }
-    } catch(e) {
+    } catch (e) {
         routerView.innerHTML = `<div class="p-8 text-red-400">Error loading view: ${e.message}</div>`;
     }
 }
@@ -82,14 +95,14 @@ async function loadView(path) {
 // ================= AUTHENTICATION =================
 function bindLoginEvents() {
     const form = document.getElementById('loginForm');
-    if(!form) return;
-    
+    if (!form) return;
+
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
         const btn = document.getElementById('loginBtn');
         const errorDiv = document.getElementById('loginError');
         const errorMsg = document.getElementById('loginErrorMsg');
-        
+
         errorDiv.classList.add('hidden');
         btn.innerHTML = '<div class="spinner border-white"></div>';
         btn.disabled = true;
@@ -97,7 +110,7 @@ function bindLoginEvents() {
 
         const user = document.getElementById('username').value;
         const pass = document.getElementById('password').value;
-        
+
         try {
             const res = await fetch(`${API_URL}/admin/login`, {
                 method: 'POST',
@@ -105,19 +118,21 @@ function bindLoginEvents() {
                 body: JSON.stringify({ username: user, password: pass })
             });
             const data = await res.json();
-            
+
             if (data.success) {
                 localStorage.setItem('adminToken', data.token);
                 window.location.hash = '#/overview';
             } else {
                 errorMsg.textContent = data.message || 'Invalid credentials.';
                 errorDiv.classList.remove('hidden');
+                playAcousticPulse('error');
             }
-        } catch(err) {
+        } catch (err) {
             errorMsg.textContent = 'Connection error establishing contact with gateway.';
             errorDiv.classList.remove('hidden');
+            playAcousticPulse('error');
         } finally {
-            if(btn) {
+            if (btn) {
                 btn.innerHTML = '<span>Authenticating</span><i class="ph ph-arrow-right font-bold transition-transform group-hover:translate-x-1"></i>';
                 btn.disabled = false;
                 btn.classList.remove('opacity-80', 'cursor-not-allowed');
@@ -127,12 +142,13 @@ function bindLoginEvents() {
 }
 
 function handleLogout(sessionExpired = false) {
+    stopAutoPolling();
     localStorage.removeItem('adminToken');
     window.location.hash = '#/login';
     setTimeout(() => {
-        if(sessionExpired) {
+        if (sessionExpired) {
             const errDiv = document.getElementById('loginError');
-            if(errDiv) {
+            if (errDiv) {
                 document.getElementById('loginErrorMsg').textContent = 'Session expired. Please log in again.';
                 errDiv.classList.remove('hidden');
             }
@@ -140,67 +156,125 @@ function handleLogout(sessionExpired = false) {
     }, 100);
 }
 
-// ================= DATA FETCHING =================
+// ================= DATA FETCHING & LATENCY PING =================
 async function refreshDashboardData() {
     const token = localStorage.getItem('adminToken');
     if (!token) return;
 
     const rfBtn = document.getElementById('refreshBtn');
-    if(rfBtn) rfBtn.classList.add('animate-spin', 'pointer-events-none');
+    if (rfBtn) rfBtn.classList.add('animate-spin', 'pointer-events-none');
 
+    const startTime = performance.now();
     try {
         const res = await fetch(`${API_URL}/admin/dashboard`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
-        
+
+        const elapsed = Math.round(performance.now() - startTime);
+        updateLatencyUI(elapsed);
+
         if (res.status === 401 || res.status === 403) {
             handleLogout(true);
             return;
         }
-        
-        if(!res.ok) throw new Error('Failed to fetch telemetry');
+
+        if (!res.ok) throw new Error('Failed to fetch telemetry');
         const data = await res.json();
         currentDataCache = data;
-        
+
+        // Update nav badges
+        updateNavigationBadges(data);
+
         // Re-hydrate the current active view
         const currentHash = window.location.hash.replace('#/', '') || 'overview';
         hydrateView(currentHash, data);
 
-    } catch(e) {
+    } catch (e) {
         console.error("Gateway fetch failed:", e);
+        updateLatencyUI(-1);
     } finally {
-        if(rfBtn) {
-            setTimeout(() => rfBtn.classList.remove('animate-spin', 'pointer-events-none'), 500);
+        if (rfBtn) {
+            setTimeout(() => rfBtn.classList.remove('animate-spin', 'pointer-events-none'), 400);
+        }
+    }
+}
+
+function updateLatencyUI(ms) {
+    const latBadge = document.getElementById('latencyBadge');
+    const latText = document.getElementById('headerLatency');
+    if (!latBadge || !latText) return;
+
+    if (ms < 0) {
+        latText.textContent = 'Degraded';
+        latBadge.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-mono backdrop-blur';
+        return;
+    }
+
+    latText.textContent = `${ms} ms`;
+    if (ms < 150) {
+        latBadge.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono backdrop-blur transition-all';
+    } else if (ms < 350) {
+        latBadge.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-mono backdrop-blur transition-all';
+    } else {
+        latBadge.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-mono backdrop-blur transition-all';
+    }
+}
+
+function updateNavigationBadges(data) {
+    if (!data) return;
+    const secBadge = document.getElementById('navSecurityBadge');
+    const logsBadge = document.getElementById('navLogsBadge');
+
+    const totalBlocks = (data.blockedIPs || []).length + (data.blockedUserIds || []).length;
+    if (secBadge) {
+        if (totalBlocks > 0) {
+            secBadge.textContent = totalBlocks;
+            secBadge.classList.remove('hidden');
+        } else {
+            secBadge.classList.add('hidden');
+        }
+    }
+
+    const totalLogs = (data.recentLogs || []).length;
+    if (logsBadge) {
+        if (totalLogs > 0) {
+            logsBadge.textContent = totalLogs > 99 ? '99+' : totalLogs;
+            logsBadge.classList.remove('hidden');
+        } else {
+            logsBadge.classList.add('hidden');
         }
     }
 }
 
 // ================= HYDRATION & DOM =================
 function hydrateView(viewName, data) {
-    if(!data) return;
+    if (!data) return;
 
     if (viewName === 'overview') {
-        const dates = Object.keys(data.analytics).sort();
+        const dates = Object.keys(data.analytics || {}).sort();
         let uVisits = 0, tActions = 0;
         dates.forEach(d => {
             uVisits += (data.analytics[d].unique_ips ? data.analytics[d].unique_ips.length : (data.analytics[d].visits || 0));
             tActions += data.analytics[d].actions || 0;
         });
-        
+
         const elV = document.getElementById('ovUniqueVisits');
         const elA = document.getElementById('ovActions');
+        const elU = document.getElementById('ovTotalUnique');
         const elB = document.getElementById('ovBlocks');
-        if(elV) elV.textContent = uVisits.toLocaleString();
-        if(elA) elA.textContent = tActions.toLocaleString();
-        if(elB) elB.textContent = (data.blockedIPs || []).length;
-        
+
+        if (elV) elV.textContent = uVisits.toLocaleString();
+        if (elA) elA.textContent = tActions.toLocaleString();
+        if (elU) elU.textContent = (data.totalUniqueVisitors || 0).toLocaleString();
+        if (elB) elB.textContent = ((data.blockedIPs || []).length + (data.blockedUserIds || []).length).toString();
+
         renderMiniLogs(data.recentLogs || []);
     }
-    
+
     if (viewName === 'site-analytics') {
-        const dates = Object.keys(data.analytics).sort();
-        renderChart(dates, data.analytics);
-        
+        const dates = Object.keys(data.analytics || {}).sort();
+        renderChart(dates, data.analytics || {});
+
         // Fill Engagement Bar
         let uVisits = 0, tActions = 0;
         dates.forEach(d => {
@@ -210,25 +284,28 @@ function hydrateView(viewName, data) {
         const total = uVisits + tActions;
         const eBar = document.getElementById('engagementBar');
         const eTxt = document.getElementById('engagementText');
-        if(eBar && total > 0) {
+        if (eBar && total > 0) {
             const perc = Math.round((tActions / total) * 100);
             requestAnimationFrame(() => {
                 eBar.style.width = perc + '%';
-                eTxt.textContent = `${perc}% Action Density`;
+                if (eTxt) eTxt.textContent = `${perc}% Action Density`;
             });
         }
+
+        renderRoutePopularity(data.recentLogs || []);
     }
 
     if (viewName === 'user-analytics') {
         renderUserSessions(data.recentLogs || []);
+        setupUserAnalyticsListeners();
     }
 
     if (viewName === 'control') {
         const toggle = document.getElementById('ctrlClosureToggle');
-        if(toggle) {
+        if (toggle) {
             toggle.checked = data.siteClosureMode;
             updateClosureUI(data.siteClosureMode);
-            
+
             toggle.onchange = async (e) => {
                 const active = e.target.checked;
                 updateClosureUI(active);
@@ -236,14 +313,15 @@ function hydrateView(viewName, data) {
                     const token = localStorage.getItem('adminToken');
                     await fetch(`${API_URL}/admin/config`, {
                         method: 'POST',
-                        headers: { 
+                        headers: {
                             'Content-Type': 'application/json',
                             'Authorization': `Bearer ${token}`
                         },
                         body: JSON.stringify({ siteClosureMode: active })
                     });
                     currentDataCache.siteClosureMode = active;
-                } catch(err) {
+                    showAdminToast(`Site Maintenance Mode is now ${active ? 'ENABLED (Locked)' : 'DISABLED (Online)'}!`, true);
+                } catch (err) {
                     alert('Edge synchronization failed.');
                     toggle.checked = !active;
                     updateClosureUI(!active);
@@ -254,7 +332,7 @@ function hydrateView(viewName, data) {
         // Custom Notice Bindings
         const notice = data.customNotice || { wpb: {}, unb: {} };
         const el = id => document.getElementById(id);
-        
+
         if (el('wpbToggle')) {
             el('wpbToggle').checked = notice.wpb?.enabled || false;
             el('wpbContent').value = notice.wpb?.content || '';
@@ -283,16 +361,25 @@ function hydrateView(viewName, data) {
         if (el('globalNoticeSaveBtn')) {
             el('globalNoticeSaveBtn').onclick = () => saveNoticeConfig(data);
         }
+
+        setupNoticeSimulatorLivePreview();
+        updateNoticeSimulatorPreview();
     }
 
     if (viewName === 'logs' || viewName === 'security') {
         if (viewName === 'logs') {
-            renderRealTimeLogs(data.recentLogs || []);
+            if (!isStreamPaused) {
+                renderRealTimeLogs(data.recentLogs || []);
+            }
             setupLogsViewListeners();
         }
-        startLogsAutoPolling();
+        startAutoPolling();
     } else {
-        stopLogsAutoPolling();
+        if (currentSettings.refreshInterval === 'manual') {
+            stopAutoPolling();
+        } else {
+            startAutoPolling();
+        }
     }
 
     if (viewName === 'security') {
@@ -300,58 +387,21 @@ function hydrateView(viewName, data) {
         renderBlockedUserIdsFull(data.blockedUserIds || []);
         const allLogins = extractAllSuccessfulLogins(data);
         renderSuccessfulLoginsTable(allLogins);
-        
-        const sForm = document.getElementById('blockForm');
-        if(sForm) {
-            sForm.onsubmit = async (e) => {
-                e.preventDefault();
-                const ipInput = document.getElementById('secIpInput');
-                await modifyBlocklistCall('block', ipInput.value.trim());
-                ipInput.value = '';
-            };
-        }
-
-        const uForm = document.getElementById('userIdBlockForm');
-        if(uForm) {
-            uForm.onsubmit = async (e) => {
-                e.preventDefault();
-                const uInput = document.getElementById('secUserIdInput');
-                await modifyUserIdBlocklistCall('block', uInput.value.trim());
-                uInput.value = '';
-            };
-        }
-
-        const unblockAllIpsBtn = document.getElementById('unblockAllIpsBtn');
-        if(unblockAllIpsBtn) {
-            unblockAllIpsBtn.onclick = async () => {
-                if(confirm('Are you sure you want to unblock all IPs?')) {
-                    await modifyBlocklistCall('unblock-all');
-                }
-            };
-        }
-
-        const unblockAllUserIdsBtn = document.getElementById('unblockAllUserIdsBtn');
-        if(unblockAllUserIdsBtn) {
-            unblockAllUserIdsBtn.onclick = async () => {
-                if(confirm('Are you sure you want to unblock all User IDs?')) {
-                    await modifyUserIdBlocklistCall('unblock-all');
-                }
-            };
-        }
+        setupSecurityViewListeners();
     }
 
     if (viewName === 'settings') {
         const sAnim = document.getElementById('setAnimations');
-        if(sAnim) {
+        if (sAnim) {
             sAnim.checked = currentSettings.animations;
             sAnim.onchange = (e) => {
                 currentSettings.animations = e.target.checked;
                 saveSettings();
-            }
+            };
         }
 
         const sLowEnd = document.getElementById('setLowEndMode');
-        if(sLowEnd) {
+        if (sLowEnd) {
             sLowEnd.checked = currentSettings.lowEndMode;
             sLowEnd.onchange = (e) => {
                 currentSettings.lowEndMode = e.target.checked;
@@ -361,7 +411,28 @@ function hydrateView(viewName, data) {
                 } else {
                     document.documentElement.classList.remove('performance-mode');
                 }
-            }
+            };
+        }
+
+        const sAudio = document.getElementById('setAudioAlerts');
+        if (sAudio) {
+            sAudio.checked = currentSettings.audioAlerts;
+            sAudio.onchange = (e) => {
+                currentSettings.audioAlerts = e.target.checked;
+                saveSettings();
+                if (currentSettings.audioAlerts) playAcousticPulse('success');
+            };
+        }
+
+        const sRefresh = document.getElementById('setRefreshInterval');
+        if (sRefresh) {
+            sRefresh.value = currentSettings.refreshInterval.toString();
+            sRefresh.onchange = (e) => {
+                const val = e.target.value;
+                currentSettings.refreshInterval = val === 'manual' ? 'manual' : parseInt(val, 10);
+                saveSettings();
+                startAutoPolling();
+            };
         }
     }
 }
@@ -369,28 +440,72 @@ function hydrateView(viewName, data) {
 function saveSettings() {
     try {
         localStorage.setItem('adminSettings', JSON.stringify(currentSettings));
-    } catch(e) {}
+    } catch (e) {}
 }
 
 // ================= RENDER COMPONENTS =================
 
 function renderMiniLogs(logs) {
     const list = document.getElementById('ovLogs');
-    if(!list) return;
+    if (!list) return;
     list.innerHTML = '';
-    const slice = logs.slice(0, 5);
-    if(slice.length === 0) {
+    const slice = logs.slice(0, 6);
+    if (slice.length === 0) {
         list.innerHTML = '<div class="p-4 text-center text-gray-500 text-sm">No activity recorded yet.</div>';
+        return;
     }
     slice.forEach(log => {
-        const timeStr = new Date(log.time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        const timeStr = new Date(log.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        const level = (log.level || 'info').toLowerCase();
+        let badgeColor = 'text-blue-400 bg-blue-500/10 border-blue-500/20';
+        if (level === 'success') badgeColor = 'text-green-400 bg-green-500/10 border-green-500/20';
+        if (level === 'error') badgeColor = 'text-red-400 bg-red-500/10 border-red-500/20';
+
         list.innerHTML += `
-            <div class="flex items-center justify-between p-3 border-b border-gray-800/50 hover:bg-gray-800/20 transition-colors rounded">
-                <div class="flex items-center gap-3">
-                    <span class="text-xs font-mono text-brand-400">${timeStr}</span>
-                    <span class="text-sm text-gray-300 truncate max-w-[150px]">${log.path}</span>
+            <div class="flex items-center justify-between p-2.5 border-b border-gray-800/40 hover:bg-white/[0.02] transition-colors rounded-lg text-xs">
+                <div class="flex items-center gap-2.5">
+                    <span class="font-mono text-gray-500 text-[11px]">${timeStr}</span>
+                    <span class="font-mono text-purple-300 font-semibold">${log.ip || 'unknown'}</span>
+                    <span class="text-gray-300 truncate max-w-[160px]">${escapeHtml(log.path || log.type || 'action')}</span>
                 </div>
-                <span class="text-xs bg-gray-800 px-2 py-1 rounded text-gray-400">${log.type}</span>
+                <span class="px-2 py-0.5 rounded border ${badgeColor} text-[10px] font-bold uppercase">${escapeHtml(log.type || level)}</span>
+            </div>
+        `;
+    });
+}
+
+function renderRoutePopularity(logs) {
+    const container = document.getElementById('routePopularityList');
+    if (!container) return;
+
+    const pathMap = {};
+    let totalPathHits = 0;
+
+    logs.forEach(l => {
+        if (l.path) {
+            pathMap[l.path] = (pathMap[l.path] || 0) + 1;
+            totalPathHits++;
+        }
+    });
+
+    const sorted = Object.entries(pathMap).sort((a, b) => b[1] - a[1]).slice(0, 5);
+    if (sorted.length === 0) {
+        container.innerHTML = '<div class="text-center text-gray-500 text-xs py-4">No route data collected yet.</div>';
+        return;
+    }
+
+    container.innerHTML = '';
+    sorted.forEach(([path, count]) => {
+        const pct = Math.round((count / totalPathHits) * 100);
+        container.innerHTML += `
+            <div>
+                <div class="flex justify-between text-xs mb-1">
+                    <span class="font-mono text-gray-300 flex items-center gap-1.5"><i class="ph ph-browsers text-purple-400"></i> ${escapeHtml(path)}</span>
+                    <span class="text-gray-400 font-semibold">${count} hits (${pct}%)</span>
+                </div>
+                <div class="h-2 rounded-full bg-gray-800 overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full" style="width: ${pct}%"></div>
+                </div>
             </div>
         `;
     });
@@ -406,9 +521,11 @@ function showAdminToast(message, isSuccess = true) {
         if (isSuccess) {
             toast.className = 'text-sm px-4 py-2.5 rounded-xl border flex items-center gap-2 transition-all bg-green-500/10 text-green-400 border-green-500/30';
             icon.className = 'ph ph-check-circle text-lg text-green-400';
+            playAcousticPulse('success');
         } else {
             toast.className = 'text-sm px-4 py-2.5 rounded-xl border flex items-center gap-2 transition-all bg-red-500/10 text-red-400 border-red-500/30';
             icon.className = 'ph ph-warning-circle text-lg text-red-400';
+            playAcousticPulse('error');
         }
         toast.classList.remove('hidden');
         setTimeout(() => {
@@ -442,7 +559,7 @@ async function saveNoticeConfig(data) {
             glow: el('unbGlow') ? el('unbGlow').checked : false
         }
     };
-    
+
     try {
         const token = localStorage.getItem('adminToken');
         const res = await fetch(`${API_URL}/admin/config`, {
@@ -461,114 +578,192 @@ async function saveNoticeConfig(data) {
         if (data) data.customNotice = notice;
         if (currentDataCache) currentDataCache.customNotice = notice;
         showAdminToast('Notice Configuration saved & deployed live across all edge nodes!', true);
-    } catch(err) {
+    } catch (err) {
         showAdminToast('Edge synchronization failed for Custom Notice.', false);
     }
 }
 
-function renderLogsFull(logs) {
-    const tbody = document.getElementById('secLogsTable');
-    if(!tbody) return;
-    tbody.innerHTML = '';
-    if(!logs || logs.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="3" class="px-5 py-8 text-center text-gray-500">No activity recorded.</td></tr>';
-        return;
-    }
-    
-    // Aggregate by IP
-    const ipMap = {};
-    logs.forEach(l => {
-        if(!ipMap[l.ip]) ipMap[l.ip] = { ip: l.ip, userAgent: l.userAgent || 'Unknown', count: 0, lastTime: l.time };
-        ipMap[l.ip].count++;
-        if(new Date(l.time) > new Date(ipMap[l.ip].lastTime)) ipMap[l.ip].lastTime = l.time;
-    });
+// ================= NOTICE LIVE PREVIEW SIMULATOR =================
+function setupNoticeSimulatorLivePreview() {
+    const inputIds = [
+        'wpbToggle', 'wpbContent', 'wpbFontSize', 'wpbFontWeight', 'wpbIcon', 'wpbAlign',
+        'unbToggle', 'unbContent', 'unbFontFamily', 'unbFontStyle', 'unbFontSize', 'unbAnimation', 'unbPosition', 'unbGlow'
+    ];
 
-    const sortedIps = Object.values(ipMap).sort((a,b) => b.count - a.count);
-
-    window.copyText = (text) => { navigator.clipboard.writeText(text); };
-
-    sortedIps.forEach(obj => {
-        tbody.innerHTML += `
-            <tr class="hover:bg-white/[0.02] transition-colors group">
-                <td class="px-5 py-3">
-                    <div class="flex items-center gap-3">
-                        <span class="font-mono text-sm text-purple-300 font-semibold">${obj.ip}</span>
-                        <button onclick="copyText('${obj.ip}')" class="text-gray-500 hover:text-white bg-gray-800 hover:bg-gray-700 w-6 h-6 rounded flex items-center justify-center transition-colors" title="Copy IP">
-                            <i class="ph ph-copy"></i>
-                        </button>
-                    </div>
-                </td>
-                <td class="px-5 py-3">
-                    <div class="text-xs text-gray-400 truncate max-w-[250px]" title="${obj.userAgent}">${obj.userAgent}</div>
-                </td>
-                <td class="px-5 py-3 text-right">
-                    <span class="px-2 py-1 bg-purple-500/10 text-purple-400 rounded text-xs font-bold">${obj.count} requests</span>
-                </td>
-            </tr>
-        `;
+    inputIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener('input', updateNoticeSimulatorPreview);
+            el.addEventListener('change', updateNoticeSimulatorPreview);
+        }
     });
 }
 
+function updateNoticeSimulatorPreview() {
+    const container = document.getElementById('simulatorNoticeContainer');
+    if (!container) return;
+
+    const el = id => document.getElementById(id);
+    const isWpb = el('wpbToggle')?.checked;
+    const isUnb = el('unbToggle')?.checked;
+
+    if (!isWpb && !isUnb) {
+        container.innerHTML = '<div class="text-center text-xs text-gray-500 py-6">Toggle on Whole Page Banner or Upper Notice Banner to see live preview here.</div>';
+        return;
+    }
+
+    let html = '<div class="space-y-4">';
+
+    if (isUnb) {
+        const unbContent = el('unbContent')?.value || 'Announcement text preview here...';
+        const unbFont = el('unbFontFamily')?.value || 'Inter';
+        const unbSize = el('unbFontSize')?.value || 'text-sm';
+        const unbGlow = el('unbGlow')?.checked;
+        const unbAnim = el('unbAnimation')?.value || 'none';
+
+        let sizePx = '14px';
+        if (unbSize === 'text-xs') sizePx = '12px';
+        if (unbSize === 'text-base') sizePx = '16px';
+        if (unbSize === 'text-lg') sizePx = '18px';
+
+        const glowBorder = unbGlow ? 'border: 1px solid rgba(139,92,246,0.5); box-shadow: 0 0 15px rgba(139,92,246,0.3);' : 'border: 1px solid rgba(255,255,255,0.08);';
+
+        html += `
+            <div class="p-2.5 rounded-lg bg-gray-900/90 flex items-center justify-between text-xs" style="${glowBorder}">
+                <span class="text-[10px] text-blue-400 font-mono font-bold uppercase bg-blue-500/10 px-1.5 py-0.5 rounded border border-blue-500/20 mr-2">UNB Live</span>
+                <span style="font-family: ${unbFont}; font-size: ${sizePx};" class="text-gray-100 flex-1 text-center font-medium ${unbAnim === 'pulse' ? 'animate-pulse' : ''}">${escapeHtml(unbContent)}</span>
+                <span class="text-gray-500 text-[10px] ml-2">✕</span>
+            </div>
+        `;
+    }
+
+    if (isWpb) {
+        const wpbContent = el('wpbContent')?.value || 'Custom notice message preview goes here...';
+        const wpbSize = el('wpbFontSize')?.value || 'text-base';
+        const wpbWeight = el('wpbFontWeight')?.value || 'font-normal';
+        const wpbAlign = el('wpbAlign')?.value || 'text-center';
+        const wpbIcon = el('wpbIcon')?.value || '';
+
+        let iconTag = '<i class="ph ph-bell-ringing text-2xl text-purple-400 mb-2 inline-block"></i>';
+        if (wpbIcon === 'danger') iconTag = '<i class="ph ph-warning-octagon text-2xl text-red-400 mb-2 inline-block"></i>';
+        if (wpbIcon === 'warning') iconTag = '<i class="ph ph-warning text-2xl text-amber-400 mb-2 inline-block"></i>';
+        if (wpbIcon === 'success') iconTag = '<i class="ph ph-check-circle text-2xl text-green-400 mb-2 inline-block"></i>';
+        if (wpbIcon === 'megaphone') iconTag = '<i class="ph ph-megaphone text-2xl text-purple-400 mb-2 inline-block"></i>';
+
+        html += `
+            <div class="p-5 rounded-xl bg-gray-900/80 border border-purple-500/30 ${wpbAlign} shadow-lg relative">
+                <span class="text-[10px] text-purple-400 font-mono font-bold uppercase bg-purple-500/10 px-2 py-0.5 rounded border border-purple-500/20 absolute top-3 left-3">WPB Screen Curtain</span>
+                <div class="pt-3">
+                    ${wpbIcon ? iconTag : ''}
+                    <div class="${wpbSize} ${wpbWeight} text-purple-100">${escapeHtml(wpbContent)}</div>
+                </div>
+            </div>
+        `;
+    }
+
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+// ================= USER SESSIONS & ORIGIN =================
 function renderUserSessions(logs) {
     const tbody = document.getElementById('userSessionsTable');
     const uList = document.getElementById('userOriginList');
-    if(!tbody || !uList) return;
-    
-    // Process unique IPs
+    if (!tbody || !uList) return;
+
     const ipMap = {};
     logs.forEach(l => {
-        if(!ipMap[l.ip]) ipMap[l.ip] = { lastPath: l.path, time: l.time, type: l.type, count: 0 };
+        if (!ipMap[l.ip]) ipMap[l.ip] = { lastPath: l.path || '/', time: l.time, type: l.type, count: 0 };
         ipMap[l.ip].count++;
     });
-    
-    const uniqueIps = Object.keys(ipMap).sort((a,b) => new Date(ipMap[b].time) - new Date(ipMap[a].time));
-    
-    tbody.innerHTML = '';
-    uniqueIps.forEach(ip => {
-        const obj = ipMap[ip];
-        const timeStr = new Date(obj.time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-        tbody.innerHTML += `
-            <tr class="hover:bg-white/[0.02] transition-colors">
-                <td class="px-4 py-3 font-mono text-xs text-brand-300">${ip}</td>
-                <td class="px-4 py-3 text-sm text-gray-300 truncate max-w-[150px]"><span class="text-gray-500 text-xs mr-2">${timeStr}</span> ${obj.lastPath}</td>
-                <td class="px-4 py-3 text-right">
-                    <span class="px-2 py-1 rounded bg-gray-800 text-gray-400 text-xs">${obj.count} events</span>
-                </td>
-            </tr>
-        `;
-    });
-    
-    if(uniqueIps.length === 0) tbody.innerHTML = '<tr><td colspan="3" class="px-4 py-8 text-center text-gray-500">No session data.</td></tr>';
 
-    // Origins
+    const uniqueIps = Object.keys(ipMap).sort((a, b) => new Date(ipMap[b].time) - new Date(ipMap[a].time));
+
+    const filterQuery = (document.getElementById('userSessionsSearchInput')?.value || '').toLowerCase().trim();
+    const filteredIps = filterQuery ? uniqueIps.filter(ip => ip.toLowerCase().includes(filterQuery) || (ipMap[ip].lastPath || '').toLowerCase().includes(filterQuery)) : uniqueIps;
+
+    tbody.innerHTML = '';
+    if (filteredIps.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="px-4 py-8 text-center text-gray-500">No session records match your filter.</td></tr>';
+    } else {
+        filteredIps.forEach(ip => {
+            const obj = ipMap[ip];
+            const timeStr = new Date(obj.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const isBlocked = (currentDataCache?.blockedIPs || []).includes(ip);
+
+            tbody.innerHTML += `
+                <tr class="hover:bg-white/[0.02] transition-colors">
+                    <td class="px-4 py-3">
+                        <div class="flex items-center gap-2">
+                            <span class="font-mono text-xs text-brand-300 font-semibold">${escapeHtml(ip)}</span>
+                            <button onclick="window.copyText('${escapeHtml(ip)}')" class="text-gray-500 hover:text-white" title="Copy IP"><i class="ph ph-copy"></i></button>
+                        </div>
+                    </td>
+                    <td class="px-4 py-3 text-xs text-gray-300 truncate max-w-[180px]">
+                        <span class="text-gray-500 mr-1.5">${timeStr}</span> ${escapeHtml(obj.lastPath)}
+                    </td>
+                    <td class="px-4 py-3">
+                        <span class="px-2 py-0.5 rounded bg-gray-800 text-gray-300 text-[11px] font-semibold">${obj.count} ops</span>
+                    </td>
+                    <td class="px-4 py-3 text-right">
+                        ${isBlocked ? `<span class="text-red-400 font-semibold text-xs">Blocked</span>` : `
+                        <button onclick="modifyBlocklistCall('block', '${escapeHtml(ip)}')" class="px-2.5 py-1 rounded text-xs bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/30 transition-colors">
+                            Block IP
+                        </button>`}
+                    </td>
+                </tr>
+            `;
+        });
+    }
+
     uList.innerHTML = `
-        <div class="flex justify-between items-center p-3 rounded-lg bg-gray-800/30 border border-gray-800">
-            <span class="text-gray-400">Total Tracked IPs</span>
-            <span class="text-xl font-bold text-white">${uniqueIps.length}</span>
+        <div class="p-3 rounded-xl bg-gray-900/60 border border-gray-800 flex justify-between items-center">
+            <span class="text-gray-400 text-xs">Active Session IPs</span>
+            <span class="text-2xl font-bold text-white font-mono">${uniqueIps.length}</span>
         </div>
-        <div class="text-xs text-gray-500 mt-4 leading-relaxed">
-            Note: Advanced analytics maps individual packets to session origins. Telemetry resets functionally based on KV expiration policies.
+        <div class="p-3 rounded-xl bg-gray-900/60 border border-gray-800 flex justify-between items-center">
+            <span class="text-gray-400 text-xs">Total Tracked Operations</span>
+            <span class="text-2xl font-bold text-purple-400 font-mono">${logs.length}</span>
         </div>
     `;
 }
 
+function setupUserAnalyticsListeners() {
+    const searchInput = document.getElementById('userSessionsSearchInput');
+    if (searchInput) {
+        searchInput.oninput = () => {
+            if (currentDataCache) renderUserSessions(currentDataCache.recentLogs || []);
+        };
+    }
+}
+
+// ================= SECURITY & BLOCKLIST =================
 function renderBlocklistFull(ips) {
     const container = document.getElementById('secBlockedList');
-    if(!container) return;
+    const badge = document.getElementById('secIpCountBadge');
+    if (!container) return;
+
+    if (badge) badge.textContent = ips.length;
+
+    const filterQuery = (document.getElementById('secIpSearchInput')?.value || '').toLowerCase().trim();
+    const filtered = filterQuery ? ips.filter(ip => ip.toLowerCase().includes(filterQuery)) : ips;
+
     container.innerHTML = '';
-    if(ips.length === 0) {
-        container.innerHTML = '<div class="text-center text-gray-500 py-8 text-sm bg-gray-900/20 rounded-lg border border-dashed border-gray-700">No IPs currently blocked. System perimeter is secure.</div>';
+    if (filtered.length === 0) {
+        container.innerHTML = `<div class="text-center text-gray-500 py-8 text-xs bg-gray-900/20 rounded-lg border border-dashed border-gray-800">${ips.length === 0 ? 'No IPs currently blocked. System perimeter is secure.' : 'No blocked IPs match your search query.'}</div>`;
         return;
     }
-    ips.forEach(ip => {
+
+    filtered.forEach(ip => {
         container.innerHTML += `
-            <div class="flex items-center justify-between p-3 rounded-lg bg-red-500/5 border border-red-500/10 hover:bg-red-500/10 transition-all group shadow-sm">
-                <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 rounded-full bg-red-500/20 flex items-center justify-center text-red-500"><i class="ph ph-shield-slash"></i></div>
-                    <span class="font-mono text-sm text-red-200">${ip}</span>
+            <div class="flex items-center justify-between p-2.5 rounded-lg bg-red-500/5 border border-red-500/10 hover:bg-red-500/10 transition-all group shadow-sm">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-7 h-7 rounded-md bg-red-500/20 flex items-center justify-center text-red-400 text-sm"><i class="ph ph-shield-slash"></i></div>
+                    <span class="font-mono text-xs text-red-200 font-semibold">${escapeHtml(ip)}</span>
+                    <button onclick="window.copyText('${escapeHtml(ip)}')" class="text-gray-500 hover:text-white text-xs opacity-0 group-hover:opacity-100 transition-opacity" title="Copy IP"><i class="ph ph-copy"></i></button>
                 </div>
-                <button data-ip="${ip}" class="btn-unblock text-gray-500 hover:text-white bg-gray-800 hover:bg-gray-700 w-8 h-8 rounded flex items-center justify-center transition-colors" title="Remove Blockline">
-                    <i class="ph ph-x"></i>
+                <button data-ip="${escapeHtml(ip)}" class="btn-unblock text-gray-400 hover:text-white bg-gray-800 hover:bg-gray-700 w-7 h-7 rounded flex items-center justify-center text-xs transition-colors" title="Remove Block">
+                    <i class="ph ph-x font-bold"></i>
                 </button>
             </div>
         `;
@@ -579,97 +774,30 @@ function renderBlocklistFull(ips) {
     });
 }
 
-async function modifyBlocklistCall(action, ip) {
-    if(action !== 'unblock-all' && !ip) return;
-    const token = localStorage.getItem('adminToken');
-    try {
-        const res = await fetch(`${API_URL}/admin/ip`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-            body: JSON.stringify({ ip, action })
-        });
-        if(res.status === 401 || res.status === 403) { handleLogout(true); return; }
-        const data = await res.json();
-        
-        if(data.success) {
-            currentDataCache.blockedIPs = data.blockedIPs;
-            renderBlocklistFull(data.blockedIPs);
-            
-            const elB = document.getElementById('ovBlocks');
-            if(elB) elB.textContent = data.blockedIPs.length;
-            
-            showAdminToast(`IP ${action === 'unblock-all' ? 'list cleared' : (action === 'block' ? 'blocked' : 'unblocked')} successfully!`, true);
-        } else {
-            alert(data.error || 'Operation denied by gateway.');
-        }
-    } catch(e) {
-        alert('Transmission error.');
-    }
-}
-
-async function modifyUserIdBlocklistCall(action, userId) {
-    if(action !== 'unblock-all' && !userId) return;
-    const token = localStorage.getItem('adminToken');
-    try {
-        const res = await fetch(`${API_URL}/admin/block-userid`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-            body: JSON.stringify({ userId, action })
-        });
-        if(res.status === 401 || res.status === 403) { handleLogout(true); return; }
-        const data = await res.json();
-        
-        if(data.success) {
-            if (currentDataCache) currentDataCache.blockedUserIds = data.blockedUserIds;
-            renderBlockedUserIdsFull(data.blockedUserIds || []);
-            
-            const allLogins = extractAllSuccessfulLogins(currentDataCache);
-            renderSuccessfulLoginsTable(allLogins);
-            
-            showAdminToast(`User ID ${action === 'unblock-all' ? 'list cleared' : (action === 'block' ? 'restricted' : 'unblocked')} successfully!`, true);
-        } else {
-            alert(data.error || 'Operation denied by gateway.');
-        }
-    } catch(e) {
-        alert('Transmission error.');
-    }
-}
-
-async function clearLogsCall() {
-    if (!confirm('Are you sure you want to permanently purge all recorded telemetry logs from KV?')) return;
-    const token = localStorage.getItem('adminToken');
-    try {
-        const res = await fetch(`${API_URL}/admin/clear-logs`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }
-        });
-        if (res.status === 401 || res.status === 403) { handleLogout(true); return; }
-        const data = await res.json();
-        if (data.success) {
-            if (currentDataCache) currentDataCache.recentLogs = [];
-            renderRealTimeLogs([]);
-            showAdminToast('Telemetry logs purged permanently from KV store!', true);
-        }
-    } catch (e) {
-        alert('Failed to clear logs.');
-    }
-}
-
 function renderBlockedUserIdsFull(userArr) {
     const list = document.getElementById('secBlockedUserIdList');
+    const badge = document.getElementById('secUserIdCountBadge');
     if (!list) return;
-    list.innerHTML = '';
 
-    if (!userArr || userArr.length === 0) {
-        list.innerHTML = '<div class="text-center text-gray-500 py-6 text-xs">No restricted User IDs.</div>';
+    if (badge) badge.textContent = (userArr || []).length;
+
+    const filterQuery = (document.getElementById('secUserIdSearchInput')?.value || '').toLowerCase().trim();
+    const filtered = filterQuery ? (userArr || []).filter(id => id.toLowerCase().includes(filterQuery)) : (userArr || []);
+
+    list.innerHTML = '';
+    if (filtered.length === 0) {
+        list.innerHTML = `<div class="text-center text-gray-500 py-8 text-xs bg-gray-900/20 rounded-lg border border-dashed border-gray-800">${(userArr || []).length === 0 ? 'No restricted User IDs.' : 'No restricted User IDs match your search query.'}</div>`;
         return;
     }
 
-    userArr.forEach(id => {
+    filtered.forEach(id => {
         const row = document.createElement('div');
-        row.className = 'flex items-center justify-between p-2.5 rounded-lg bg-gray-900/60 border border-gray-800 hover:border-amber-500/30 transition-colors';
+        row.className = 'flex items-center justify-between p-2.5 rounded-lg bg-amber-500/5 border border-amber-500/10 hover:border-amber-500/30 transition-colors';
         row.innerHTML = `
-            <span class="font-mono text-xs font-semibold text-amber-300">${escapeHtml(id)}</span>
+            <div class="flex items-center gap-2">
+                <i class="ph ph-user-minus text-amber-400"></i>
+                <span class="font-mono text-xs font-semibold text-amber-300">${escapeHtml(id)}</span>
+            </div>
             <button onclick="modifyUserIdBlocklistCall('unblock', '${escapeHtml(id)}')" class="px-2.5 py-1 rounded text-xs bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 border border-amber-500/30 transition-colors">
                 Unblock
             </button>
@@ -682,7 +810,7 @@ function extractAllSuccessfulLogins(data) {
     if (!data) return [];
     const map = {};
 
-    // 1. Process recentLogs (contains all historical & live login telemetry)
+    // 1. Process recentLogs
     if (data.recentLogs && Array.isArray(data.recentLogs)) {
         data.recentLogs.forEach(l => {
             if (l.type === 'login' || (l.formatted && l.formatted.includes('logged in using'))) {
@@ -700,7 +828,8 @@ function extractAllSuccessfulLogins(data) {
                             ip: l.ip || 'unknown',
                             time: l.time,
                             version: version,
-                            totalLogins: 1
+                            totalLogins: 1,
+                            userAgent: l.userAgent || ''
                         };
                     } else {
                         map[uId].totalLogins++;
@@ -715,7 +844,7 @@ function extractAllSuccessfulLogins(data) {
         });
     }
 
-    // 2. Process explicit successfulLogins from KV
+    // 2. Process explicit successfulLogins
     if (data.successfulLogins && Array.isArray(data.successfulLogins)) {
         data.successfulLogins.forEach(item => {
             if (item.userId) {
@@ -725,7 +854,8 @@ function extractAllSuccessfulLogins(data) {
                         ip: item.ip || 'unknown',
                         time: item.time,
                         version: item.version || 'V1',
-                        totalLogins: item.totalLogins || 1
+                        totalLogins: item.totalLogins || 1,
+                        userAgent: item.userAgent || ''
                     };
                 } else {
                     map[item.userId].totalLogins = Math.max(map[item.userId].totalLogins, item.totalLogins || 1);
@@ -745,14 +875,17 @@ function extractAllSuccessfulLogins(data) {
 function renderSuccessfulLoginsTable(loginsArr) {
     const tbody = document.getElementById('secUserLoginsTable');
     if (!tbody) return;
-    tbody.innerHTML = '';
 
-    if (!loginsArr || loginsArr.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="px-5 py-8 text-center text-gray-500">No active login records found.</td></tr>';
+    const filterQuery = (document.getElementById('secLoginSearchInput')?.value || '').toLowerCase().trim();
+    const filtered = filterQuery ? loginsArr.filter(l => l.userId.toLowerCase().includes(filterQuery) || (l.ip || '').toLowerCase().includes(filterQuery)) : loginsArr;
+
+    tbody.innerHTML = '';
+    if (filtered.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="px-5 py-8 text-center text-gray-500 font-sans">No matching authentication records found.</td></tr>';
         return;
     }
 
-    loginsArr.forEach(item => {
+    filtered.forEach(item => {
         const timeStr = item.time ? new Date(item.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : 'N/A';
         const dateStr = item.time ? new Date(item.time).toISOString().split('T')[0] : '';
         const isBlocked = (currentDataCache?.blockedUserIds || []).includes(item.userId);
@@ -762,14 +895,16 @@ function renderSuccessfulLoginsTable(loginsArr) {
         row.className = 'hover:bg-white/[0.02] transition-colors border-b border-gray-800/40';
         row.innerHTML = `
             <td class="px-5 py-3 font-mono font-semibold text-purple-300 text-xs">${escapeHtml(item.userId)}</td>
-            <td class="px-5 py-3 font-mono text-gray-300 text-xs">${escapeHtml(item.ip || 'unknown')}</td>
+            <td class="px-5 py-3 font-mono text-gray-300 text-xs">
+                <span class="cursor-pointer hover:text-white" onclick="window.copyText('${escapeHtml(item.ip)}')">${escapeHtml(item.ip || 'unknown')}</span>
+            </td>
             <td class="px-5 py-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${item.version === 'V2' ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30' : 'bg-blue-500/20 text-blue-300 border border-blue-500/30'}">${escapeHtml(item.version || 'V1')}</span></td>
             <td class="px-5 py-3"><span class="px-2 py-0.5 rounded text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">${count} ${count === 1 ? 'login' : 'logins'}</span></td>
             <td class="px-5 py-3 text-gray-400 text-xs">${dateStr} ${timeStr}</td>
             <td class="px-5 py-3 text-right">
-                ${isBlocked ? `<span class="text-amber-400 font-semibold text-xs px-2 py-1 rounded bg-amber-500/10 border border-amber-500/20">Blocked</span>` : `
+                ${isBlocked ? `<span class="text-amber-400 font-semibold text-xs px-2 py-1 rounded bg-amber-500/10 border border-amber-500/20">Restricted</span>` : `
                 <button onclick="modifyUserIdBlocklistCall('block', '${escapeHtml(item.userId)}')" class="px-2.5 py-1 rounded text-xs bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/30 transition-colors">
-                    Restrict User ID
+                    Restrict ID
                 </button>`}
             </td>
         `;
@@ -777,12 +912,162 @@ function renderSuccessfulLoginsTable(loginsArr) {
     });
 }
 
+function setupSecurityViewListeners() {
+    const sForm = document.getElementById('blockForm');
+    if (sForm) {
+        sForm.onsubmit = async (e) => {
+            e.preventDefault();
+            const ipInput = document.getElementById('secIpInput');
+            await modifyBlocklistCall('block', ipInput.value.trim());
+            ipInput.value = '';
+        };
+    }
+
+    const uForm = document.getElementById('userIdBlockForm');
+    if (uForm) {
+        uForm.onsubmit = async (e) => {
+            e.preventDefault();
+            const uInput = document.getElementById('secUserIdInput');
+            await modifyUserIdBlocklistCall('block', uInput.value.trim());
+            uInput.value = '';
+        };
+    }
+
+    const unblockAllIpsBtn = document.getElementById('unblockAllIpsBtn');
+    if (unblockAllIpsBtn) {
+        unblockAllIpsBtn.onclick = async () => {
+            if (confirm('Are you sure you want to unblock all IPs?')) {
+                await modifyBlocklistCall('unblock-all');
+            }
+        };
+    }
+
+    const unblockAllUserIdsBtn = document.getElementById('unblockAllUserIdsBtn');
+    if (unblockAllUserIdsBtn) {
+        unblockAllUserIdsBtn.onclick = async () => {
+            if (confirm('Are you sure you want to unblock all User IDs?')) {
+                await modifyUserIdBlocklistCall('unblock-all');
+            }
+        };
+    }
+
+    const ipSearch = document.getElementById('secIpSearchInput');
+    if (ipSearch) {
+        ipSearch.oninput = () => {
+            if (currentDataCache) renderBlocklistFull(currentDataCache.blockedIPs || []);
+        };
+    }
+
+    const userSearch = document.getElementById('secUserIdSearchInput');
+    if (userSearch) {
+        userSearch.oninput = () => {
+            if (currentDataCache) renderBlockedUserIdsFull(currentDataCache.blockedUserIds || []);
+        };
+    }
+
+    const loginSearch = document.getElementById('secLoginSearchInput');
+    if (loginSearch) {
+        loginSearch.oninput = () => {
+            if (currentDataCache) renderSuccessfulLoginsTable(extractAllSuccessfulLogins(currentDataCache));
+        };
+    }
+
+    const exportLoginsBtn = document.getElementById('exportLoginsCsvBtn');
+    if (exportLoginsBtn) {
+        exportLoginsBtn.onclick = () => {
+            if (currentDataCache) {
+                const logins = extractAllSuccessfulLogins(currentDataCache);
+                exportLoginsCSV(logins);
+            }
+        };
+    }
+}
+
+async function modifyBlocklistCall(action, ip) {
+    if (action !== 'unblock-all' && !ip) return;
+    const token = localStorage.getItem('adminToken');
+    try {
+        const res = await fetch(`${API_URL}/admin/ip`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ ip, action })
+        });
+        if (res.status === 401 || res.status === 403) { handleLogout(true); return; }
+        const data = await res.json();
+
+        if (data.success) {
+            currentDataCache.blockedIPs = data.blockedIPs;
+            renderBlocklistFull(data.blockedIPs);
+            updateNavigationBadges(currentDataCache);
+
+            const elB = document.getElementById('ovBlocks');
+            if (elB) elB.textContent = ((data.blockedIPs || []).length + (currentDataCache.blockedUserIds || []).length).toString();
+
+            showAdminToast(`IP ${action === 'unblock-all' ? 'list cleared' : (action === 'block' ? 'blocked' : 'unblocked')} successfully!`, true);
+        } else {
+            alert(data.error || 'Operation denied by gateway.');
+        }
+    } catch (e) {
+        alert('Transmission error.');
+    }
+}
+
+async function modifyUserIdBlocklistCall(action, userId) {
+    if (action !== 'unblock-all' && !userId) return;
+    const token = localStorage.getItem('adminToken');
+    try {
+        const res = await fetch(`${API_URL}/admin/block-userid`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ userId, action })
+        });
+        if (res.status === 401 || res.status === 403) { handleLogout(true); return; }
+        const data = await res.json();
+
+        if (data.success) {
+            if (currentDataCache) currentDataCache.blockedUserIds = data.blockedUserIds;
+            renderBlockedUserIdsFull(data.blockedUserIds || []);
+            updateNavigationBadges(currentDataCache);
+
+            const allLogins = extractAllSuccessfulLogins(currentDataCache);
+            renderSuccessfulLoginsTable(allLogins);
+
+            showAdminToast(`User ID ${action === 'unblock-all' ? 'list cleared' : (action === 'block' ? 'restricted' : 'unblocked')} successfully!`, true);
+        } else {
+            alert(data.error || 'Operation denied by gateway.');
+        }
+    } catch (e) {
+        alert('Transmission error.');
+    }
+}
+
+async function clearLogsCall() {
+    if (!confirm('Are you sure you want to permanently purge all recorded telemetry logs from KV?')) return;
+    const token = localStorage.getItem('adminToken');
+    try {
+        const res = await fetch(`${API_URL}/admin/clear-logs`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }
+        });
+        if (res.status === 401 || res.status === 403) { handleLogout(true); return; }
+        const data = await res.json();
+        if (data.success) {
+            if (currentDataCache) currentDataCache.recentLogs = [];
+            renderRealTimeLogs([]);
+            updateNavigationBadges(currentDataCache);
+            showAdminToast('Telemetry logs purged permanently from KV store!', true);
+        }
+    } catch (e) {
+        alert('Failed to clear logs.');
+    }
+}
+
 function updateClosureUI(active) {
     const badge = document.getElementById('controlStatusBadge');
     const panel = document.getElementById('controlPanelWrapper');
-    if(!badge || !panel) return;
-    
-    if(active) {
+    if (!badge || !panel) return;
+
+    if (active) {
         badge.className = 'text-xs py-1.5 px-3 rounded-md bg-red-500/10 text-red-400 font-medium inline-flex items-center gap-1.5 border border-red-500/20 shadow-[0_0_10px_rgba(239,68,68,0.2)]';
         badge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span> SYSTEM LOCKED';
         panel.className = 'p-6 rounded-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6 transition-all duration-300 bg-red-500/5 border-red-500/30 shadow-[0_0_30px_rgba(239,68,68,0.05)]';
@@ -793,20 +1078,21 @@ function updateClosureUI(active) {
     }
 }
 
+// ================= CHART RENDERING =================
 function renderChart(dates, analyticsObj) {
     const canvas = document.getElementById('trafficChart');
-    if(!canvas) return;
+    if (!canvas) return;
     const ctx = canvas.getContext('2d');
-    if(!ctx) return;
-    
+    if (!ctx) return;
+
     const labels = dates.map(d => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
     const visitsData = dates.map(d => analyticsObj[d].unique_ips ? analyticsObj[d].unique_ips.length : (analyticsObj[d].visits || 0));
     const actionsData = dates.map(d => analyticsObj[d].actions || 0);
 
     if (trafficChartInstance) trafficChartInstance.destroy();
 
-    const gradientVisits = ctx.createLinearGradient(0, 0, 0, 400);
-    gradientVisits.addColorStop(0, 'rgba(59, 130, 246, 0.5)');
+    const gradientVisits = ctx.createLinearGradient(0, 0, 0, 350);
+    gradientVisits.addColorStop(0, 'rgba(59, 130, 246, 0.45)');
     gradientVisits.addColorStop(1, 'rgba(59, 130, 246, 0.0)');
 
     trafficChartInstance = new Chart(ctx, {
@@ -815,28 +1101,30 @@ function renderChart(dates, analyticsObj) {
             labels: labels,
             datasets: [
                 {
-                    label: 'Unique Endpoints',
+                    label: 'Unique Endpoints (Daily)',
                     data: visitsData,
                     borderColor: '#3b82f6',
                     backgroundColor: gradientVisits,
-                    borderWidth: 2,
-                    tension: 0.4,
+                    borderWidth: 2.5,
+                    tension: 0.35,
                     fill: true,
                     pointBackgroundColor: '#0b0f19',
                     pointBorderColor: '#3b82f6',
-                    pointHoverBackgroundColor: '#3b82f6'
+                    pointHoverBackgroundColor: '#3b82f6',
+                    pointRadius: 4
                 },
                 {
-                    label: 'System Actions',
+                    label: 'System Operations',
                     data: actionsData,
                     borderColor: '#8b5cf6',
                     backgroundColor: 'transparent',
                     borderWidth: 2,
                     borderDash: [5, 5],
-                    tension: 0.4,
+                    tension: 0.35,
                     pointBackgroundColor: '#0b0f19',
                     pointBorderColor: '#8b5cf6',
-                    pointHoverBackgroundColor: '#8b5cf6'
+                    pointHoverBackgroundColor: '#8b5cf6',
+                    pointRadius: 3
                 }
             ]
         },
@@ -846,74 +1134,42 @@ function renderChart(dates, analyticsObj) {
             animation: (currentSettings.animations && !currentSettings.lowEndMode) ? undefined : false,
             interaction: { mode: 'index', intersect: false },
             plugins: {
-                legend: { labels: { color: '#9ca3af', usePointStyle: true, boxWidth: 6 } },
+                legend: { labels: { color: '#9ca3af', usePointStyle: true, boxWidth: 6, font: { family: 'Inter', size: 12 } } },
                 tooltip: { backgroundColor: 'rgba(17, 24, 39, 0.95)', titleColor: '#fff', bodyColor: '#cbd5e1', borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1, padding: 10 }
             },
             scales: {
-                x: { grid: { color: 'rgba(255,255,255,0.03)', drawBorder: false }, ticks: { color: '#6b7280' } },
-                y: { grid: { color: 'rgba(255,255,255,0.03)', drawBorder: false }, ticks: { color: '#6b7280', precision: 0 }, beginAtZero: true }
+                x: { grid: { color: 'rgba(255,255,255,0.03)', drawBorder: false }, ticks: { color: '#6b7280', font: { family: 'Inter', size: 11 } } },
+                y: { grid: { color: 'rgba(255,255,255,0.03)', drawBorder: false }, ticks: { color: '#6b7280', precision: 0, font: { family: 'Inter', size: 11 } }, beginAtZero: true }
             }
         }
     });
 }
 
-// ================= UTILS & BINDINGS =================
-
-function bindLayoutEvents() {
-    document.getElementById('logoutBtn').addEventListener('click', () => handleLogout(false));
-    document.getElementById('refreshBtn').addEventListener('click', refreshDashboardData);
-}
-
-function updateNavActive(path) {
-    document.querySelectorAll('.nav-link').forEach(link => {
-        link.classList.remove('active', 'border-brand-500/20', 'bg-brand-500/10', 'text-brand-500');
-        link.classList.add('text-gray-400', 'border-transparent');
-        if(link.getAttribute('href') === `#/${path}` || (path==='overview' && link.getAttribute('href')==='#/overview')) {
-            link.classList.add('active', 'border-brand-500/20', 'bg-brand-500/10', 'text-brand-500');
-            link.classList.remove('text-gray-400', 'border-transparent');
-        }
-    });
-}
-
-function updatePageHeaders(path) {
-    const t = document.getElementById('pageTitle');
-    const s = document.getElementById('pageSubtitle');
-    if(!t || !s) return;
-    
-    switch(path) {
-        case 'overview': t.textContent = 'Command Overview'; s.textContent = 'High-level surface telemetry.'; break;
-        case 'user-analytics': t.textContent = 'User Analytics'; s.textContent = 'Deep dive into origin footprints.'; break;
-        case 'site-analytics': t.textContent = 'Site Analytics'; s.textContent = 'Performance and density ratios.'; break;
-        case 'control': t.textContent = 'Command & Control'; s.textContent = 'Global emergency switches.'; break;
-        case 'logs': t.textContent = 'Real-Time Audit Logs'; s.textContent = 'Live user event streaming & telemetry inspection.'; break;
-        case 'security': t.textContent = 'Access Management'; s.textContent = 'Packet firewalls and event inspection.'; break;
-        case 'settings': t.textContent = 'Dashboard Settings'; s.textContent = 'Local console interface preferences.'; break;
-    }
-}
-
 // ================= REAL-TIME LOGS STREAM =================
-let logsAutoPollingInterval = null;
-let currentLogsFilterLevel = 'all';
-let currentLogsSearchQuery = '';
+function startAutoPolling() {
+    stopAutoPolling();
+    if (currentSettings.refreshInterval === 'manual') return;
 
-function startLogsAutoPolling() {
-    stopLogsAutoPolling();
-    logsAutoPollingInterval = setInterval(() => {
+    const intervalMs = typeof currentSettings.refreshInterval === 'number' ? currentSettings.refreshInterval : 5000;
+    autoPollingInterval = setInterval(() => {
         refreshDashboardData();
-    }, 4000);
+    }, intervalMs);
 }
 
-function stopLogsAutoPolling() {
-    if (logsAutoPollingInterval) {
-        clearInterval(logsAutoPollingInterval);
-        logsAutoPollingInterval = null;
+function stopAutoPolling() {
+    if (autoPollingInterval) {
+        clearInterval(autoPollingInterval);
+        autoPollingInterval = null;
     }
 }
 
 function setupLogsViewListeners() {
     const searchInput = document.getElementById('logsSearchInput');
     const autoRefreshBtn = document.getElementById('logsAutoRefreshBtn');
+    const pauseBtn = document.getElementById('logsStreamPauseBtn');
     const clearViewBtn = document.getElementById('logsClearViewBtn');
+    const exportJsonBtn = document.getElementById('logsExportJsonBtn');
+    const exportCsvBtn = document.getElementById('logsExportCsvBtn');
     const filterBtns = document.querySelectorAll('.log-level-filter');
 
     if (searchInput) {
@@ -923,15 +1179,33 @@ function setupLogsViewListeners() {
         };
     }
 
+    if (pauseBtn) {
+        pauseBtn.onclick = () => {
+            isStreamPaused = !isStreamPaused;
+            const icon = document.getElementById('logsPauseIcon');
+            const text = document.getElementById('logsPauseText');
+            if (isStreamPaused) {
+                if (icon) icon.className = 'ph ph-play text-sm text-green-400';
+                if (text) text.textContent = 'Resume';
+                pauseBtn.className = 'px-3 py-1.5 rounded-lg bg-green-500/10 text-green-300 border border-green-500/30 text-xs flex items-center gap-1.5 transition-colors';
+            } else {
+                if (icon) icon.className = 'ph ph-pause text-sm';
+                if (text) text.textContent = 'Pause';
+                pauseBtn.className = 'px-3 py-1.5 rounded-lg bg-gray-800/80 hover:bg-gray-700 text-xs text-gray-300 border border-gray-700 flex items-center gap-1.5 transition-colors';
+                if (currentDataCache) renderRealTimeLogs(currentDataCache.recentLogs || []);
+            }
+        };
+    }
+
     if (autoRefreshBtn) {
         autoRefreshBtn.onclick = () => {
-            if (logsAutoPollingInterval) {
-                stopLogsAutoPolling();
+            if (autoPollingInterval) {
+                stopAutoPolling();
                 autoRefreshBtn.classList.remove('bg-blue-500/20', 'text-blue-300', 'border-blue-500/30');
                 autoRefreshBtn.classList.add('bg-gray-800', 'text-gray-400');
                 document.getElementById('logsLiveBadge')?.classList.add('hidden');
             } else {
-                startLogsAutoPolling();
+                startAutoPolling();
                 autoRefreshBtn.classList.add('bg-blue-500/20', 'text-blue-300', 'border-blue-500/30');
                 autoRefreshBtn.classList.remove('bg-gray-800', 'text-gray-400');
                 document.getElementById('logsLiveBadge')?.classList.remove('hidden');
@@ -940,9 +1214,15 @@ function setupLogsViewListeners() {
     }
 
     if (clearViewBtn) {
-        clearViewBtn.onclick = () => {
-            clearLogsCall();
-        };
+        clearViewBtn.onclick = clearLogsCall;
+    }
+
+    if (exportJsonBtn) {
+        exportJsonBtn.onclick = () => exportLogsJSON(currentDataCache?.recentLogs || []);
+    }
+
+    if (exportCsvBtn) {
+        exportCsvBtn.onclick = () => exportLogsCSV(currentDataCache?.recentLogs || []);
     }
 
     filterBtns.forEach(btn => {
@@ -957,6 +1237,13 @@ function setupLogsViewListeners() {
             if (currentDataCache) renderRealTimeLogs(currentDataCache.recentLogs || []);
         };
     });
+
+    const closeLogModal = document.getElementById('closeLogModalBtn');
+    if (closeLogModal) {
+        closeLogModal.onclick = () => {
+            document.getElementById('logDetailModal')?.classList.add('hidden');
+        };
+    }
 }
 
 function renderRealTimeLogs(logs) {
@@ -969,7 +1256,7 @@ function renderRealTimeLogs(logs) {
             <div class="p-8 text-center text-gray-500 font-sans">
                 <i class="ph ph-check-circle text-2xl mb-2 text-green-400 inline-block"></i>
                 <p class="font-medium">No activity logs recorded.</p>
-                <p class="text-xs mt-1 text-gray-600">Events will appear live as users interact with the app.</p>
+                <p class="text-xs mt-1 text-gray-600">Events will stream live as users interact with the application.</p>
             </div>
         `;
         if (countEl) countEl.textContent = '0';
@@ -977,7 +1264,16 @@ function renderRealTimeLogs(logs) {
     }
 
     let filtered = logs.filter(log => {
-        const levelMatch = currentLogsFilterLevel === 'all' || (log.level || 'info') === currentLogsFilterLevel;
+        const level = (log.level || 'info').toLowerCase();
+        const type = (log.type || '').toLowerCase();
+
+        let levelMatch = true;
+        if (currentLogsFilterLevel === 'login') {
+            levelMatch = type === 'login' || (log.formatted && log.formatted.includes('logged in using'));
+        } else if (currentLogsFilterLevel !== 'all') {
+            levelMatch = level === currentLogsFilterLevel;
+        }
+
         if (!levelMatch) return false;
 
         if (currentLogsSearchQuery) {
@@ -994,39 +1290,42 @@ function renderRealTimeLogs(logs) {
         feed.innerHTML = `
             <div class="p-8 text-center text-gray-500 font-sans">
                 <i class="ph ph-magnifying-glass text-2xl mb-2 inline-block opacity-40"></i>
-                <p class="font-medium">No logs match your filter criteria.</p>
+                <p class="font-medium">No logs match your active filter criteria.</p>
             </div>
         `;
         return;
     }
 
     const fragment = document.createDocumentFragment();
-    filtered.slice(0, 250).forEach(log => {
+    filtered.slice(0, 300).forEach((log, index) => {
         const row = document.createElement('div');
-        row.className = 'py-1.5 px-3 rounded hover:bg-white/[0.04] transition-colors flex items-start gap-2.5 leading-relaxed font-mono text-[11px] md:text-xs border-b border-gray-900/50';
+        row.className = 'py-1.5 px-3 rounded hover:bg-white/[0.04] transition-colors flex items-start gap-2.5 leading-relaxed font-mono text-[11px] md:text-xs border-b border-gray-900/50 cursor-pointer select-none group';
 
         const timeStr = log.time ? new Date(log.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '00:00:00';
         const dateStr = log.time ? new Date(log.time).toISOString().split('T')[0] : '';
-        const level = (log.level || 'info').toLowerCase();
-        
+        const level = (log.level || (log.type === 'error' ? 'error' : 'info')).toLowerCase();
+
         let levelBadgeClass = 'bg-blue-500/10 text-blue-400 border-blue-500/20';
-        if (level === 'success') levelBadgeClass = 'bg-green-500/10 text-green-400 border-green-500/20';
+        if (level === 'success' || log.type === 'login') levelBadgeClass = 'bg-green-500/10 text-green-400 border-green-500/20';
         if (level === 'warning' || level === 'warn') levelBadgeClass = 'bg-amber-500/10 text-amber-400 border-amber-500/20';
         if (level === 'error') levelBadgeClass = 'bg-red-500/10 text-red-400 border-red-500/20';
 
         let formattedMsg = log.formatted;
         if (!formattedMsg) {
-          const ipStr = log.ip || 'unknown';
-          let msg = log.path ? `visited ${log.path}` : (log.type || 'action');
-          formattedMsg = `[${dateStr} ${timeStr}] [${level}] user [${ipStr}] ${msg}`;
+            const ipStr = log.ip || 'unknown';
+            let msg = log.path ? `visited ${log.path}` : (log.type || 'action');
+            formattedMsg = `[${dateStr} ${timeStr}] [${level}] user [${ipStr}] ${msg}`;
         }
 
         row.innerHTML = `
-            <span class="text-gray-500 flex-shrink-0 select-none">${dateStr} ${timeStr}</span>
+            <span class="text-gray-500 flex-shrink-0">${dateStr} ${timeStr}</span>
             <span class="px-1.5 py-0.5 rounded text-[10px] uppercase font-bold border ${levelBadgeClass} flex-shrink-0">${level}</span>
             <span class="text-purple-300 font-semibold flex-shrink-0">user [${log.ip || 'unknown'}]</span>
             <span class="text-gray-300 break-all flex-1">${escapeHtml(formattedMsg.replace(/\[\d{4}-\d{2}-\d{2}[^\]]*\]\s*\[[^\]]+\]\s*user\s*\[[^\]]+\]\s*/, ''))}</span>
+            <i class="ph ph-magnifying-glass-plus text-gray-500 group-hover:text-brand-400 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"></i>
         `;
+
+        row.onclick = () => showLogPacketModal(log);
         fragment.appendChild(row);
     });
 
@@ -1034,9 +1333,311 @@ function renderRealTimeLogs(logs) {
     feed.appendChild(fragment);
 }
 
+function showLogPacketModal(log) {
+    const modal = document.getElementById('logDetailModal');
+    const content = document.getElementById('logModalContent');
+    const copyBtn = document.getElementById('copyLogJsonBtn');
+    if (!modal || !content) return;
+
+    content.innerHTML = `
+        <div class="p-3 bg-gray-950 rounded-lg border border-gray-800 space-y-2">
+            <div class="flex justify-between"><span class="text-gray-500">Event ID:</span><span class="text-gray-300">${escapeHtml(log.id || 'N/A')}</span></div>
+            <div class="flex justify-between"><span class="text-gray-500">Timestamp:</span><span class="text-gray-300">${escapeHtml(log.time || 'N/A')}</span></div>
+            <div class="flex justify-between"><span class="text-gray-500">Client IP:</span><span class="text-purple-400 font-semibold">${escapeHtml(log.ip || 'unknown')}</span></div>
+            <div class="flex justify-between"><span class="text-gray-500">Action Type:</span><span class="text-brand-300 font-semibold">${escapeHtml(log.type || 'N/A')}</span></div>
+            <div class="flex justify-between"><span class="text-gray-500">Target Path:</span><span class="text-emerald-400">${escapeHtml(log.path || 'N/A')}</span></div>
+            ${log.userId ? `<div class="flex justify-between"><span class="text-gray-500">User ID:</span><span class="text-amber-400 font-semibold">${escapeHtml(log.userId)}</span></div>` : ''}
+            ${log.timeTaken ? `<div class="flex justify-between"><span class="text-gray-500">Duration:</span><span class="text-gray-300">${escapeHtml(log.timeTaken)} ms</span></div>` : ''}
+            <div><span class="text-gray-500 block mb-1">User Agent:</span><span class="text-gray-400 text-[10px] break-all">${escapeHtml(log.userAgent || 'Unknown')}</span></div>
+        </div>
+        <div class="p-3 bg-gray-950 rounded-lg border border-gray-800">
+            <span class="text-gray-500 block mb-1 text-[11px]">Formatted Telemetry String:</span>
+            <div class="text-gray-200 text-xs">${escapeHtml(log.formatted || '')}</div>
+        </div>
+    `;
+
+    if (copyBtn) {
+        copyBtn.onclick = () => {
+            navigator.clipboard.writeText(JSON.stringify(log, null, 2));
+            showAdminToast('Log packet JSON copied to clipboard!', true);
+        };
+    }
+
+    modal.classList.remove('hidden');
+}
+
+// ================= EXPORT UTILITIES =================
+function exportLogsJSON(logs) {
+    if (!logs || logs.length === 0) {
+        alert('No logs available to export.');
+        return;
+    }
+    const blob = new Blob([JSON.stringify(logs, null, 2)], { type: 'application/json' });
+    downloadBlob(blob, `sui7_telemetry_${new Date().toISOString().split('T')[0]}.json`);
+    showAdminToast('Exported telemetry JSON successfully!', true);
+}
+
+function exportLogsCSV(logs) {
+    if (!logs || logs.length === 0) {
+        alert('No logs available to export.');
+        return;
+    }
+    const headers = ['Time', 'Level', 'IP', 'Type', 'Path', 'UserId', 'Formatted'];
+    const rows = logs.map(l => [
+        `"${l.time || ''}"`,
+        `"${l.level || 'info'}"`,
+        `"${l.ip || ''}"`,
+        `"${l.type || ''}"`,
+        `"${l.path || ''}"`,
+        `"${l.userId || ''}"`,
+        `"${(l.formatted || '').replace(/"/g, '""')}"`
+    ]);
+
+    const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    downloadBlob(blob, `sui7_telemetry_${new Date().toISOString().split('T')[0]}.csv`);
+    showAdminToast('Exported telemetry CSV successfully!', true);
+}
+
+function exportLoginsCSV(logins) {
+    if (!logins || logins.length === 0) {
+        alert('No login records available to export.');
+        return;
+    }
+    const headers = ['User ID', 'IP', 'Platform', 'Total Logins', 'Last Timestamp'];
+    const rows = logins.map(l => [
+        `"${l.userId || ''}"`,
+        `"${l.ip || ''}"`,
+        `"${l.version || 'V1'}"`,
+        `"${l.totalLogins || 1}"`,
+        `"${l.time || ''}"`
+    ]);
+
+    const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    downloadBlob(blob, `sui7_user_logins_${new Date().toISOString().split('T')[0]}.csv`);
+    showAdminToast('Exported User Logins CSV successfully!', true);
+}
+
+function downloadBlob(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+// ================= COMMAND PALETTE (Ctrl+K) =================
+function initCommandPalette() {
+    const modal = document.getElementById('commandPaletteModal');
+    const input = document.getElementById('cmdPaletteInput');
+    const results = document.getElementById('cmdPaletteResults');
+    const searchBtn = document.getElementById('headerSearchBtn');
+    const quickTrigger = document.getElementById('quickCmdTriggerBtn');
+
+    if (!modal || !input || !results) return;
+
+    const commands = [
+        { label: 'Go to Overview', icon: 'ph-squares-four', category: 'Navigation', action: () => window.location.hash = '#/overview' },
+        { label: 'Go to User Analytics', icon: 'ph-users', category: 'Navigation', action: () => window.location.hash = '#/user-analytics' },
+        { label: 'Go to Site Analytics', icon: 'ph-chart-line-up', category: 'Navigation', action: () => window.location.hash = '#/site-analytics' },
+        { label: 'Go to Control Panel', icon: 'ph-faders', category: 'Navigation', action: () => window.location.hash = '#/control' },
+        { label: 'Go to Real-Time Logs', icon: 'ph-terminal-window', category: 'Navigation', action: () => window.location.hash = '#/logs' },
+        { label: 'Go to Access & Security', icon: 'ph-shield-slash', category: 'Navigation', action: () => window.location.hash = '#/security' },
+        { label: 'Go to Settings', icon: 'ph-gear', category: 'Navigation', action: () => window.location.hash = '#/settings' },
+        { label: 'Refresh Dashboard Telemetry', icon: 'ph-arrows-clockwise', category: 'Action', action: () => refreshDashboardData() },
+        { label: 'Export Telemetry Logs (JSON)', icon: 'ph-file-code', category: 'Export', action: () => exportLogsJSON(currentDataCache?.recentLogs || []) },
+        { label: 'Export Telemetry Logs (CSV)', icon: 'ph-file-csv', category: 'Export', action: () => exportLogsCSV(currentDataCache?.recentLogs || []) },
+        { label: 'Export Authenticated Logins (CSV)', icon: 'ph-user-check', category: 'Export', action: () => exportLoginsCSV(extractAllSuccessfulLogins(currentDataCache)) },
+        { label: 'Purge Telemetry Logs (KV)', icon: 'ph-trash', category: 'Danger', action: clearLogsCall },
+        { label: 'Sign Out Admin Session', icon: 'ph-sign-out', category: 'Auth', action: () => handleLogout(false) }
+    ];
+
+    let selectedIndex = 0;
+
+    function renderCommandResults(query = '') {
+        const q = query.toLowerCase().trim();
+        const filtered = q ? commands.filter(c => c.label.toLowerCase().includes(q) || c.category.toLowerCase().includes(q)) : commands;
+
+        results.innerHTML = '';
+        if (filtered.length === 0) {
+            results.innerHTML = '<div class="p-4 text-center text-gray-500 text-xs">No matching commands found.</div>';
+            return;
+        }
+
+        selectedIndex = Math.min(selectedIndex, filtered.length - 1);
+
+        filtered.forEach((cmd, i) => {
+            const item = document.createElement('div');
+            item.className = `cmd-item p-2.5 rounded-xl border border-transparent flex items-center justify-between cursor-pointer text-xs ${i === selectedIndex ? 'selected' : ''}`;
+            item.innerHTML = `
+                <div class="flex items-center gap-2.5">
+                    <i class="ph ${cmd.icon} text-base text-brand-400"></i>
+                    <span class="text-white font-medium">${escapeHtml(cmd.label)}</span>
+                </div>
+                <span class="text-[10px] text-gray-500 font-mono bg-gray-900 px-2 py-0.5 rounded border border-gray-800">${cmd.category}</span>
+            `;
+
+            item.onclick = () => {
+                modal.classList.add('hidden');
+                cmd.action();
+            };
+
+            results.appendChild(item);
+        });
+    }
+
+    function openPalette() {
+        modal.classList.remove('hidden');
+        input.value = '';
+        selectedIndex = 0;
+        renderCommandResults('');
+        setTimeout(() => input.focus(), 50);
+    }
+
+    function closePalette() {
+        modal.classList.add('hidden');
+    }
+
+    if (searchBtn) searchBtn.onclick = openPalette;
+    if (quickTrigger) quickTrigger.onclick = openPalette;
+
+    input.oninput = (e) => {
+        selectedIndex = 0;
+        renderCommandResults(e.target.value);
+    };
+
+    input.onkeydown = (e) => {
+        const items = results.querySelectorAll('.cmd-item');
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            selectedIndex = (selectedIndex + 1) % items.length;
+            renderCommandResults(input.value);
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            selectedIndex = (selectedIndex - 1 + items.length) % items.length;
+            renderCommandResults(input.value);
+        } else if (e.key === 'Enter') {
+            e.preventDefault();
+            const q = input.value.toLowerCase().trim();
+            const filtered = q ? commands.filter(c => c.label.toLowerCase().includes(q) || c.category.toLowerCase().includes(q)) : commands;
+            if (filtered[selectedIndex]) {
+                closePalette();
+                filtered[selectedIndex].action();
+            }
+        } else if (e.key === 'Escape') {
+            closePalette();
+        }
+    };
+
+    modal.onclick = (e) => {
+        if (e.target === modal) closePalette();
+    };
+
+    // Global Keybindings Listener
+    document.addEventListener('keydown', (e) => {
+        const isInput = ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName);
+
+        if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K')) {
+            e.preventDefault();
+            if (modal.classList.contains('hidden')) openPalette();
+            else closePalette();
+            return;
+        }
+
+        if (e.key === 'Escape') {
+            closePalette();
+            document.getElementById('logDetailModal')?.classList.add('hidden');
+            return;
+        }
+
+        if (!isInput && !modal.classList.contains('hidden')) return;
+
+        if (!isInput) {
+            if (e.key === 'r' || e.key === 'R') {
+                e.preventDefault();
+                refreshDashboardData();
+            } else if (e.key === '1') window.location.hash = '#/overview';
+            else if (e.key === '2') window.location.hash = '#/user-analytics';
+            else if (e.key === '3') window.location.hash = '#/site-analytics';
+            else if (e.key === '4') window.location.hash = '#/control';
+            else if (e.key === '5') window.location.hash = '#/logs';
+            else if (e.key === '6') window.location.hash = '#/security';
+            else if (e.key === '7') window.location.hash = '#/settings';
+        }
+    });
+}
+
+// ================= ACOUSTIC SECURITY CHIME (Web Audio API) =================
+function playAcousticPulse(type = 'success') {
+    if (!currentSettings.audioAlerts) return;
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        if (type === 'success') {
+            osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
+            osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.15); // A5
+            gain.gain.setValueAtTime(0.05, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
+            osc.start(ctx.currentTime);
+            osc.stop(ctx.currentTime + 0.25);
+        } else {
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(220, ctx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(110, ctx.currentTime + 0.2);
+            gain.gain.setValueAtTime(0.07, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+            osc.start(ctx.currentTime);
+            osc.stop(ctx.currentTime + 0.3);
+        }
+    } catch (e) {}
+}
+
+// ================= UTILS & BINDINGS =================
+
+function bindLayoutEvents() {
+    document.getElementById('logoutBtn')?.addEventListener('click', () => handleLogout(false));
+    document.getElementById('refreshBtn')?.addEventListener('click', refreshDashboardData);
+}
+
+function updateNavActive(path) {
+    document.querySelectorAll('.nav-link').forEach(link => {
+        link.classList.remove('active', 'border-brand-500/20', 'bg-brand-500/10', 'text-brand-500');
+        link.classList.add('text-gray-400', 'border-transparent');
+        if (link.getAttribute('href') === `#/${path}` || (path === 'overview' && link.getAttribute('href') === '#/overview')) {
+            link.classList.add('active', 'border-brand-500/20', 'bg-brand-500/10', 'text-brand-500');
+            link.classList.remove('text-gray-400', 'border-transparent');
+        }
+    });
+}
+
+function updatePageHeaders(path) {
+    const t = document.getElementById('pageTitle');
+    const s = document.getElementById('pageSubtitle');
+    if (!t || !s) return;
+
+    switch (path) {
+        case 'overview': t.textContent = 'Command Overview'; s.textContent = 'High-level surface telemetry & edge perimeter status.'; break;
+        case 'user-analytics': t.textContent = 'User Analytics'; s.textContent = 'Deep dive into origin footprints & active sessions.'; break;
+        case 'site-analytics': t.textContent = 'Site Analytics'; s.textContent = 'Performance, density ratios & route popularity.'; break;
+        case 'control': t.textContent = 'Command & Control'; s.textContent = 'Emergency maintenance lock & live notice deployment.'; break;
+        case 'logs': t.textContent = 'Real-Time Telemetry Logs'; s.textContent = 'Live user event streaming & packet inspection.'; break;
+        case 'security': t.textContent = 'Access & Security'; s.textContent = 'Packet firewalls, student ID restrictions & session logs.'; break;
+        case 'settings': t.textContent = 'Dashboard Preferences'; s.textContent = 'Interface tuning, refresh rates & shortcuts.'; break;
+    }
+}
+
 function escapeHtml(str) {
     if (!str) return '';
-    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
 // ================= BOOT =================
@@ -1052,4 +1653,8 @@ document.addEventListener('DOMContentLoaded', router);
 // Expose functions globally for inline HTML event handlers
 window.modifyUserIdBlocklistCall = modifyUserIdBlocklistCall;
 window.modifyBlocklistCall = modifyBlocklistCall;
-window.copyText = (text) => { navigator.clipboard.writeText(text); };
+window.triggerExportLogsJSON = () => exportLogsJSON(currentDataCache?.recentLogs || []);
+window.copyText = (text) => {
+    navigator.clipboard.writeText(text);
+    showAdminToast('Copied to clipboard!', true);
+};

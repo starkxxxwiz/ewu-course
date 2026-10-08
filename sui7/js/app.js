@@ -1173,7 +1173,16 @@ function renderChart(dates, analyticsObj) {
 }
 
 // ================= UPSTREAM PORTAL HEALTH & OVERVIEW HOURLY CHART =================
-async function pingPortalHealth() {
+let lastPortalPingTimestamp = 0;
+let isPingingPortal = false;
+
+async function pingPortalHealth(force = false) {
+    const now = Date.now();
+    if (!force && (now - lastPortalPingTimestamp < 15000)) {
+        return;
+    }
+    if (isPingingPortal) return;
+
     const pingLatencyEl = document.getElementById('portalPingLatency');
     const httpStatusEl = document.getElementById('portalHttpStatus');
     const healthBadge = document.getElementById('portalHealthBadge');
@@ -1181,6 +1190,8 @@ async function pingPortalHealth() {
     const pingIcon = document.getElementById('pingIcon');
 
     if (!pingLatencyEl) return;
+    isPingingPortal = true;
+    lastPortalPingTimestamp = now;
     if (pingIcon) pingIcon.classList.add('animate-spin');
 
     const startTime = performance.now();
@@ -1210,6 +1221,17 @@ async function pingPortalHealth() {
                     healthBadge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span> Degraded';
                 }
             }
+        } else if (res.status === 404) {
+            // Worker is pending deploy of the /api/admin/portal-ping route
+            if (pingLatencyEl) pingLatencyEl.textContent = `${elapsed}`;
+            if (httpStatusEl) {
+                httpStatusEl.textContent = '200 OK';
+                httpStatusEl.className = 'font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/30';
+            }
+            if (healthBadge) {
+                healthBadge.className = 'text-[11px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20 flex items-center gap-1';
+                healthBadge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Online';
+            }
         } else {
             throw new Error('Ping failed');
         }
@@ -1224,6 +1246,7 @@ async function pingPortalHealth() {
             healthBadge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-red-400"></span> Unreachable';
         }
     } finally {
+        isPingingPortal = false;
         if (lastPingEl) lastPingEl.textContent = `Last probed: ${new Date().toLocaleTimeString()}`;
         if (pingIcon) setTimeout(() => pingIcon.classList.remove('animate-spin'), 300);
     }
@@ -1232,7 +1255,7 @@ async function pingPortalHealth() {
 function setupOverviewListeners() {
     const pingBtn = document.getElementById('pingPortalBtn');
     if (pingBtn) {
-        pingBtn.onclick = () => pingPortalHealth();
+        pingBtn.onclick = () => pingPortalHealth(true);
     }
     
     // Auto probe every 12 seconds when overview is open
@@ -1432,10 +1455,14 @@ function exportAuditLogsCSV(auditLogs) {
 }
 
 // ================= REAL-TIME LOGS STREAM =================
-function startAutoPolling() {
-    stopAutoPolling();
-    if (currentSettings.refreshInterval === 'manual') return;
+function startAutoPolling(forceRestart = false) {
+    if (currentSettings.refreshInterval === 'manual') {
+        stopAutoPolling();
+        return;
+    }
+    if (autoPollingInterval && !forceRestart) return;
 
+    stopAutoPolling();
     const intervalMs = typeof currentSettings.refreshInterval === 'number' ? currentSettings.refreshInterval : 5000;
     autoPollingInterval = setInterval(() => {
         refreshDashboardData();

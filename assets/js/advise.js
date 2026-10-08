@@ -201,12 +201,12 @@ function showErrorMessage(message) {
             <td colspan="10">
                 <div class="empty-state">
                     <div class="empty-state-icon" style="background: rgba(239, 68, 68, 0.1);">
-                        <i class="fas fa-exclamation-triangle" style="color: #ef4444;"></i>
+                        <svg class="w-6 h-6" style="color: #ef4444;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
                     </div>
                     <p class="text-red-400 font-medium">${message}</p>
-                    <button onclick="loadCourses(false, true)" class="mt-4 px-4 py-2 rounded-lg text-sm font-medium transition-all"
+                    <button onclick="loadCourses(false, true)" class="mt-4 px-4 py-2 rounded-lg text-sm font-medium transition-all inline-flex items-center"
                         style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #ef4444;">
-                        <i class="fas fa-redo mr-2"></i>Try Again
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>Try Again
                     </button>
                 </div>
             </td>
@@ -234,7 +234,7 @@ function populateCourseFilter() {
     container.innerHTML = `
         <div class="filter-option ${isAllSelected ? 'active' : ''}" data-course="" onclick="selectCourseFilter(null, event)">
             <span class="text-white font-medium flex items-center gap-2">
-                ${isAllSelected ? '<i class="fas fa-check text-xs text-[#5a8fd8]"></i>' : ''} All Courses
+                ${isAllSelected ? '<svg class="w-3.5 h-3.5 text-[#5a8fd8]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>' : ''} All Courses
             </span>
             <span class="text-gray-400 text-xs ml-2 font-mono">(${allCourses.length})</span>
         </div>
@@ -244,7 +244,7 @@ function populateCourseFilter() {
         return `
             <div class="filter-option ${isSelected ? 'active' : ''}" data-course="${code}" onclick="selectCourseFilter('${code.replace(/'/g, "\\'")}', event)">
                 <span class="text-white font-medium flex items-center gap-2">
-                    ${isSelected ? '<i class="fas fa-check text-xs text-[#5a8fd8]"></i>' : ''} ${code}
+                    ${isSelected ? '<svg class="w-3.5 h-3.5 text-[#5a8fd8]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>' : ''} ${code}
                 </span>
                 <span class="text-gray-400 text-xs ml-2 font-mono">(${count})</span>
             </div>
@@ -354,8 +354,8 @@ function renderCourseTable() {
             <tr>
                 <td colspan="10">
                     <div class="empty-state">
-                        <div class="empty-state-icon">
-                            <i class="fas fa-inbox"></i>
+                        <div class="empty-state-icon flex items-center justify-center">
+                            <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/></svg>
                         </div>
                         <p class="text-gray-400 font-medium">No courses found</p>
                         <p class="text-gray-500 text-sm mt-2">Try adjusting your search or filters</p>
@@ -613,9 +613,9 @@ function showSearchSuggestions(query) {
                         </div>
                     </div>
                     <div class="flex flex-wrap gap-3 mt-2 text-xs text-gray-500">
-                        <span><i class="fas fa-door-open mr-1"></i>${truncateText(course.RoomName, 12)}</span>
-                        <span><i class="fas fa-clock mr-1"></i>${time || 'TBA'}</span>
-                        <span><i class="fas fa-calendar mr-1"></i>${day || 'TBA'}</span>
+                        <span class="inline-flex items-center"><svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>${truncateText(course.RoomName, 12)}</span>
+                        <span class="inline-flex items-center"><svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>${time || 'TBA'}</span>
+                        <span class="inline-flex items-center"><svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>${day || 'TBA'}</span>
                     </div>
                 </div>
             `;
@@ -626,7 +626,7 @@ function showSearchSuggestions(query) {
     } else {
         searchSuggestions.innerHTML = `
             <div class="p-6 text-center text-gray-500 text-sm">
-                <i class="fas fa-search mb-2 text-2xl opacity-30"></i>
+                <svg class="w-8 h-8 mx-auto mb-2 text-gray-500 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                 <p class="font-medium">No matches found</p>
                 <p class="text-xs mt-1 text-gray-600">Try searching by course code or faculty name</p>
             </div>

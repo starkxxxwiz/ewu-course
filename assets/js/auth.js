@@ -12,13 +12,16 @@ const retryHandler = new RetryHandler();
 function togglePassword() {
     const passwordInput = document.getElementById('password');
     const passwordIcon = document.getElementById('passwordIcon');
+    if (!passwordInput) return;
     
-    if (passwordInput.type === 'password') {
-        passwordInput.type = 'text';
-        passwordIcon.className = 'fas fa-eye-slash';
-    } else {
-        passwordInput.type = 'password';
-        passwordIcon.className = 'fas fa-eye';
+    const isPass = passwordInput.type === 'password';
+    passwordInput.type = isPass ? 'text' : 'password';
+    if (passwordIcon) {
+        if (isPass) {
+            passwordIcon.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>';
+        } else {
+            passwordIcon.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>';
+        }
     }
 }
 
@@ -34,13 +37,13 @@ function showAlert(message, type = 'error') {
 
     if (type === 'error') {
         alertBox.classList.add('alert-error');
-        alertIcon.className = 'fas fa-exclamation-circle text-xl text-red-400';
+        alertIcon.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="flex-shrink-0"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>';
     } else if (type === 'success') {
         alertBox.classList.add('alert-success');
-        alertIcon.className = 'fas fa-check-circle text-xl text-emerald-400';
+        alertIcon.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="flex-shrink-0"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>';
     } else {
         alertBox.classList.add('alert-info');
-        alertIcon.className = 'fas fa-info-circle text-xl text-[#D86C5A] pulse-effect';
+        alertIcon.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#D86C5A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="flex-shrink-0 pulse-effect"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>';
     }
 
     alertMessage.textContent = message;
@@ -126,7 +129,13 @@ document.getElementById('loginForm')?.addEventListener('submit', async function(
     // Disable button and show loading
     loginBtn.disabled = true;
     loginBtn.classList.add('opacity-75', 'cursor-not-allowed');
-    btnText.innerHTML = '<i class="fas fa-circle-notch fa-spin mr-2"></i>Signing in...';
+    const btnIconWrapper = document.getElementById('btnIconWrapper');
+    const defaultSignInIcon = '<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg>';
+    const spinnerIcon = '<svg class="animate-spin h-4 w-4 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>';
+    const checkIcon = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+
+    if (btnIconWrapper) btnIconWrapper.innerHTML = spinnerIcon;
+    btnText.textContent = 'Signing in...';
 
     // Use retry handler for login
     await retryHandler.executeWithRetry(
@@ -136,7 +145,8 @@ document.getElementById('loginForm')?.addEventListener('submit', async function(
             retryDelay: 1000,
             onSuccess: (result) => {
                 showAlert('Login successful! Redirecting...', 'success');
-                btnText.innerHTML = '<i class="fas fa-check mr-2"></i>Redirecting...';
+                if (btnIconWrapper) btnIconWrapper.innerHTML = checkIcon;
+                btnText.textContent = 'Redirecting...';
                 setTimeout(() => {
                     window.location.href = 'advise.html';
                 }, 800);
@@ -145,16 +155,19 @@ document.getElementById('loginForm')?.addEventListener('submit', async function(
                 showAlert(result.message || 'Invalid credentials. Please check your student ID and password.', 'error');
                 loginBtn.disabled = false;
                 loginBtn.classList.remove('opacity-75', 'cursor-not-allowed');
+                if (btnIconWrapper) btnIconWrapper.innerHTML = defaultSignInIcon;
                 btnText.textContent = 'Sign In';
             },
             onRetryAttempt: (attemptNum, elapsedTime, errorReason) => {
                 console.log(`Login attempt ${attemptNum} failed. Elapsed time: ${elapsedTime}s. Reason: ${errorReason}`);
                 showAlert(`${errorReason || 'Portal busy'}. Retrying automatically... (Attempt ${attemptNum + 1})`, 'info');
-                btnText.innerHTML = `<i class="fas fa-sync-alt fa-spin mr-2"></i>Retrying (Attempt ${attemptNum + 1})...`;
+                if (btnIconWrapper) btnIconWrapper.innerHTML = spinnerIcon;
+                btnText.textContent = `Retrying (Attempt ${attemptNum + 1})...`;
             },
             onStop: () => {
                 loginBtn.disabled = false;
                 loginBtn.classList.remove('opacity-75', 'cursor-not-allowed');
+                if (btnIconWrapper) btnIconWrapper.innerHTML = defaultSignInIcon;
                 btnText.textContent = 'Sign In';
                 showAlert('Login process stopped.', 'info');
             }

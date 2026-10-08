@@ -27,7 +27,6 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="assets/css/styles.css">
     
     <script>
@@ -355,7 +354,7 @@
                 </div>
                 <!-- Mobile Menu Button -->
                 <button id="mobileMenuBtn" class="md:hidden text-white text-2xl focus:outline-none">
-                    <i class="fas fa-bars"></i>
+                    <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
                 </button>
             </div>
             <!-- Mobile Menu -->
@@ -384,14 +383,15 @@
                 <form id="loginForm" class="space-y-6">
                     <!-- Alert Messages -->
                     <div id="alertBox" class="hidden alert-box">
-                        <i id="alertIcon" class="text-xl"></i>
+                        <span id="alertIcon" class="flex-shrink-0 flex items-center"></span>
                         <p id="alertMessage" class="text-sm font-medium"></p>
                     </div>
 
                     <!-- Student ID -->
                     <div>
-                        <label class="block text-sm font-medium text-gray-300 mb-2">
-                            <i class="fas fa-user mr-2 text-[#D86C5A]"></i>Student ID
+                        <label class="flex items-center text-sm font-medium text-gray-300 mb-2">
+                            <svg class="w-4 h-4 mr-2 text-[#D86C5A] inline-block flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                            <span>Student ID</span>
                         </label>
                         <input 
                             type="text" 
@@ -406,10 +406,11 @@
 
                     <!-- Password -->
                     <div>
-                        <label class="block text-sm font-medium text-gray-300 mb-2">
-                            <i class="fas fa-lock mr-2 text-[#D86C5A]"></i>Password
+                        <label class="flex items-center text-sm font-medium text-gray-300 mb-2">
+                            <svg class="w-4 h-4 mr-2 text-[#D86C5A] inline-block flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                            <span>Password</span>
                         </label>
-                        <div class="relative">
+                        <div class="relative flex items-center">
                             <input 
                                 type="password" 
                                 id="password" 
@@ -421,9 +422,12 @@
                             <button 
                                 type="button" 
                                 onclick="togglePassword()"
-                                class="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-[#D86C5A] transition-colors"
+                                class="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-[#D86C5A] transition-colors focus:outline-none"
+                                aria-label="Toggle password visibility"
                             >
-                                <i id="passwordIcon" class="fas fa-eye"></i>
+                                <span id="passwordIcon" class="flex items-center">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                </span>
                             </button>
                         </div>
                     </div>
@@ -435,15 +439,17 @@
                         class="btn-login w-full"
                     >
                         <span class="btn-login-inner">
-                            <i class="fas fa-sign-in-alt mr-2"></i>
+                            <span id="btnIconWrapper" class="flex items-center mr-2">
+                                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg>
+                            </span>
                             <span id="btnText">Sign In</span>
                         </span>
                     </button>
 
                     <!-- Info -->
-                    <div class="text-center text-sm text-gray-400 mt-4">
-                        <i class="fas fa-info-circle mr-1"></i>
-                        Use your EWU portal credentials
+                    <div class="flex items-center justify-center text-sm text-gray-400 mt-4 gap-1.5">
+                        <svg class="w-4 h-4 text-gray-400 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                        <span>Use your EWU portal credentials</span>
                     </div>
                 </form>
             </div>
@@ -458,8 +464,9 @@
                 <p class="text-xs mb-3 text-gray-400">
                     This website is created for educational purposes only. It has no official connection with East West University (EWU). If any authority requests content removal, please contact us.
                 </p>
-                <a href="mailto:contact.aftabkabir@proton.me" class="inline-block px-4 py-2 rounded-md bg-[#D86C5A]/10 border border-[#D86C5A]/30 text-[#D86C5A] hover:bg-[#D86C5A]/20 transition-all text-xs">
-                    <i class="fas fa-envelope mr-1"></i> Contact
+                <a href="mailto:contact.aftabkabir@proton.me" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-md bg-[#D86C5A]/10 border border-[#D86C5A]/30 text-[#D86C5A] hover:bg-[#D86C5A]/20 transition-all text-xs">
+                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                    <span>Contact</span>
                 </a>
             </div>
         </div>

@@ -138,33 +138,35 @@ class RetryHandler {
             <div class="retry-widget-content">
                 <div class="retry-widget-header">
                     <div class="status-indicator">
-                        <i class="fas fa-circle-notch fa-spin status-icon status-connecting"></i>
+                        <span class="status-icon-wrapper flex items-center justify-center">
+                            <svg class="w-4 h-4 animate-spin text-blue-400 status-icon" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                        </span>
                         <span class="status-text">Connecting...</span>
                     </div>
                     <div class="retry-widget-actions">
                         <button class="widget-btn minimize-btn" title="Minimize" type="button">
-                            <i class="fas fa-minus"></i>
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/></svg>
                         </button>
                         <button class="widget-btn stop-btn" title="Stop" type="button">
-                            <i class="fas fa-times"></i>
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                         </button>
                     </div>
                 </div>
                 <div class="retry-widget-body">
                     <div class="retry-stat">
-                        <i class="fas fa-redo-alt"></i>
+                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
                         <span class="stat-label">Attempt:</span>
                         <span class="stat-value attempt-value">1</span>
                     </div>
                     <div class="retry-stat">
-                        <i class="fas fa-clock"></i>
+                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                         <span class="stat-label">Elapsed:</span>
                         <span class="stat-value elapsed-value">0 sec</span>
                     </div>
                 </div>
             </div>
             <div class="retry-widget-minimized">
-                <i class="fas fa-circle-notch fa-spin"></i>
+                <svg class="w-5 h-5 animate-spin text-blue-400" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                 <span class="mini-badge">1</span>
             </div>
         `;
@@ -191,7 +193,7 @@ class RetryHandler {
         if (!this.widgetElement) return;
 
         const statusText = this.widgetElement.querySelector('.status-text');
-        const statusIcon = this.widgetElement.querySelector('.status-icon');
+        const iconWrapper = this.widgetElement.querySelector('.status-icon-wrapper');
         const attemptValue = this.widgetElement.querySelector('.attempt-value');
         const miniBadge = this.widgetElement.querySelector('.mini-badge');
 
@@ -200,17 +202,23 @@ class RetryHandler {
 
         if (status === 'connecting') {
             if (statusText) statusText.textContent = this.attemptNumber > 1 ? `${operationName} (Attempt ${this.attemptNumber})...` : `${operationName}...`;
-            if (statusIcon) statusIcon.className = 'fas fa-circle-notch fa-spin status-icon status-connecting';
+            if (iconWrapper) {
+                iconWrapper.innerHTML = `<svg class="w-4 h-4 animate-spin text-blue-400 status-icon status-connecting" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>`;
+            }
             this.widgetElement.classList.remove('status-timeout', 'status-success');
             this.widgetElement.classList.add('status-connecting');
         } else if (status === 'retrying') {
             if (statusText) statusText.textContent = `Auto-retrying (Attempt ${this.attemptNumber + 1})...`;
-            if (statusIcon) statusIcon.className = 'fas fa-sync-alt fa-spin status-icon status-timeout';
+            if (iconWrapper) {
+                iconWrapper.innerHTML = `<svg class="w-4 h-4 animate-spin text-amber-400 status-icon status-timeout" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>`;
+            }
             this.widgetElement.classList.remove('status-connecting', 'status-success');
             this.widgetElement.classList.add('status-timeout');
         } else if (status === 'success') {
             if (statusText) statusText.textContent = 'Success!';
-            if (statusIcon) statusIcon.className = 'fas fa-check-circle status-icon status-success';
+            if (iconWrapper) {
+                iconWrapper.innerHTML = `<svg class="w-4 h-4 text-emerald-400 status-icon status-success" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>`;
+            }
             this.widgetElement.classList.remove('status-connecting', 'status-timeout');
             this.widgetElement.classList.add('status-success');
         }

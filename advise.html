@@ -857,37 +857,35 @@
             </div>
             
             <!-- Filters Row -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4 mb-5 items-end">
                 
                 <!-- Course Filter -->
                 <div class="relative">
-                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                    <label class="block text-xs font-semibold text-[#5a8fd8]/80 uppercase tracking-wider mb-2">
                         <i class="fas fa-book mr-1"></i> Course
                     </label>
-                    <button type="button" id="courseFilterBtn" class="w-full px-4 py-3 rounded-xl text-left flex items-center justify-between transition-all"
-                        style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(90, 143, 216, 0.2);">
-                        <span id="courseFilterText" class="text-white text-sm">All Courses</span>
-                        <i class="fas fa-chevron-down text-xs text-gray-500"></i>
+                    <button type="button" id="courseFilterBtn" class="w-full px-4 py-3 rounded-xl text-left flex items-center justify-between transition-all glass-input-select">
+                        <span id="courseFilterText" class="text-white text-sm font-medium">All Courses</span>
+                        <i class="fas fa-chevron-down text-xs text-[#5a8fd8]/70"></i>
                     </button>
-                    <div id="courseFilterDropdown" class="absolute w-full mt-2 filter-dropdown-premium hidden" style="z-index: 95; min-width: 200px;">
+                    <div id="courseFilterDropdown" class="absolute w-full mt-2 filter-dropdown-premium hidden" style="z-index: 95; min-width: 220px;">
                         <div class="p-3 border-b border-white/5">
                             <input type="text" id="courseFilterSearch" placeholder="Search courses..." 
                                 class="w-full px-3 py-2 rounded-lg text-white text-sm outline-none"
-                                style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(90, 143, 216, 0.15);">
+                                style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(90, 143, 216, 0.25);">
                         </div>
                         <div id="courseFilterOptions" class="max-h-64 overflow-y-auto scroll-premium">
-                            <!-- Will be populated dynamically -->
+                            <!-- Populated dynamically -->
                         </div>
                     </div>
                 </div>
                 
                 <!-- Sort By -->
                 <div>
-                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                    <label class="block text-xs font-semibold text-[#5a8fd8]/80 uppercase tracking-wider mb-2">
                         <i class="fas fa-sort mr-1"></i> Sort By
                     </label>
-                    <select id="sortSelect" class="w-full px-4 py-3 rounded-xl text-white text-sm outline-none cursor-pointer transition-all"
-                        style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(90, 143, 216, 0.2);">
+                    <select id="sortSelect" class="w-full px-4 py-3 rounded-xl text-white text-sm outline-none cursor-pointer transition-all glass-select">
                         <option value="default">Default Order</option>
                         <option value="az">Faculty (A → Z)</option>
                         <option value="za">Faculty (Z → A)</option>
@@ -896,35 +894,44 @@
                 </div>
                 
                 <!-- Results Counter -->
-                <div class="flex items-end">
-                    <div class="result-counter">
-                        <i class="fas fa-list-ul"></i>
-                        <span id="resultCount">0 courses</span>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                        <i class="fas fa-layer-group mr-1"></i> Total Results
+                    </label>
+                    <div class="result-counter-card">
+                        <i class="fas fa-list-ul text-[#5a8fd8]"></i>
+                        <span id="resultCount" class="font-semibold text-white">0 courses</span>
                     </div>
                 </div>
                 
                 <!-- Available Only Toggle -->
-                <div class="flex items-end">
-                    <label class="flex items-center gap-3 cursor-pointer group">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                        <i class="fas fa-filter mr-1"></i> Filter Seats
+                    </label>
+                    <label class="toggle-card cursor-pointer group" id="availableToggleCard">
                         <div class="toggle-premium" id="availableToggle">
                             <div class="toggle-knob"></div>
                         </div>
                         <input type="checkbox" id="availableOnly" class="sr-only">
-                        <span class="text-sm text-gray-400 group-hover:text-white transition-colors">
-                            <i class="fas fa-check-circle mr-1 text-emerald-500/60"></i>Available Only
+                        <span class="text-sm font-medium text-gray-300 group-hover:text-white transition-colors flex items-center gap-1.5">
+                            <i class="fas fa-check-circle text-emerald-400"></i> Available Only
                         </span>
                     </label>
                 </div>
 
                 <!-- Auto Refresh Toggle -->
-                <div class="flex items-end">
-                    <label class="flex items-center gap-3 cursor-pointer group">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                        <i class="fas fa-clock mr-1"></i> Live Update
+                    </label>
+                    <label class="toggle-card cursor-pointer group" id="autoRefreshToggleCard">
                         <div class="toggle-premium" id="autoRefreshToggle">
                             <div class="toggle-knob"></div>
                         </div>
                         <input type="checkbox" id="autoRefresh" class="sr-only">
-                        <span class="text-sm text-gray-400 group-hover:text-white transition-colors">
-                            <i class="fas fa-sync-alt mr-1 text-amber-500/60"></i>Auto Refresh
+                        <span class="text-sm font-medium text-gray-300 group-hover:text-white transition-colors flex items-center gap-1.5">
+                            <i class="fas fa-sync-alt text-amber-400"></i> Auto Refresh
                         </span>
                     </label>
                 </div>
@@ -938,16 +945,16 @@
                     <table class="table-premium" id="courseTable">
                         <thead>
                             <tr>
-                                <th class="text-center" style="width: 60px;">#</th>
-                                <th style="width: 140px;">Course Code</th>
+                                <th class="text-center" style="width: 50px;">#</th>
+                                <th style="width: 130px;">Course Code</th>
                                 <th class="text-center" style="width: 80px;">Section</th>
-                                <th style="width: 90px; min-width: 80px;">Faculty</th>
-                                <th class="text-center" style="width: 70px;">Capacity</th>
-                                <th class="text-center" style="width: 80px;">Taken</th>
-                                <th class="text-center" style="width: 80px;">Available</th>
-                                <th style="width: 100px;">Day</th>
-                                <th style="width: 170px;">Time</th>
-                                <th style="width: 160px;">Room</th>
+                                <th style="width: 110px;">Faculty</th>
+                                <th class="text-center" style="width: 80px;">Capacity</th>
+                                <th class="text-center" style="width: 85px;">Taken</th>
+                                <th class="text-center" style="width: 85px;">Available</th>
+                                <th class="text-center" style="width: 90px;">Day</th>
+                                <th style="width: 160px;">Time</th>
+                                <th style="width: 140px;">Room</th>
                             </tr>
                         </thead>
                         <tbody id="courseTableBody">

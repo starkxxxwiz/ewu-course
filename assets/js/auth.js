@@ -30,17 +30,17 @@ function showAlert(message, type = 'error') {
 
     if (!alertBox || !alertIcon || !alertMessage) return;
 
-    alertBox.classList.remove('hidden', 'bg-red-500/20', 'bg-green-500/20', 'bg-blue-500/20', 'border', 'border-red-400/30', 'border-green-400/30', 'border-blue-400/30', 'text-red-300', 'text-green-300', 'text-blue-300');
+    alertBox.classList.remove('hidden', 'alert-error', 'alert-success', 'alert-info');
 
     if (type === 'error') {
-        alertBox.classList.add('bg-red-500/20', 'border', 'border-red-400/30', 'text-red-300');
-        alertIcon.className = 'fas fa-exclamation-circle text-xl';
+        alertBox.classList.add('alert-error');
+        alertIcon.className = 'fas fa-exclamation-circle text-xl text-red-400';
     } else if (type === 'success') {
-        alertBox.classList.add('bg-green-500/20', 'border', 'border-green-400/30', 'text-green-300');
-        alertIcon.className = 'fas fa-check-circle text-xl';
+        alertBox.classList.add('alert-success');
+        alertIcon.className = 'fas fa-check-circle text-xl text-emerald-400';
     } else {
-        alertBox.classList.add('bg-blue-500/20', 'border', 'border-blue-400/30', 'text-blue-300');
-        alertIcon.className = 'fas fa-info-circle text-xl pulse-effect';
+        alertBox.classList.add('alert-info');
+        alertIcon.className = 'fas fa-info-circle text-xl text-[#D86C5A] pulse-effect';
     }
 
     alertMessage.textContent = message;

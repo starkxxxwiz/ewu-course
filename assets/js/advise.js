@@ -230,23 +230,29 @@ function populateCourseFilter() {
 
     if (!container) return;
 
+    const isAllSelected = !selectedCourseFilter;
     container.innerHTML = `
-        <div class="filter-option" data-course="" onclick="selectCourseFilter(null, event)">
-            <span class="text-white">All Courses</span>
-            <span class="text-gray-500 text-xs ml-2">(${allCourses.length})</span>
+        <div class="filter-option ${isAllSelected ? 'active' : ''}" data-course="" onclick="selectCourseFilter(null, event)">
+            <span class="text-white font-medium flex items-center gap-2">
+                ${isAllSelected ? '<i class="fas fa-check text-xs text-[#5a8fd8]"></i>' : ''} All Courses
+            </span>
+            <span class="text-gray-400 text-xs ml-2 font-mono">(${allCourses.length})</span>
         </div>
     ` + courseCodes.map(code => {
         const count = allCourses.filter(c => c.CourseCode === code).length;
+        const isSelected = selectedCourseFilter === code;
         return `
-            <div class="filter-option" data-course="${code}" onclick="selectCourseFilter('${code.replace(/'/g, "\\'")}', event)">
-                <span class="text-white">${code}</span>
-                <span class="text-gray-500 text-xs ml-2">(${count})</span>
+            <div class="filter-option ${isSelected ? 'active' : ''}" data-course="${code}" onclick="selectCourseFilter('${code.replace(/'/g, "\\'")}', event)">
+                <span class="text-white font-medium flex items-center gap-2">
+                    ${isSelected ? '<i class="fas fa-check text-xs text-[#5a8fd8]"></i>' : ''} ${code}
+                </span>
+                <span class="text-gray-400 text-xs ml-2 font-mono">(${count})</span>
             </div>
         `;
     }).join('');
 }
 
-// Select course filter - FIXED
+// Select course filter
 function selectCourseFilter(course, event) {
     if (event) {
         event.preventDefault();
@@ -266,6 +272,7 @@ function selectCourseFilter(course, event) {
         dropdown.classList.add('hidden');
     }
 
+    populateCourseFilter();
     applyFilters();
 
     // Show confirmation
@@ -298,7 +305,8 @@ function applyFilters() {
     }
 
     // Apply available only filter
-    if (document.getElementById('availableOnly').checked) {
+    const availOnlyEl = document.getElementById('availableOnly');
+    if (availOnlyEl && availOnlyEl.checked) {
         courses = courses.filter(c => (c.SeatCapacity - c.SeatTaken) > 0);
     }
 
@@ -319,14 +327,14 @@ function applyFilters() {
 
 // Get availability status class and color
 function getAvailabilityInfo(available, capacity) {
-    const percentage = (available / capacity) * 100;
+    const percentage = capacity > 0 ? (available / capacity) * 100 : 0;
 
     if (available <= 0) {
-        return { class: 'status-full', color: '#ef4444', bgColor: 'rgba(239, 68, 68, 0.15)' };
+        return { class: 'status-full', color: '#f87171', bgColor: 'rgba(239, 68, 68, 0.15)' };
     } else if (percentage < 20 || available < 5) {
-        return { class: 'status-limited', color: '#f59e0b', bgColor: 'rgba(245, 158, 11, 0.15)' };
+        return { class: 'status-limited', color: '#fbbf24', bgColor: 'rgba(245, 158, 11, 0.15)' };
     } else {
-        return { class: 'status-available', color: '#10b981', bgColor: 'rgba(16, 185, 129, 0.15)' };
+        return { class: 'status-available', color: '#34d399', bgColor: 'rgba(16, 185, 129, 0.15)' };
     }
 }
 
@@ -339,6 +347,7 @@ function truncateText(text, maxLength) {
 // Render course table with enhanced UI
 function renderCourseTable() {
     const tbody = document.getElementById('courseTableBody');
+    if (!tbody) return;
 
     if (filteredCourses.length === 0) {
         tbody.innerHTML = `
@@ -359,30 +368,30 @@ function renderCourseTable() {
 
     tbody.innerHTML = filteredCourses.map((course, index) => {
         const available = course.SeatCapacity - course.SeatTaken;
-        const takenPercentage = (course.SeatTaken / course.SeatCapacity) * 100;
+        const takenPercentage = course.SeatCapacity > 0 ? (course.SeatTaken / course.SeatCapacity) * 100 : 0;
         const availInfo = getAvailabilityInfo(available, course.SeatCapacity);
         const { day, time } = parseDayTime(course.TimeSlotName);
 
         return `
-            <tr class="course-row" style="animation: fadeInUp 0.3s ease forwards; animation-delay: ${Math.min(index * 0.02, 0.5)}s; opacity: 0;">
+            <tr class="course-row" style="animation: fadeInUp 0.3s ease forwards; animation-delay: ${Math.min(index * 0.02, 0.4)}s; opacity: 0;">
                 <td class="text-center">
                     <span class="text-gray-500 text-xs font-mono">${index + 1}</span>
                 </td>
                 <td>
                     <span class="badge-course">${course.CourseCode}</span>
                 </td>
-                <td>
+                <td class="text-center">
                     <span class="badge-section">${course.SectionName}</span>
                 </td>
                 <td>
                     <span class="faculty-name" title="${course.ShortName}">${course.ShortName}</span>
                 </td>
                 <td class="text-center">
-                    <span class="text-gray-400 font-medium text-sm">${course.SeatCapacity}</span>
+                    <span class="text-gray-300 font-medium text-sm">${course.SeatCapacity}</span>
                 </td>
                 <td class="text-center">
                     <div>
-                        <span class="text-amber-400 font-medium text-sm">${course.SeatTaken}</span>
+                        <span class="text-amber-400 font-semibold text-sm">${course.SeatTaken}</span>
                         <div class="capacity-bar mx-auto">
                             <div class="capacity-fill" style="width: ${Math.min(takenPercentage, 100)}%; background: ${availInfo.color};"></div>
                         </div>
@@ -391,14 +400,14 @@ function renderCourseTable() {
                 <td class="text-center">
                     <span class="${availInfo.class} text-sm">${available}</span>
                 </td>
-                <td>
+                <td class="text-center">
                     <span class="day-badge">${day || 'TBA'}</span>
                 </td>
                 <td>
                     <span class="time-text">${time || 'TBA'}</span>
                 </td>
                 <td>
-                    <span class="badge-room" title="${course.RoomName}" style="white-space:normal;overflow:visible;text-overflow:unset;max-width:none;">${course.RoomName}</span>
+                    <span class="badge-room" title="${course.RoomName}">${course.RoomName}</span>
                 </td>
             </tr>
         `;
@@ -659,25 +668,13 @@ function initializeToggle() {
     const checkbox = document.getElementById('availableOnly');
 
     if (!toggle || !checkbox) {
-        console.warn('Toggle elements not found');
         return;
     }
 
-    // Handle toggle click
-    toggle.addEventListener('click', function (e) {
-        e.preventDefault();
-        checkbox.checked = !checkbox.checked;
-        toggle.classList.toggle('active', checkbox.checked);
-        applyFilters();
-
-        // Visual feedback
-        showToast(checkbox.checked ? 'Showing available seats only' : 'Showing all courses', 1500);
-    });
-
-    // Handle checkbox change (for programmatic changes)
     checkbox.addEventListener('change', function () {
         toggle.classList.toggle('active', this.checked);
         applyFilters();
+        showToast(this.checked ? 'Showing available seats only' : 'Showing all courses', 1500);
     });
 
     // Initialize visual state

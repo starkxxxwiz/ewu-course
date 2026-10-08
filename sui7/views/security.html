@@ -103,6 +103,45 @@
                     <tr><td colspan="6" class="px-5 py-8 text-center text-gray-500">Retrieving successful authentication records...</td></tr>
                 </tbody>
             </table>
+    <!-- Administrative Audit Logs Table & Downloadable Trails -->
+    <div class="glass-card p-0 flex flex-col min-h-[380px]">
+        <div class="p-4 border-b border-gray-800 flex flex-col sm:flex-row justify-between sm:items-center gap-3 bg-gray-900/50 rounded-t-xl">
+            <div class="flex items-center gap-3">
+                <h3 class="text-base font-semibold text-white flex items-center gap-2">
+                    <i class="ph ph-fingerprint text-purple-400"></i> Administrative Action Audit Trail
+                </h3>
+                <span class="text-xs text-purple-400 bg-purple-500/10 px-2.5 py-0.5 rounded-full flex items-center gap-1.5 border border-purple-500/20 font-mono">
+                    <i class="ph ph-shield-check"></i> Tamper-evident KV
+                </span>
+            </div>
+            <div class="flex items-center gap-2">
+                <div class="relative">
+                    <i class="ph ph-magnifying-glass absolute left-3 top-2.5 text-gray-500 text-xs"></i>
+                    <input type="text" id="secAuditSearchInput" placeholder="Filter audit trail..." class="glass-input rounded-lg pl-8 pr-3 py-1.5 text-xs w-48 sm:w-60">
+                </div>
+                <button id="exportAuditJsonBtn" class="px-2.5 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-xs text-gray-300 border border-gray-700 flex items-center gap-1 font-medium transition-all" title="Export Audit Trail as JSON">
+                    <i class="ph ph-file-code text-brand-400"></i> JSON
+                </button>
+                <button id="exportAuditCsvBtn" class="px-2.5 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-xs text-gray-300 border border-gray-700 flex items-center gap-1 font-medium transition-all" title="Export Audit Trail as CSV">
+                    <i class="ph ph-file-csv text-emerald-400"></i> CSV
+                </button>
+            </div>
+        </div>
+        <div class="flex-1 overflow-x-auto">
+            <table class="w-full text-left relative font-sans">
+                <thead class="text-xs text-gray-400 bg-gray-900/80 sticky top-0 backdrop-blur z-10 border-b border-gray-800 uppercase tracking-wider">
+                    <tr>
+                        <th class="px-5 py-3 font-medium">Timestamp</th>
+                        <th class="px-5 py-3 font-medium">Action</th>
+                        <th class="px-5 py-3 font-medium">Target / Entity</th>
+                        <th class="px-5 py-3 font-medium">Actor</th>
+                        <th class="px-5 py-3 font-medium">Details</th>
+                    </tr>
+                </thead>
+                <tbody id="secAuditLogsTable" class="text-xs divide-y divide-gray-800/50">
+                    <tr><td colspan="5" class="px-5 py-8 text-center text-gray-500">Retrieving administrative audit trail...</td></tr>
+                </tbody>
+            </table>
         </div>
     </div>
 

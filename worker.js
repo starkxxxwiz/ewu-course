@@ -673,6 +673,69 @@ async function handleAdminLogin(request, env) {
   }
 }
 
+async function recordAdminAudit(env, request, action, target, details) {
+  if (!env.ADMIN_KV) return;
+  try {
+    const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+    const auditLogsStr = await env.ADMIN_KV.get('admin_audit_logs');
+    let auditLogs = [];
+    if (auditLogsStr) {
+      try { auditLogs = JSON.parse(auditLogsStr); } catch(e){}
+    }
+    const newEntry = {
+      id: `audit_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
+      timestamp: new Date().toISOString(),
+      action: action,
+      target: target || 'N/A',
+      actor: `Admin (${ip})`,
+      details: details || ''
+    };
+    auditLogs.unshift(newEntry);
+    if (auditLogs.length > 250) auditLogs = auditLogs.slice(0, 250);
+    await env.ADMIN_KV.put('admin_audit_logs', JSON.stringify(auditLogs));
+  } catch(e) {
+    console.error('Failed to write audit log:', e);
+  }
+}
+
+async function handlePortalPing(request, env) {
+  const startTime = Date.now();
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 6000);
+    
+    const targetUrl = 'https://portal.ewubd.edu/';
+    const res = await fetch(targetUrl, {
+      method: 'GET',
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+      },
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
+
+    const latencyMs = Date.now() - startTime;
+    return jsonResponse({
+      status: res.ok || res.status === 302 ? 'healthy' : 'degraded',
+      httpStatus: res.status,
+      latencyMs: latencyMs,
+      timestamp: new Date().toISOString(),
+      upstream: 'portal.ewubd.edu'
+    }, 200, request);
+  } catch(e) {
+    const latencyMs = Date.now() - startTime;
+    return jsonResponse({
+      status: 'down',
+      httpStatus: 0,
+      latencyMs: latencyMs > 6000 ? 6000 : latencyMs,
+      error: e.message || 'Connection timed out',
+      timestamp: new Date().toISOString(),
+      upstream: 'portal.ewubd.edu'
+    }, 200, request);
+  }
+}
+
 async function handleAdminDashboard(request, env) {
   if (!(await verifyAdminAuth(request, env))) return jsonResponse({ error: 'Unauthorized' }, 401, request);
   
@@ -682,6 +745,7 @@ async function handleAdminDashboard(request, env) {
   let blockedIPs = [];
   let blockedUserIds = [];
   let successfulLogins = [];
+  let auditLogs = [];
   let isClosed = false;
   let totalUniqueVisitors = 0;
   let customNotice = null;
@@ -723,6 +787,11 @@ async function handleAdminDashboard(request, env) {
     if (loginsStr) {
       try { successfulLogins = JSON.parse(loginsStr); } catch(e){}
     }
+
+    const auditStr = await env.ADMIN_KV.get('admin_audit_logs');
+    if (auditStr) {
+      try { auditLogs = JSON.parse(auditStr); } catch(e){}
+    }
   }
 
   return jsonResponse({
@@ -733,7 +802,8 @@ async function handleAdminDashboard(request, env) {
     recentLogs: recentLogs,
     blockedIPs: blockedIPs,
     blockedUserIds: blockedUserIds,
-    successfulLogins: successfulLogins
+    successfulLogins: successfulLogins,
+    auditLogs: auditLogs
   }, 200, request);
 }
 
@@ -761,10 +831,13 @@ async function handleIpBlock(request, env) {
       targetIps.forEach(i => {
         if (!blockedIPs.includes(i)) blockedIPs.push(i);
       });
+      await recordAdminAudit(env, request, 'BLOCK_IP', targetIps.join(', '), `Blocked ${targetIps.length} IP address(es)`);
     } else if (action === 'unblock') {
       blockedIPs = blockedIPs.filter(i => !targetIps.includes(i));
+      await recordAdminAudit(env, request, 'UNBLOCK_IP', targetIps.join(', '), `Unblocked ${targetIps.length} IP address(es)`);
     } else if (action === 'unblock-all') {
       blockedIPs = [];
+      await recordAdminAudit(env, request, 'UNBLOCK_ALL_IPS', 'ALL', `Cleared entire IP blocklist`);
     }
     
     await env.ADMIN_KV.put('blocked_ips', JSON.stringify(blockedIPs));
@@ -797,10 +870,13 @@ async function handleUserIdBlock(request, env) {
       targetIds.forEach(id => {
         if (!blockedUserIds.includes(id)) blockedUserIds.push(id);
       });
+      await recordAdminAudit(env, request, 'BLOCK_USER', targetIds.join(', '), `Restricted ${targetIds.length} Student ID(s)`);
     } else if (action === 'unblock') {
       blockedUserIds = blockedUserIds.filter(id => !targetIds.includes(id));
+      await recordAdminAudit(env, request, 'UNBLOCK_USER', targetIds.join(', '), `Unrestricted ${targetIds.length} Student ID(s)`);
     } else if (action === 'unblock-all') {
       blockedUserIds = [];
+      await recordAdminAudit(env, request, 'UNBLOCK_ALL_USERS', 'ALL', `Cleared entire User ID restriction list`);
     }
     
     await env.ADMIN_KV.put('blocked_user_ids', JSON.stringify(blockedUserIds));
@@ -814,6 +890,7 @@ async function handleClearLogs(request, env) {
   if (!(await verifyAdminAuth(request, env))) return jsonResponse({ error: 'Unauthorized' }, 401, request);
   try {
     await env.ADMIN_KV.put('recent_logs', JSON.stringify([]));
+    await recordAdminAudit(env, request, 'PURGE_LOGS', 'recent_logs', 'Purged all real-time telemetry logs from KV');
     return jsonResponse({ success: true, recentLogs: [] }, 200, request);
   } catch(e) {
     return jsonResponse({ error: 'Server error' }, 500, request);
@@ -826,9 +903,11 @@ async function handleAdminConfig(request, env) {
     const data = await request.json();
     if(typeof data.siteClosureMode === 'boolean') {
       await env.ADMIN_KV.put('site_closure_mode', data.siteClosureMode ? 'true' : 'false');
+      await recordAdminAudit(env, request, 'SET_MAINTENANCE', `${data.siteClosureMode}`, `Site maintenance mode changed to: ${data.siteClosureMode ? 'ENABLED' : 'DISABLED'}`);
     }
     if(data.customNotice !== undefined) {
       await env.ADMIN_KV.put('custom_notice', JSON.stringify(data.customNotice));
+      await recordAdminAudit(env, request, 'UPDATE_NOTICE', 'custom_notice', 'Updated global site banner notices');
     }
     return jsonResponse({ success: true, siteClosureMode: data.siteClosureMode, customNotice: data.customNotice }, 200, request);
   } catch(e) {
@@ -910,6 +989,9 @@ export default {
     }
     if (url.pathname === '/api/admin/clear-logs' && request.method === 'POST') {
       return handleClearLogs(request, env);
+    }
+    if (url.pathname === '/api/admin/portal-ping' && request.method === 'GET') {
+      return handlePortalPing(request, env);
     }
 
     // Catch-all for undefined routes

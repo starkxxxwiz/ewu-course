@@ -49,7 +49,7 @@
             </a>
 
             <!-- Desktop Navigation -->
-            <ul class="nav-desktop">
+            <ul class="nav-desktop" style="align-items: center; gap: 1rem;">
                 <li><a href="index.html">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                             stroke-width="2">
@@ -65,6 +65,14 @@
                         </svg>
                         Courses
                     </a></li>
+                <!-- Version Switcher -->
+                <li>
+                    <a href="../advise.html" style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 20px; background: rgba(90, 143, 216, 0.15); border: 1px solid rgba(90, 143, 216, 0.35); color: #5a8fd8; font-size: 0.8rem; font-weight: 600; text-decoration: none; transition: all 0.2s;" title="Switch to V1 Classic Interface">
+                        <span style="width: 7px; height: 7px; border-radius: 50%; background: #5a8fd8;"></span>
+                        <span>Switch to V1</span>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                    </a>
+                </li>
                 <li><a href="#" onclick="handleLogout(); return false;" class="logout-link">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                             stroke-width="2">
@@ -99,6 +107,14 @@
                     <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
                 </svg>
                 Courses
+            </a>
+            <a href="../advise.html" style="color: #5a8fd8;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                    <polyline points="15 3 21 3 21 9"></polyline>
+                    <line x1="10" y1="14" x2="21" y2="3"></line>
+                </svg>
+                Switch to V1 Classic
             </a>
             <a href="#" onclick="handleLogout(); return false;" class="logout-link">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -347,13 +363,16 @@
             <!-- Stats Bar -->
             <div class="stats-bar"
                 style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
-                <span>
-                    <span>Showing:</span>
-                    <strong id="visible-count">0</strong>
-                    <span>/</span>
-                    <strong id="total-count">0</strong>
-                    <span>courses</span>
-                </span>
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                    <span>
+                        <span>Showing:</span>
+                        <strong id="visible-count">0</strong>
+                        <span>/</span>
+                        <strong id="total-count">0</strong>
+                        <span>courses</span>
+                    </span>
+                    <span id="search-latency-badge" style="font-size: 0.75rem; font-family: monospace; color: var(--accent-secondary); background: rgba(78,205,196,0.1); padding: 2px 8px; border-radius: 10px; border: 1px solid rgba(78,205,196,0.2);">Sub-ms Indexed</span>
+                </div>
                 <span id="page-info" style="font-size: 0.85rem; color: var(--text-secondary);">Page 1 of 1</span>
             </div>
 

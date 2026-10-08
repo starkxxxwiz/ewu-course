@@ -15,7 +15,7 @@ const CONFIG = {
     ],
     PORTAL_BASE_URL: 'https://portal.ewubd.edu',
     SESSION_COOKIE_NAME: 'ASP.NET_SessionId',
-    COOKIE_PATH: '/V2/api/',
+    COOKIE_PATH: '/',
     MAX_RETRIES: 3,
     TIMEOUT: 60000
 };
@@ -88,6 +88,14 @@ async function handleApiRequest(request, url) {
         
         if (path === '/V2/api/logout' && request.method === 'POST') {
             return await handleLogout(request);
+        }
+
+        if ((path === '/V2/api/auth/status' || path === '/V2/api/status') && request.method === 'GET') {
+            const sessionId = getSessionCookie(request);
+            return jsonResponse(request, {
+                loggedIn: !!sessionId,
+                status: sessionId ? 'success' : 'unauthorized'
+            }, 200);
         }
         
         if (path === '/V2/api/options' && request.method === 'GET') {

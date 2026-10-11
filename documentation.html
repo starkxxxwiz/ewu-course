@@ -1,27 +1,29 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Documentation - EWU Course Fetching</title>
-    
+    <title>User Guide & Features - EWU Course Fetching</title>
+
     <!-- Comprehensive SEO Tags -->
-    <meta name="description" content="Aftabkabir's EWU Course Fetching Documentation. Learn how to view and plan your East West University (EWU) course schedule efficiently.">
-    <meta name="keywords" content="aftabkabir, aftabkabiir me, aftab kabir, ewu course, ewu course schedule, ewu faculty, ewu faculty list, ewu department faculty list, East West University, EWU tool documentation">
+    <meta name="description" content="Official User Guide for EWU Course Fetching. Learn how to view recommended advising routines, explore department-wise course offerings, check seat availability, and export PDF schedules.">
+    <meta name="keywords" content="EWU Course Fetching guide, EWU advising guide, EWU course schedule, EWU department courses, EWU student portal helper">
     <meta name="author" content="Aftab Kabir">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://aftabkabir.me/documentation.html">
-    
+
     <!-- Open Graph for Social Media -->
-    <meta property="og:title" content="Documentation | EWU Course Fetching Tool by AftabKabir">
-    <meta property="og:description" content="Master the EWU Course Fetching tool. Access smart filters and view ewu faculty lists quickly.">
+    <meta property="og:title" content="User Guide & Features | EWU Course Fetching">
+    <meta property="og:description" content="Quick start guide and feature walkthrough for East West University students.">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://aftabkabir.me/documentation.html">
-    
+
     <!-- Twitter Cards -->
     <meta name="twitter:card" content="summary">
-    <meta name="twitter:title" content="Documentation | EWU Course Fetching Tool">
-    <meta name="twitter:description" content="Learn how to find and plan East West University courses.">
+    <meta name="twitter:title" content="User Guide & Features | EWU Course Fetching">
+    <meta name="twitter:description" content="Quick start guide and feature walkthrough for EWU students.">
+
     <link rel="icon" href="assets/images/ewu.png" type="image/png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -30,18 +32,25 @@
     <link rel="stylesheet" href="assets/css/styles.css">
 
     <script>
-    tailwind.config = {
-        theme: {
-            extend: {
-                colors: {
-                    ewu: {
-                        primary: '#D86C5A',
-                        dark: '#000000',
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        ewu: {
+                            primary: '#D86C5A',
+                            primaryHover: '#c5584a',
+                            dark: '#000000',
+                            accent: '#5a8fd8'
+                        }
+                    },
+                    fontFamily: {
+                        'sans': ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
+                        'mono': ['JetBrains Mono', 'monospace']
                     }
                 }
             }
         }
-    }
     </script>
 
     <style>
@@ -54,20 +63,21 @@
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             overflow-x: hidden;
+            background-color: #060609;
         }
 
-        /* Animated gradient background */
-        .hero-background {
+        /* Ambient background */
+        .doc-bg {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: linear-gradient(135deg, #000000 0%, #1a0a0a 25%, #0a0a0a 50%, #000000 100%);
+            background: linear-gradient(135deg, #000000 0%, #080a12 30%, #0d080b 70%, #000000 100%);
             z-index: -2;
         }
 
-        .hero-background::before {
+        .doc-bg::before {
             content: '';
             position: absolute;
             top: 0;
@@ -75,20 +85,9 @@
             width: 100%;
             height: 100%;
             background: 
-                radial-gradient(ellipse at 20% 30%, rgba(216, 108, 90, 0.15) 0%, transparent 50%),
-                radial-gradient(ellipse at 80% 70%, rgba(216, 108, 90, 0.1) 0%, transparent 50%);
-            animation: gradientShift 15s ease infinite;
-        }
-
-        .hero-background::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' /%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.03'/%3E%3C/svg%3E");
-            opacity: 0.4;
+                radial-gradient(ellipse at 15% 20%, rgba(216, 108, 90, 0.12) 0%, transparent 45%),
+                radial-gradient(ellipse at 85% 65%, rgba(90, 143, 216, 0.1) 0%, transparent 45%);
+            animation: gradientShift 20s ease infinite;
         }
 
         @keyframes gradientShift {
@@ -96,372 +95,347 @@
             50% { opacity: 0.8; }
         }
 
-        /* Navigation */
+        /* Navigation bar */
         .nav-glass {
-            background: rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border-bottom: 1px solid rgba(216, 108, 90, 0.1);
+            background: rgba(8, 8, 12, 0.75);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
         }
 
-        /* Feature cards */
-        .feature-card {
-            background: rgba(255, 255, 255, 0.03);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(216, 108, 90, 0.1);
-            border-radius: 16px;
+        /* Feature Guide Card */
+        .guide-card {
+            background: linear-gradient(145deg, rgba(22, 22, 34, 0.65) 0%, rgba(14, 14, 22, 0.8) 100%);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 20px;
             padding: 2rem;
-            transition: all 0.4s ease;
-        }
-
-        .feature-card:hover {
-            background: rgba(255, 255, 255, 0.05);
-            border-color: rgba(216, 108, 90, 0.3);
-            transform: translateY(-8px);
-            box-shadow: 0 16px 40px rgba(216, 108, 90, 0.2);
-        }
-
-        .feature-icon {
-            width: 60px;
-            height: 60px;
-            background: linear-gradient(135deg, rgba(216, 108, 90, 0.2), rgba(216, 108, 90, 0.1));
-            border-radius: 14px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 1.5rem;
+            box-shadow: 0 10px 35px rgba(0, 0, 0, 0.4);
             transition: all 0.3s ease;
         }
 
-        .feature-card:hover .feature-icon {
-            background: linear-gradient(135deg, rgba(216, 108, 90, 0.3), rgba(216, 108, 90, 0.15));
-            transform: rotate(5deg) scale(1.1);
+        .guide-card:hover {
+            border-color: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 14px 45px rgba(0, 0, 0, 0.5);
         }
 
-        /* Glossy button - matches site theme */
-        .btn-glossy {
-            position: relative;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            padding: 0.125rem;
-            overflow: hidden;
-            font-weight: 600;
+        /* Step circle */
+        .step-badge {
+            width: 36px;
+            height: 36px;
             border-radius: 12px;
-            background: linear-gradient(135deg, #D86C5A 0%, #c5584a 50%, #D86C5A 100%);
-            background-size: 200% auto;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            border: none;
-            cursor: pointer;
-            box-shadow: 0 6px 25px rgba(216, 108, 90, 0.5);
-            animation: shimmerDoc 3s ease-in-out infinite;
-        }
-
-        @keyframes shimmerDoc {
-            0%, 100% { background-position: 0% center; }
-            50% { background-position: 100% center; }
-        }
-
-        .btn-glossy:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 35px rgba(216, 108, 90, 0.7);
-        }
-
-        .btn-glossy-inner {
-            position: relative;
-            padding: 0.875rem 2.5rem;
-            transition: all 0.3s ease;
-            background: rgba(0, 0, 0, 0.85);
-            backdrop-filter: blur(10px);
-            border-radius: 11px;
-            color: white;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .btn-glossy:hover .btn-glossy-inner {
-            background: rgba(0, 0, 0, 0.3);
-        }
-
-        /* Fade in */
-        .fade-in {
-            opacity: 0;
-            animation: fadeIn 1s ease forwards;
-        }
-
-        @keyframes fadeIn {
-            to { opacity: 1; }
-        }
-
-        .fade-in.delay-1 { animation-delay: 0.2s; }
-        .fade-in.delay-2 { animation-delay: 0.4s; }
-
-        /* Step number */
-        .step-number {
-            width: 50px;
-            height: 50px;
-            background: linear-gradient(135deg, #D86C5A, #c5584a);
-            border-radius: 50%;
+            background: linear-gradient(135deg, rgba(216, 108, 90, 0.25), rgba(90, 143, 216, 0.25));
+            border: 1px solid rgba(255, 255, 255, 0.15);
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: 700;
-            font-size: 1.25rem;
+            font-size: 0.9rem;
             color: white;
             flex-shrink: 0;
-            box-shadow: 0 4px 15px rgba(216, 108, 90, 0.4);
+        }
+
+        /* High-fidelity primary button */
+        .btn-glow-primary {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 24px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #D86C5A 0%, #c5584a 50%, #D86C5A 100%);
+            background-size: 200% auto;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 20px rgba(216, 108, 90, 0.4);
+            text-decoration: none;
+        }
+
+        .btn-glow-primary:hover {
+            background-position: right center;
+            box-shadow: 0 6px 28px rgba(216, 108, 90, 0.6);
+            transform: translateY(-2px);
+            color: white;
+        }
+
+        .btn-glow-secondary {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 24px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #5a8fd8 0%, #4075c0 50%, #5a8fd8 100%);
+            background-size: 200% auto;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 20px rgba(90, 143, 216, 0.4);
+            text-decoration: none;
+        }
+
+        .btn-glow-secondary:hover {
+            background-position: right center;
+            box-shadow: 0 6px 28px rgba(90, 143, 216, 0.6);
+            transform: translateY(-2px);
+            color: white;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.4s ease forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
     </style>
 </head>
 
-<body class="min-h-screen text-white">
-    <!-- Animated background -->
-    <div class="hero-background"></div>
+<body class="min-h-screen text-white flex flex-col justify-between">
+    <!-- Ambient background -->
+    <div class="doc-bg"></div>
 
     <!-- Navigation -->
-    <nav class="nav-glass sticky top-0 z-50">
-        <div class="container mx-auto px-6 py-4">
-            <div class="flex justify-between items-center">
-                <a href="index.html" class="flex items-center gap-3 hover:opacity-80 transition-opacity" style="text-decoration: none;">
-                    <img src="assets/images/ewu.png" alt="EWU Logo" class="h-10 w-auto object-contain" style="animation: none; transition: none;">
-                    <span class="text-xl font-bold" style="animation: none; transition: none;">EWU Course Fetching</span>
-                </a>
-                <!-- Desktop Navigation -->
-                <div class="hidden md:flex gap-6 items-center">
-                    <a href="index.html" class="text-gray-300 hover:text-white transition-colors">Home</a>
-                    <a href="documentation.html" class="text-[#D86C5A] font-medium hover:text-white transition-colors">Documentation</a>
-                    <a href="learn-more.html" class="text-gray-300 hover:text-white transition-colors">Learn More</a>
-                    <a href="login.html" class="px-4 py-2 rounded-lg bg-[#D86C5A]/10 border border-[#D86C5A]/30 text-[#D86C5A] hover:bg-[#D86C5A]/20 transition-all">Login</a>
-                </div>
-                <!-- Mobile Menu Button -->
-                <button id="mobileMenuBtn" class="md:hidden text-white p-1.5 focus:outline-none" aria-label="Toggle Navigation">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
-                </button>
-            </div>
-            <!-- Mobile Menu -->
-            <div id="mobileMenu" class="hidden md:hidden mt-4 pb-4 space-y-3">
-                <a href="index.html" class="block text-gray-300 hover:text-white transition-colors py-2">Home</a>
-                <a href="documentation.html" class="block text-[#D86C5A] font-medium hover:text-white transition-colors py-2">Documentation</a>
-                <a href="learn-more.html" class="block text-gray-300 hover:text-white transition-colors py-2">Learn More</a>
-                <a href="login.html" class="block text-gray-300 hover:text-white transition-colors py-2">Login</a>
-            </div>
-        </div>
-    </nav>
+    <header>
+        <nav class="nav-glass sticky top-0 z-50">
+            <div class="container mx-auto px-4 sm:px-6 py-3.5">
+                <div class="flex justify-between items-center">
+                    <!-- Brand -->
+                    <a href="index.html" class="flex items-center gap-3 hover:opacity-90 transition-opacity" style="text-decoration: none;">
+                        <img src="assets/images/ewu.png" alt="EWU Logo" class="h-9 sm:h-10 w-auto object-contain">
+                        <div class="flex flex-col">
+                            <span class="text-base sm:text-lg font-bold text-white tracking-tight">EWU Course Fetching</span>
+                            <span class="text-[10px] text-[#5a8fd8] font-mono hidden sm:inline-block">User Guide</span>
+                        </div>
+                    </a>
 
-    <!-- Header Section -->
-    <section class="py-16 px-6">
-        <div class="container mx-auto max-w-5xl text-center fade-in">
-            <h1 class="text-5xl md:text-6xl font-bold mb-4">
-                <span style="background: linear-gradient(135deg, #ffffff 0%, #D86C5A 50%, #ffffff 100%); background-size: 200% auto; -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
-                    Documentation
-                </span>
+                    <!-- Desktop Navigation Links -->
+                    <div class="hidden md:flex gap-4 items-center">
+                        <a href="index.html" class="text-xs text-gray-300 hover:text-white transition-colors">Home</a>
+                        <a href="dashboard.html" class="text-xs text-gray-300 hover:text-white transition-colors">Dashboard</a>
+                        <a href="advise.html" class="text-xs text-gray-300 hover:text-white transition-colors">Recommended</a>
+                        <a href="department-courses.html" class="text-xs text-gray-300 hover:text-white transition-colors">Department Courses</a>
+                        <a href="documentation.html" class="text-xs text-[#D86C5A] font-semibold">User Guide</a>
+                        <a href="login.html" class="px-3.5 py-1.5 rounded-lg bg-[#D86C5A]/15 border border-[#D86C5A]/30 text-[#D86C5A] hover:bg-[#D86C5A]/25 text-xs font-semibold transition-all">Sign In</a>
+                    </div>
+
+                    <!-- Mobile Menu Button -->
+                    <button id="mobileMenuBtn" class="md:hidden text-white p-1.5 focus:outline-none" aria-label="Toggle navigation">
+                        <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+                    </button>
+                </div>
+
+                <!-- Mobile Menu Dropdown -->
+                <div id="mobileMenu" class="hidden md:hidden mt-3 pt-3 border-t border-white/[0.08] space-y-2">
+                    <a href="index.html" class="block py-1.5 text-xs text-gray-300">Home</a>
+                    <a href="dashboard.html" class="block py-1.5 text-xs text-gray-300">Dashboard</a>
+                    <a href="advise.html" class="block py-1.5 text-xs text-gray-300">Recommended Routine</a>
+                    <a href="department-courses.html" class="block py-1.5 text-xs text-gray-300">Department Courses</a>
+                    <a href="login.html" class="block py-1.5 text-xs text-[#D86C5A] font-semibold">Sign In</a>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 sm:px-6 py-8 sm:py-12 max-w-5xl flex-grow space-y-8">
+        <!-- Title Banner -->
+        <div class="text-center sm:text-left border-b border-white/[0.06] pb-6 fade-in">
+            <h1 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+                Features & User Guide
             </h1>
-            <p class="text-gray-300 text-xl">
-                Everything you need to know
+            <p class="text-gray-400 text-sm sm:text-base mt-1.5 max-w-2xl">
+                Learn how to quickly search course offerings, check seat availability, and organize your academic schedule.
             </p>
         </div>
-    </section>
 
-    <!-- Quick Start -->
-    <section class="py-12 px-6">
-        <div class="container mx-auto max-w-5xl">
-            <div class="feature-card fade-in">
-                <h2 class="text-3xl font-bold mb-8 text-center flex items-center justify-center gap-3">
-                    <svg class="w-8 h-8 text-[#D86C5A] inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                    <span>Quick Start</span>
-                </h2>
-                
-                <div class="space-y-6">
-                    <div class="flex gap-4 items-start">
-                        <div class="step-number">1</div>
-                        <div class="flex-1">
-                            <h3 class="text-xl font-bold mb-2">Login</h3>
-                            <p class="text-gray-300">Use your EWU portal credentials</p>
-                        </div>
-                    </div>
-
-                    <div class="flex gap-4 items-start">
-                        <div class="step-number">2</div>
-                        <div class="flex-1">
-                            <h3 class="text-xl font-bold mb-2">Browse</h3>
-                            <p class="text-gray-300">All courses load automatically</p>
-                        </div>
-                    </div>
-
-                    <div class="flex gap-4 items-start">
-                        <div class="step-number">3</div>
-                        <div class="flex-1">
-                            <h3 class="text-xl font-bold mb-2">Filter & Search</h3>
-                            <p class="text-gray-300">Find courses quickly with smart filters</p>
-                        </div>
-                    </div>
-
-                    <div class="flex gap-4 items-start">
-                        <div class="step-number">4</div>
-                        <div class="flex-1">
-                            <h3 class="text-xl font-bold mb-2">Export</h3>
-                            <p class="text-gray-300">Download schedules as PDF</p>
-                        </div>
-                    </div>
+        <!-- Quick Access Banner -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 fade-in">
+            <a href="advise.html" class="guide-card p-5 flex items-center justify-between group hover:border-[#D86C5A]/40 transition-all text-decoration-none">
+                <div>
+                    <span class="text-xs font-mono text-[#D86C5A] uppercase tracking-wider font-semibold">Feature 1</span>
+                    <h3 class="text-base font-bold text-white group-hover:text-[#D86C5A] transition-colors">Recommended Courses</h3>
+                    <p class="text-xs text-gray-400 mt-1">View personal advising routine & live seats</p>
                 </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Features -->
-    <section class="py-12 px-6">
-        <div class="container mx-auto max-w-6xl">
-            <h2 class="text-3xl font-bold mb-12 text-center flex items-center justify-center gap-3">
-                <svg class="w-8 h-8 text-[#D86C5A] inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/></svg>
-                <span>Key Features</span>
-            </h2>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <svg class="w-7 h-7 text-[#D86C5A]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                    </div>
-                    <h3 class="text-xl font-bold mb-3">Smart Search</h3>
-                    <p class="text-gray-400">Search by course, faculty, room, or time</p>
+                <div class="w-9 h-9 rounded-xl bg-[#D86C5A]/15 border border-[#D86C5A]/30 flex items-center justify-center text-[#D86C5A] group-hover:translate-x-1 transition-transform">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
                 </div>
+            </a>
 
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <svg class="w-7 h-7 text-[#D86C5A]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
-                    </div>
-                    <h3 class="text-xl font-bold mb-3">Filters</h3>
-                    <p class="text-gray-400">Filter by availability and course code</p>
+            <a href="department-courses.html" class="guide-card p-5 flex items-center justify-between group hover:border-[#5a8fd8]/40 transition-all text-decoration-none">
+                <div>
+                    <span class="text-xs font-mono text-[#5a8fd8] uppercase tracking-wider font-semibold">Feature 2</span>
+                    <h3 class="text-base font-bold text-white group-hover:text-[#5a8fd8] transition-colors">Department-Wise Courses</h3>
+                    <p class="text-xs text-gray-400 mt-1">Search all departments & semester offerings</p>
                 </div>
-
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <svg class="w-7 h-7 text-[#D86C5A]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-                    </div>
-                    <h3 class="text-xl font-bold mb-3">Auto Retry</h3>
-                    <p class="text-gray-400">Never fails during registration rush</p>
+                <div class="w-9 h-9 rounded-xl bg-[#5a8fd8]/15 border border-[#5a8fd8]/30 flex items-center justify-center text-[#5a8fd8] group-hover:translate-x-1 transition-transform">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
                 </div>
-
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <svg class="w-7 h-7 text-[#D86C5A]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                    </div>
-                    <h3 class="text-xl font-bold mb-3">PDF Export</h3>
-                    <p class="text-gray-400">Download formatted schedules</p>
-                </div>
-
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <svg class="w-7 h-7 text-[#D86C5A]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"/></svg>
-                    </div>
-                    <h3 class="text-xl font-bold mb-3">Sorting</h3>
-                    <p class="text-gray-400">Sort by faculty name or availability</p>
-                </div>
-
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <svg class="w-7 h-7 text-[#D86C5A]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
-                    </div>
-                    <h3 class="text-xl font-bold mb-3">Responsive</h3>
-                    <p class="text-gray-400">Works on all devices</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Security -->
-    <section class="py-12 px-6">
-        <div class="container mx-auto max-w-5xl">
-            <div class="feature-card">
-                <h2 class="text-3xl font-bold mb-8 text-center flex items-center justify-center gap-3">
-                    <svg class="w-8 h-8 text-green-400 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
-                    <span>Security & Privacy</span>
-                </h2>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="p-6 bg-green-500/10 border border-green-500/30 rounded-xl">
-                        <svg class="w-8 h-8 text-green-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-                        <h3 class="text-xl font-bold mb-2 text-green-300">No Credentials Stored</h3>
-                        <p class="text-gray-300">Your password is never saved. Authentication goes through EWU portal.</p>
-                    </div>
-
-                    <div class="p-6 bg-blue-500/10 border border-blue-500/30 rounded-xl">
-                        <svg class="w-8 h-8 text-blue-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2 1.5 3 3.5 3h9c2 0 3.5-1 3.5-3V7M4 7c0-2 1.5-3 3.5-3h9c2 0 3.5 1 3.5 3M4 7c0 2 1.5 3 3.5 3h9c2 0 3.5-1 3.5-3m-16 5c0 2 1.5 3 3.5 3h9c2 0 3.5-1 3.5-3"/></svg>
-                        <h3 class="text-xl font-bold mb-2 text-blue-300">Real-Time Data</h3>
-                        <p class="text-gray-300">All course data comes directly from EWU portal servers.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Important Notice -->
-    <section class="py-12 px-6">
-        <div class="container mx-auto max-w-5xl">
-            <div class="p-8 bg-yellow-500/10 border border-yellow-500/30 rounded-2xl">
-                <div class="flex items-start gap-4">
-                    <svg class="w-8 h-8 text-yellow-400 flex-shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-                    <div>
-                        <h3 class="text-2xl font-bold mb-3 text-yellow-300">Important Notice</h3>
-                        <p class="text-gray-300 mb-4">
-                            This is an <strong>educational project</strong>. Not an official EWU system.
-                        </p>
-                        <ul class="space-y-2 text-gray-300">
-                            <li class="flex items-start gap-2">
-                                <svg class="w-4 h-4 text-yellow-400 mt-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                                <span>Use your own credentials only</span>
-                            </li>
-                            <li class="flex items-start gap-2">
-                                <svg class="w-4 h-4 text-yellow-400 mt-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                                <span>Verify information through official channels</span>
-                            </li>
-                            <li class="flex items-start gap-2">
-                                <svg class="w-4 h-4 text-yellow-400 mt-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                                <span>Use responsibly</span>
-                            </li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- CTA -->
-    <section class="py-16 px-6">
-        <div class="container mx-auto max-w-4xl text-center">
-            <h2 class="text-4xl font-bold mb-6">Ready to Get Started?</h2>
-            <p class="text-gray-300 text-lg mb-8">
-                Access your courses now
-            </p>
-            <a href="login.html" class="btn-glossy">
-                <span class="btn-glossy-inner">
-                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/></svg>
-                    Login Now
-                </span>
             </a>
         </div>
-    </section>
 
-    <!-- Footer -->
-    <footer class="border-t border-[#D86C5A]/20 py-8 mt-20">
-        <div class="container mx-auto px-6 text-center text-gray-400 text-sm">
-            <div class="mb-6 p-4 rounded-lg bg-[#ffffff]/5 border border-[#D86C5A]/20 max-w-3xl mx-auto inline-block">
-                <p class="mb-3 text-xs md:text-sm text-gray-300">
-                    This website is created for educational purposes only. It has no official connection with East West University (EWU). If any authority requests content removal, please contact us.
-                </p>
-                <a href="mailto:contact.aftabkabir@proton.me" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-md bg-[#D86C5A]/10 border border-[#D86C5A]/30 text-[#D86C5A] hover:bg-[#D86C5A]/20 transition-all text-xs">
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
-                    <span>Contact</span>
+        <!-- Section 1: How to use Recommended Courses -->
+        <section class="guide-card space-y-4 fade-in">
+            <div class="flex items-center gap-3">
+                <div class="step-badge text-[#D86C5A]">1</div>
+                <div>
+                    <h2 class="text-xl font-bold text-white tracking-tight">How to Use: Recommended Courses</h2>
+                    <p class="text-xs text-gray-400">Your personalized advising schedule and section capacity tracker</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-2">
+                <div class="p-4 rounded-xl bg-black/40 border border-white/[0.06] space-y-1.5">
+                    <h4 class="text-xs font-bold text-[#D86C5A] uppercase tracking-wider">1. Real-Time Seat Status</h4>
+                    <p class="text-xs text-gray-300 leading-relaxed">
+                        Instantly see how many seats are taken vs available. Color-coded badges highlight whether sections are open, limited (5 or fewer left), or full.
+                    </p>
+                </div>
+
+                <div class="p-4 rounded-xl bg-black/40 border border-white/[0.06] space-y-1.5">
+                    <h4 class="text-xs font-bold text-[#D86C5A] uppercase tracking-wider">2. Multi-Field Filter & Search</h4>
+                    <p class="text-xs text-gray-300 leading-relaxed">
+                        Type any course code, faculty initials, classroom number, or time slot to instantly narrow down your recommended routine.
+                    </p>
+                </div>
+
+                <div class="p-4 rounded-xl bg-black/40 border border-white/[0.06] space-y-1.5">
+                    <h4 class="text-xs font-bold text-[#D86C5A] uppercase tracking-wider">3. 1-Click PDF Schedule Export</h4>
+                    <p class="text-xs text-gray-300 leading-relaxed">
+                        Click <strong>Export PDF</strong> to download a landscape printable timetable containing course codes, faculty names, rooms, and class times.
+                    </p>
+                </div>
+
+                <div class="p-4 rounded-xl bg-black/40 border border-white/[0.06] space-y-1.5">
+                    <h4 class="text-xs font-bold text-[#D86C5A] uppercase tracking-wider">4. Available Only Mode</h4>
+                    <p class="text-xs text-gray-300 leading-relaxed">
+                        Toggle the <strong>Available Only</strong> switch to hide full sections and focus exclusively on open slots during advising.
+                    </p>
+                </div>
+            </div>
+
+            <div class="pt-2">
+                <a href="advise.html" class="btn-glow-primary">
+                    <span>Open Recommended Courses</span>
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
                 </a>
             </div>
-            <p>&copy; <span id="current-year"></span> East West University. Educational use only.</p>
+        </section>
+
+        <!-- Section 2: How to use Department-Wise Course Fetch -->
+        <section class="guide-card space-y-4 fade-in">
+            <div class="flex items-center gap-3">
+                <div class="step-badge text-[#5a8fd8]">2</div>
+                <div>
+                    <h2 class="text-xl font-bold text-white tracking-tight">How to Use: Department-Wise Course Fetch</h2>
+                    <p class="text-xs text-gray-400">Search and filter across all university departments and semesters</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-2">
+                <div class="p-4 rounded-xl bg-black/40 border border-white/[0.06] space-y-1.5">
+                    <h4 class="text-xs font-bold text-[#5a8fd8] uppercase tracking-wider">1. Multi-Department Selection</h4>
+                    <p class="text-xs text-gray-300 leading-relaxed">
+                        Select one, several, or all departments simultaneously using the checkboxes or quick search bar.
+                    </p>
+                </div>
+
+                <div class="p-4 rounded-xl bg-black/40 border border-white/[0.06] space-y-1.5">
+                    <h4 class="text-xs font-bold text-[#5a8fd8] uppercase tracking-wider">2. Choose Academic Semester</h4>
+                    <p class="text-xs text-gray-300 leading-relaxed">
+                        Select your desired semester from the dropdown to load official course listings and time schedules.
+                    </p>
+                </div>
+
+                <div class="p-4 rounded-xl bg-black/40 border border-white/[0.06] space-y-1.5">
+                    <h4 class="text-xs font-bold text-[#5a8fd8] uppercase tracking-wider">3. Dynamic Department Toggle</h4>
+                    <p class="text-xs text-gray-300 leading-relaxed">
+                        Inside the course explorer, open <strong>Manage Departments</strong> to toggle departments on or off without reloading the entire page.
+                    </p>
+                </div>
+
+                <div class="p-4 rounded-xl bg-black/40 border border-white/[0.06] space-y-1.5">
+                    <h4 class="text-xs font-bold text-[#5a8fd8] uppercase tracking-wider">4. Sorting & Pagination</h4>
+                    <p class="text-xs text-gray-300 leading-relaxed">
+                        Sort by course code, most seats remaining, or class time slot. Choose page sizes from 25 to All entries.
+                    </p>
+                </div>
+            </div>
+
+            <div class="pt-2">
+                <a href="department-courses.html" class="btn-glow-secondary">
+                    <span>Explore Department Courses</span>
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                </a>
+            </div>
+        </section>
+
+        <!-- Section 3: Automatic Busy-Portal Retry -->
+        <section class="guide-card space-y-4 fade-in">
+            <div class="flex items-center gap-3">
+                <div class="step-badge text-emerald-400">3</div>
+                <div>
+                    <h2 class="text-xl font-bold text-white tracking-tight">Auto-Retry During Advising Rush</h2>
+                    <p class="text-xs text-gray-400">No manual refreshes needed when the university portal is busy</p>
+                </div>
+            </div>
+
+            <p class="text-xs sm:text-sm text-gray-300 leading-relaxed">
+                When thousands of students log in at the same time, university servers often return busy or temporary timeout responses. This website includes an automated retry system:
+            </p>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs pt-1">
+                <div class="p-3.5 rounded-xl bg-black/30 border border-white/[0.04]">
+                    <strong class="text-emerald-400 block mb-1">Zero Page Refreshes</strong>
+                    <span class="text-gray-400">Keeps your filters and inputs active while attempting next connections in the background.</span>
+                </div>
+                <div class="p-3.5 rounded-xl bg-black/30 border border-white/[0.04]">
+                    <strong class="text-emerald-400 block mb-1">Live Retry Counter</strong>
+                    <span class="text-gray-400">Shows clear status feedback with retry attempt count and elapsed seconds.</span>
+                </div>
+                <div class="p-3.5 rounded-xl bg-black/30 border border-white/[0.04]">
+                    <strong class="text-emerald-400 block mb-1">Instant Fail-Safe</strong>
+                    <span class="text-gray-400">If student ID or password is incorrect, retry stops immediately to notify you.</span>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="mt-12 border-t border-white/[0.06] bg-black/40 py-6 text-center">
+        <div class="container mx-auto px-6 max-w-4xl">
+            <div class="flex items-center justify-center gap-3 text-xs text-gray-500">
+                <span>&copy; <span id="dynamicYear">2026</span> EWU Course Fetching</span>
+                <span>•</span>
+                <a href="mailto:contact.aftabkabir@proton.me" class="text-gray-400 hover:text-[#5a8fd8] transition-colors">Contact Support</a>
+            </div>
         </div>
     </footer>
 
-    <script>
-        document.getElementById('current-year').textContent = new Date().getFullYear();
-    </script>
+    <!-- Scripts -->
     <script src="assets/js/system-metrics.js" defer></script>
-    <script src="assets/js/main.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const year = document.getElementById('dynamicYear');
+            if (year) year.textContent = new Date().getFullYear();
+
+            const mobBtn = document.getElementById('mobileMenuBtn');
+            const mobMenu = document.getElementById('mobileMenu');
+            if (mobBtn && mobMenu) {
+                mobBtn.addEventListener('click', () => mobMenu.classList.toggle('hidden'));
+            }
+        });
+    </script>
 </body>
 </html>

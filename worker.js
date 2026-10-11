@@ -21,7 +21,7 @@ function getCorsHeaders(request) {
       'Access-Control-Allow-Origin': origin,
       'Access-Control-Allow-Credentials': 'true',
       'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Cookie, Authorization',
+      'Access-Control-Allow-Headers': 'Content-Type, Cookie, Authorization, X-Requested-With',
       'Access-Control-Max-Age': '86400',
     };
   }
@@ -393,6 +393,164 @@ async function handleGetCourses(request) {
     return jsonResponse({
       success: false,
       error: 'Failed to fetch courses'
+    }, 500, request);
+  }
+}
+
+// ===== ENDPOINT: GET /api/options or /api/department-options =====
+async function handleGetDepartmentOptions(request) {
+  const cookieHeader = request.headers.get('Cookie');
+  const sessionId = getCookieValue(cookieHeader, 'ASP.NET_SessionId');
+
+  if (!sessionId) {
+    return jsonResponse({
+      status: 'error',
+      message: 'Unauthorized. Please log in first.'
+    }, 401, request);
+  }
+
+  const cookieString = `ASP.NET_SessionId=${sessionId}; perf_dv6Tr4n=1`;
+  const headers = {
+    'accept': 'application/json, text/plain, */*',
+    'accept-language': 'en-US,en;q=0.9',
+    'referer': 'https://portal.ewubd.edu/Home/OfferedCoursesStudent',
+    'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+    'cookie': cookieString
+  };
+
+  try {
+    const deptPromise = fetch(`${PORTAL_URL}/api/utility/GetAllAcademicDepartments`, { headers });
+    const semPromise = fetch(`${PORTAL_URL}/api/utility/GetSemesterForDropDown`, { headers });
+
+    const [deptRes, semRes] = await Promise.all([deptPromise, semPromise]);
+
+    if (deptRes.status === 401 || deptRes.status === 403 || semRes.status === 401 || semRes.status === 403) {
+      return jsonResponse({
+        status: 'error',
+        message: 'Session expired'
+      }, 401, request);
+    }
+
+    if (!deptRes.ok || !semRes.ok) {
+      throw new Error('Failed to fetch department/semester options from portal');
+    }
+
+    const departments = await deptRes.json();
+    const semesters = await semRes.json();
+
+    return jsonResponse({
+      status: 'success',
+      message: 'Options fetched successfully',
+      departments: Array.isArray(departments) ? departments.map(dept => ({
+        AcademicDepartmentId: dept.AcademicDepartmentId || '',
+        AcademicDepartmentName: dept.AcademicDepartmentName || 'Unknown'
+      })) : [],
+      semesters: Array.isArray(semesters) ? semesters.map(sem => ({
+        SemesterId: sem.SemesterId || '',
+        SemesterName: sem.SemesterName || 'Unknown'
+      })) : []
+    }, 200, request);
+  } catch (error) {
+    console.error('handleGetDepartmentOptions error:', error);
+    return jsonResponse({
+      status: 'error',
+      message: error.message || 'Failed to fetch options'
+    }, 500, request);
+  }
+}
+
+// ===== ENDPOINT: POST or GET /api/department-courses =====
+async function handleGetDepartmentCourses(request) {
+  const cookieHeader = request.headers.get('Cookie');
+  const sessionId = getCookieValue(cookieHeader, 'ASP.NET_SessionId');
+
+  if (!sessionId) {
+    return jsonResponse({
+      status: 'error',
+      message: 'Unauthorized. Please log in first.'
+    }, 401, request);
+  }
+
+  let departmentId, semesterId;
+  if (request.method === 'POST') {
+    try {
+      const body = await request.json();
+      departmentId = body.departmentId;
+      semesterId = body.semesterId;
+    } catch (e) {}
+  } else {
+    const url = new URL(request.url);
+    departmentId = url.searchParams.get('deptid') || url.searchParams.get('departmentId');
+    semesterId = url.searchParams.get('semesterid') || url.searchParams.get('semesterId');
+  }
+
+  if (!departmentId || !semesterId) {
+    return jsonResponse({
+      status: 'error',
+      message: 'Department ID and Semester ID are required'
+    }, 400, request);
+  }
+
+  const cookieString = `ASP.NET_SessionId=${sessionId}; perf_dv6Tr4n=1`;
+  const headers = {
+    'accept': 'application/json, text/plain, */*',
+    'accept-language': 'en-US,en;q=0.9',
+    'referer': 'https://portal.ewubd.edu/Home/OfferedCoursesStudent',
+    'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+    'cookie': cookieString
+  };
+
+  try {
+    const apiUrl = `${PORTAL_URL}/api/utility/GetAllOfferedCoursesBySemAndDept?deptid=${encodeURIComponent(departmentId)}&semesterid=${encodeURIComponent(semesterId)}`;
+    const response = await fetch(apiUrl, { headers });
+
+    if (response.status === 401 || response.status === 403) {
+      return jsonResponse({
+        status: 'error',
+        message: 'Session expired'
+      }, 401, request);
+    }
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch courses. Status: ${response.status}`);
+    }
+
+    const courses = await response.json();
+    const rawList = Array.isArray(courses) ? courses : [];
+
+    const formattedCourses = rawList.map(course => {
+      const seatCapacity = typeof course.SeatCapacity === 'number' ? course.SeatCapacity : (parseInt(course.SeatCapacity) || 0);
+      const seatTaken = typeof course.SeatTaken === 'number' ? course.SeatTaken : (parseInt(course.SeatTaken) || 0);
+      const seatsLeft = Math.max(0, seatCapacity - seatTaken);
+
+      return {
+        CourseCode: course.CourseCode || 'N/A',
+        Section: course.SectionName || 'N/A',
+        SectionName: course.SectionName || 'N/A',
+        ShortName: course.ShortName || 'N/A',
+        SeatCapacity: seatCapacity,
+        SeatTaken: seatTaken,
+        SeatsLeft: seatsLeft,
+        Schedule: course.TimeSlotName || 'N/A',
+        TimeSlotName: course.TimeSlotName || 'N/A',
+        RoomName: course.RoomName || 'N/A',
+        RoomCode: course.RoomCode || '',
+        CreditHour: typeof course.CreditHour === 'number' ? course.CreditHour : (parseInt(course.CreditHour) || 0),
+        RoutineId: course.RoutineId !== undefined ? course.RoutineId : null,
+        SectionId: course.SectionId !== undefined ? course.SectionId : null,
+        TimeSlotId: course.TimeSlotId !== undefined ? course.TimeSlotId : null
+      };
+    });
+
+    return jsonResponse({
+      status: 'success',
+      courses: formattedCourses
+    }, 200, request);
+  } catch (error) {
+    console.error('handleGetDepartmentCourses error:', error);
+    return jsonResponse({
+      status: 'error',
+      message: error.message || 'Failed to fetch department courses'
     }, 500, request);
   }
 }
@@ -963,6 +1121,14 @@ export default {
 
     if (url.pathname === '/api/courses' && request.method === 'GET') {
       return handleGetCourses(request);
+    }
+
+    if ((url.pathname === '/api/options' || url.pathname === '/api/department-options') && request.method === 'GET') {
+      return handleGetDepartmentOptions(request);
+    }
+
+    if ((url.pathname === '/api/department-courses' || (url.pathname === '/api/courses' && request.method === 'POST')) && (request.method === 'POST' || request.method === 'GET')) {
+      return handleGetDepartmentCourses(request);
     }
 
     // Admin & Status routes

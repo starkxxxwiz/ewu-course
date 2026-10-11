@@ -148,7 +148,7 @@ document.getElementById('loginForm')?.addEventListener('submit', async function(
                 if (btnIconWrapper) btnIconWrapper.innerHTML = checkIcon;
                 btnText.textContent = 'Redirecting...';
                 setTimeout(() => {
-                    window.location.href = 'advise.html';
+                    window.location.href = 'dashboard.html';
                 }, 800);
             },
             onInvalidCredentials: (result) => {

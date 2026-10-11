@@ -144,6 +144,13 @@ document.getElementById('loginForm')?.addEventListener('submit', async function(
             operationName: 'Login',
             retryDelay: 1000,
             onSuccess: (result) => {
+                const sId = (result?.data?.userId && result.data.userId !== 'User') ? result.data.userId : username;
+                try {
+                    localStorage.setItem('studentId', sId);
+                    localStorage.setItem('ewu_student_id', sId);
+                } catch (e) {
+                    console.warn('Unable to persist student ID:', e);
+                }
                 showAlert('Login successful! Redirecting...', 'success');
                 if (btnIconWrapper) btnIconWrapper.innerHTML = checkIcon;
                 btnText.textContent = 'Redirecting...';

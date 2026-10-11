@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student Dashboard - EWU Course Fetching</title>
+    <title>Academic Dashboard - EWU Course Fetching</title>
 
     <!-- Comprehensive SEO Tags -->
     <meta name="description" content="EWU Student Dashboard. Access your recommended courses, browse department-wise course schedules, check seat availability, and explore upcoming academic planning tools.">
@@ -14,14 +14,14 @@
     <link rel="canonical" href="https://aftabkabir.me/dashboard.html">
 
     <!-- Open Graph for Social Media -->
-    <meta property="og:title" content="Student Dashboard | EWU Course Fetching">
+    <meta property="og:title" content="Academic Dashboard | EWU Course Fetching">
     <meta property="og:description" content="Central academic dashboard for East West University students. Access advising routines and department-wise course offerings.">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://aftabkabir.me/dashboard.html">
 
     <!-- Twitter Cards -->
     <meta name="twitter:card" content="summary">
-    <meta name="twitter:title" content="Student Dashboard | EWU Course Fetching">
+    <meta name="twitter:title" content="Academic Dashboard | EWU Course Fetching">
     <meta name="twitter:description" content="Central academic dashboard for East West University students.">
 
     <link rel="icon" href="assets/images/ewu.png" type="image/png">
@@ -109,19 +109,19 @@
 
         /* Navigation bar */
         .nav-glass {
-            background: rgba(8, 8, 12, 0.75);
+            background: rgba(8, 8, 12, 0.82);
             backdrop-filter: blur(24px);
             -webkit-backdrop-filter: blur(24px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.07);
         }
 
         /* Active feature cards with refined glow and hover depth */
         .feature-card-active {
             position: relative;
-            background: linear-gradient(145deg, rgba(22, 22, 32, 0.7) 0%, rgba(14, 14, 20, 0.8) 100%);
+            background: linear-gradient(145deg, rgba(22, 22, 32, 0.75) 0%, rgba(14, 14, 20, 0.85) 100%);
             backdrop-filter: blur(30px);
             -webkit-backdrop-filter: blur(30px);
-            border: 1px solid rgba(216, 108, 90, 0.22);
+            border: 1px solid rgba(216, 108, 90, 0.25);
             border-radius: 20px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.03) inset;
             transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
@@ -138,16 +138,16 @@
             left: 0;
             right: 0;
             height: 3px;
-            background: linear-gradient(90deg, #D86C5A 0%, #5a8fd8 100%);
-            opacity: 0.8;
+            background: linear-gradient(90deg, #D86C5A 0%, #f472b6 100%);
+            opacity: 0.85;
             transition: opacity 0.3s ease;
         }
 
         .feature-card-active:hover {
-            transform: translateY(-6px);
-            border-color: rgba(216, 108, 90, 0.5);
+            transform: translateY(-5px);
+            border-color: rgba(216, 108, 90, 0.55);
             box-shadow: 
-                0 20px 45px rgba(216, 108, 90, 0.2),
+                0 20px 45px rgba(216, 108, 90, 0.22),
                 0 0 35px rgba(216, 108, 90, 0.15),
                 0 0 0 1px rgba(216, 108, 90, 0.3) inset;
         }
@@ -157,27 +157,43 @@
             height: 4px;
         }
 
+        .feature-card-active.feature-card-active-blue {
+            border-color: rgba(90, 143, 216, 0.25);
+        }
+
+        .feature-card-active.feature-card-active-blue::before {
+            background: linear-gradient(90deg, #5a8fd8 0%, #38bdf8 100%);
+        }
+
+        .feature-card-active.feature-card-active-blue:hover {
+            border-color: rgba(90, 143, 216, 0.55);
+            box-shadow: 
+                0 20px 45px rgba(90, 143, 216, 0.22),
+                0 0 35px rgba(90, 143, 216, 0.15),
+                0 0 0 1px rgba(90, 143, 216, 0.3) inset;
+        }
+
         /* Coming Soon / Locked feature cards */
         .feature-card-locked {
             position: relative;
-            background: linear-gradient(145deg, rgba(16, 16, 24, 0.45) 0%, rgba(10, 10, 16, 0.55) 100%);
+            background: linear-gradient(145deg, rgba(16, 16, 24, 0.5) 0%, rgba(10, 10, 16, 0.65) 100%);
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
-            border: 1px dashed rgba(255, 255, 255, 0.08);
-            border-radius: 20px;
-            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 18px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             overflow: hidden;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            opacity: 0.78;
+            min-height: 200px;
         }
 
         .feature-card-locked:hover {
-            opacity: 0.95;
-            border-color: rgba(255, 255, 255, 0.18);
-            background: linear-gradient(145deg, rgba(20, 20, 30, 0.55) 0%, rgba(14, 14, 22, 0.65) 100%);
-            transform: translateY(-2px);
+            border-color: rgba(255, 255, 255, 0.2);
+            background: linear-gradient(145deg, rgba(22, 22, 34, 0.65) 0%, rgba(15, 15, 24, 0.75) 100%);
+            transform: translateY(-4px);
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.4), 0 0 20px rgba(255, 255, 255, 0.03);
         }
 
         /* Feature Icon Container */
@@ -196,20 +212,31 @@
 
         .feature-card-active:hover .icon-box-active {
             background: linear-gradient(135deg, rgba(216, 108, 90, 0.35) 0%, rgba(216, 108, 90, 0.15) 100%);
-            transform: scale(1.08) rotate(3deg);
+            transform: scale(1.06) rotate(2deg);
             border-color: rgba(216, 108, 90, 0.6);
         }
 
+        .icon-box-active-blue {
+            background: linear-gradient(135deg, rgba(90, 143, 216, 0.2) 0%, rgba(90, 143, 216, 0.05) 100%) !important;
+            border-color: rgba(90, 143, 216, 0.35) !important;
+            color: #5a8fd8 !important;
+        }
+
+        .feature-card-active-blue:hover .icon-box-active-blue {
+            background: linear-gradient(135deg, rgba(90, 143, 216, 0.35) 0%, rgba(90, 143, 216, 0.15) 100%) !important;
+            border-color: rgba(90, 143, 216, 0.6) !important;
+        }
+
         .icon-box-locked {
-            width: 48px;
-            height: 48px;
-            border-radius: 14px;
+            width: 46px;
+            height: 46px;
+            border-radius: 12px;
             background: rgba(255, 255, 255, 0.04);
             border: 1px solid rgba(255, 255, 255, 0.08);
             display: flex;
             align-items: center;
             justify-content: center;
-            color: rgba(255, 255, 255, 0.4);
+            color: rgba(255, 255, 255, 0.45);
         }
 
         /* Action Buttons */
@@ -219,7 +246,7 @@
             justify-content: center;
             gap: 8px;
             width: 100%;
-            padding: 12px 20px;
+            padding: 13px 20px;
             font-size: 0.925rem;
             font-weight: 600;
             border-radius: 12px;
@@ -240,18 +267,13 @@
             color: white;
         }
 
-        /* Tag pill */
-        .tag-pill {
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            font-size: 0.72rem;
-            font-weight: 500;
-            padding: 3px 9px;
-            border-radius: 8px;
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid rgba(255, 255, 255, 0.07);
-            color: rgba(255, 255, 255, 0.7);
+        .btn-card-action-blue {
+            background: linear-gradient(135deg, #5a8fd8 0%, #4075c0 50%, #5a8fd8 100%) !important;
+            box-shadow: 0 4px 18px rgba(90, 143, 216, 0.35) !important;
+        }
+
+        .btn-card-action-blue:hover {
+            box-shadow: 0 6px 25px rgba(90, 143, 216, 0.55) !important;
         }
 
         /* Pulse live indicator */
@@ -260,7 +282,7 @@
             height: 8px;
             border-radius: 50%;
             background-color: #10b981;
-            box-shadow: 0 0 8px #10b981;
+            box-shadow: 0 0 10px #10b981;
             animation: pulseDot 2s infinite;
         }
 
@@ -281,14 +303,14 @@
     </style>
 </head>
 
-<body class="min-h-screen text-white flex flex-col justify-between">
+<body class="min-h-screen text-white flex flex-col justify-between selection:bg-[#D86C5A]/30">
     <!-- Animated background -->
     <div class="dashboard-bg"></div>
 
-    <!-- Main Navigation -->
-    <header>
+    <!-- Main Navigation Header -->
+    <header class="w-full">
         <nav class="nav-glass sticky top-0 z-50">
-            <div class="container mx-auto px-4 sm:px-6 py-3.5">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5">
                 <div class="flex justify-between items-center">
                     <!-- Brand -->
                     <a href="dashboard.html" class="flex items-center gap-3 hover:opacity-90 transition-opacity" style="text-decoration: none;">
@@ -299,93 +321,89 @@
                         </div>
                     </a>
 
-                    <!-- Center / User Status Widget -->
-                    <div class="hidden lg:flex items-center gap-4 px-4 py-1.5 rounded-full bg-white/[0.03] border border-white/[0.06]">
-                        <div class="flex items-center gap-2">
-                            <span class="live-dot"></span>
-                            <span class="text-xs text-gray-300 font-medium">Portal Connected</span>
-                        </div>
-                        <span class="text-gray-600">|</span>
-                        <div class="flex items-center gap-1.5 text-xs text-gray-300 font-mono">
-                            <svg class="w-3.5 h-3.5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-                            <span id="currentTime">BD Time...</span>
-                        </div>
+                    <!-- Center / Portal Connected Widget (Time removed as requested) -->
+                    <div class="hidden sm:flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.1)]">
+                        <span class="live-dot"></span>
+                        <span class="text-xs font-medium tracking-wide">Portal Connected</span>
                     </div>
 
                     <!-- Right Controls -->
                     <div class="hidden md:flex items-center gap-3.5">
-                        <!-- User ID Badge -->
-                        <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/[0.04] border border-white/[0.08] text-xs font-mono text-gray-200">
-                            <svg class="w-3.5 h-3.5 text-[#D86C5A]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-                            <span id="userId">Student</span>
+                        <!-- Student ID Badge (Shows Student ID instead of User) -->
+                        <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/[0.04] border border-white/[0.08] text-xs font-mono text-gray-200 shadow-sm" title="Logged in Student ID">
+                            <svg class="w-3.5 h-3.5 text-[#D86C5A]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="12" cy="7" r="4"></circle>
+                            </svg>
+                            <span id="userId" class="tracking-wide">Student ID</span>
                         </div>
 
                         <!-- Documentation -->
                         <a href="documentation.html" class="px-3 py-1.5 text-xs text-gray-300 hover:text-white font-medium transition-colors">Documentation</a>
 
                         <!-- Logout Button -->
-                        <button onclick="handleLogout()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 text-xs font-medium transition-all">
+                        <button onclick="handleLogout(event)" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 text-xs font-medium transition-all cursor-pointer">
                             <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
                             <span>Logout</span>
                         </button>
                     </div>
 
                     <!-- Mobile Menu Button -->
-                    <button id="mobileMenuBtn" class="md:hidden text-white p-1.5 rounded-lg hover:bg-white/10 focus:outline-none" aria-label="Toggle menu">
+                    <button id="mobileMenuBtn" class="md:hidden text-white p-2 rounded-lg hover:bg-white/10 focus:outline-none transition-colors" aria-label="Toggle menu">
                         <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
                     </button>
                 </div>
 
                 <!-- Mobile Menu Dropdown -->
-                <div id="mobileMenu" class="hidden md:hidden mt-3 pt-3 border-t border-white/[0.08] space-y-2.5">
+                <div id="mobileMenu" class="hidden md:hidden mt-3 pt-3 border-t border-white/[0.08] space-y-3">
                     <div class="flex items-center justify-between py-1 text-xs text-gray-300 font-mono">
-                        <span class="flex items-center gap-1.5">
+                        <span class="flex items-center gap-2">
                             <span class="live-dot"></span>
-                            <span>Student: <strong id="userIdMobile" class="text-white">User</strong></span>
+                            <span class="text-emerald-400 font-medium">Portal Connected</span>
                         </span>
-                        <span id="currentTimeMobile" class="text-gray-400">BD Time</span>
+                        <span class="text-white font-mono bg-white/[0.06] px-2.5 py-1 rounded border border-white/[0.08]" id="userIdMobile">Student ID</span>
                     </div>
                     <div class="grid grid-cols-2 gap-2 pt-1">
-                        <a href="documentation.html" class="block text-center py-2 rounded-lg bg-white/[0.04] text-xs text-gray-300 hover:text-white">Documentation</a>
-                        <button onclick="handleLogout()" class="block w-full text-center py-2 rounded-lg bg-red-500/10 text-xs text-red-400 hover:bg-red-500/20">Logout</button>
+                        <a href="documentation.html" class="block text-center py-2 rounded-lg bg-white/[0.04] text-xs text-gray-300 hover:text-white transition-colors">Documentation</a>
+                        <button onclick="handleLogout(event)" class="block w-full text-center py-2 rounded-lg bg-red-500/10 text-xs text-red-400 hover:bg-red-500/20 transition-colors">Logout</button>
                     </div>
                 </div>
             </div>
         </nav>
     </header>
 
+    <!-- Main Content Container -->
+    <main class="flex-grow w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
         <!-- Hero Header -->
-        <div class="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-white/[0.06] pb-6">
+        <div class="mb-8 sm:mb-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-white/[0.08] pb-6">
             <div class="fade-in">
-                <h1 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+                <div class="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-white/[0.04] border border-white/[0.06] text-[11px] font-mono text-gray-400 mb-2">
+                    <span class="w-1.5 h-1.5 rounded-full bg-[#D86C5A]"></span>
+                    East West University Advising System
+                </div>
+                <h1 class="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white tracking-tight">
                     Academic Dashboard
                 </h1>
-                <p class="text-gray-400 text-xs sm:text-sm mt-1">
-                    Select a tool below to view advising routines or search department course offerings.
+                <p class="text-gray-400 text-xs sm:text-sm mt-1.5 max-w-2xl">
+                    Select a tool below to view your personalized advising routine or search course offerings across all academic departments.
                 </p>
-            </div>
-            
-            <div class="flex items-center gap-2">
-                <a href="documentation.html" class="px-3 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-xs font-medium text-gray-300 transition-all flex items-center gap-1.5">
-                    <svg class="w-3.5 h-3.5 text-[#5a8fd8]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
-                    <span>Documentation</span>
-                </a>
             </div>
         </div>
 
-        <!-- Section: Active Features -->
-        <div class="mb-10">
-            <div class="flex items-center justify-between mb-4">
-                <div class="flex items-center gap-2">
-                    <div class="w-2 h-2 rounded-full bg-emerald-400"></div>
-                    <h2 class="text-base sm:text-lg font-bold text-white tracking-tight">Active Features</h2>
+        <!-- Section 1: Active Features -->
+        <section class="mb-10 sm:mb-12">
+            <div class="flex items-center justify-between mb-5">
+                <div class="flex items-center gap-2.5">
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.6)]"></span>
+                    <h2 class="text-lg sm:text-xl font-bold text-white tracking-tight">Active Features</h2>
                 </div>
+                <span class="text-xs text-emerald-400/90 font-mono font-medium px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">2 Available</span>
             </div>
 
             <!-- Active Feature Cards Grid -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
                 <!-- Card 1: Recommended Courses -->
-                <div class="feature-card-active p-5 sm:p-6 fade-in">
+                <div class="feature-card-active p-6 sm:p-7 fade-in">
                     <div>
                         <div class="flex items-start justify-between gap-3 mb-4">
                             <div class="icon-box-active">
@@ -396,15 +414,15 @@
                                     <line x1="12" y1="10" x2="16" y2="10"></line>
                                 </svg>
                             </div>
-                            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-[11px] font-semibold">
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-semibold">
                                 <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
                                 Active
                             </span>
                         </div>
 
-                        <h3 class="text-lg font-bold text-white mb-1.5">Recommended Courses</h3>
-                        <p class="text-gray-300 text-xs sm:text-sm leading-relaxed mb-4">
-                            View personalized course offerings from your advising routine with live seat availability, room codes, and PDF export.
+                        <h3 class="text-lg sm:text-xl font-bold text-white mb-2">Recommended Courses</h3>
+                        <p class="text-gray-300 text-xs sm:text-sm leading-relaxed mb-6">
+                            View personalized course offerings from your advising routine with live seat availability, room codes, conflict checks, and PDF export.
                         </p>
                     </div>
 
@@ -417,10 +435,10 @@
                 </div>
 
                 <!-- Card 2: Department-Wise Course Fetch -->
-                <div class="feature-card-active p-5 sm:p-6 fade-in">
+                <div class="feature-card-active feature-card-active-blue p-6 sm:p-7 fade-in">
                     <div>
                         <div class="flex items-start justify-between gap-3 mb-4">
-                            <div class="icon-box-active" style="background: linear-gradient(135deg, rgba(90, 143, 216, 0.2) 0%, rgba(90, 143, 216, 0.05) 100%); border-color: rgba(90, 143, 216, 0.35); color: #5a8fd8;">
+                            <div class="icon-box-active icon-box-active-blue">
                                 <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <rect x="3" y="3" width="7" height="7"></rect>
                                     <rect x="14" y="3" width="7" height="7"></rect>
@@ -428,37 +446,40 @@
                                     <rect x="3" y="14" width="7" height="7"></rect>
                                 </svg>
                             </div>
-                            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-[11px] font-semibold">
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-semibold">
                                 <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
                                 Active
                             </span>
                         </div>
 
-                        <h3 class="text-lg font-bold text-white mb-1.5">Department-Wise Courses</h3>
-                        <p class="text-gray-300 text-xs sm:text-sm leading-relaxed mb-4">
-                            Search and filter course offerings across all academic departments and semesters with multi-tag search and seat filters.
+                        <h3 class="text-lg sm:text-xl font-bold text-white mb-2">Department-Wise Courses</h3>
+                        <p class="text-gray-300 text-xs sm:text-sm leading-relaxed mb-6">
+                            Search and filter course offerings across all academic departments and semesters with multi-tag search, faculty info, and seat filters.
                         </p>
                     </div>
 
                     <div class="pt-2">
-                        <a href="department-courses.html" class="btn-card-action" style="background: linear-gradient(135deg, #5a8fd8 0%, #4075c0 50%, #5a8fd8 100%); box-shadow: 0 4px 18px rgba(90, 143, 216, 0.35);">
+                        <a href="department-courses.html" class="btn-card-action btn-card-action-blue">
                             <span>Explore Department Courses</span>
                             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
                         </a>
                     </div>
                 </div>
-        <!-- Section: Coming Soon Features -->
-        <div>
-            <div class="flex items-center justify-between mb-4">
-                <div class="flex items-center gap-2">
-                    <svg class="w-4 h-4 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                    <h2 class="text-base sm:text-lg font-bold text-white tracking-tight">Coming Soon Features</h2>
+            </div>
+        </section>
+
+        <!-- Section 2: Coming Soon Features -->
+        <section class="mb-12">
+            <div class="flex items-center justify-between mb-5">
+                <div class="flex items-center gap-2.5">
+                    <span class="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.5)]"></span>
+                    <h2 class="text-lg sm:text-xl font-bold text-white tracking-tight">Coming Soon Features</h2>
                 </div>
-                <span class="text-xs text-gray-500 font-mono">Planned</span>
+                <span class="text-xs text-amber-400/90 font-mono font-medium px-2.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20">5 Planned</span>
             </div>
 
             <!-- Locked Cards Grid -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
                 <!-- Locked Card 1: Class Schedule -->
                 <div class="feature-card-locked p-5 sm:p-6">
                     <div>
@@ -466,7 +487,7 @@
                             <div class="icon-box-locked">
                                 <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
                             </div>
-                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/25 text-amber-300 text-[11px] font-medium">
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/25 text-amber-300 text-[11px] font-medium">
                                 <svg class="w-3 h-3 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
                                 Available Soon
                             </span>
@@ -476,9 +497,12 @@
                             Personalized weekly timetable grid with conflict detection and automated classroom directions.
                         </p>
                     </div>
-                    <div class="mt-4 pt-3 border-t border-white/[0.04] flex items-center justify-between text-[11px] text-gray-500 font-mono">
-                        <span>Status: Planned</span>
-                        <span>v1.2</span>
+                    <div class="mt-5 pt-3.5 border-t border-white/[0.06] flex items-center justify-between text-[11px] text-gray-500 font-mono">
+                        <span class="flex items-center gap-1.5">
+                            <span class="w-1.5 h-1.5 rounded-full bg-amber-400/60"></span>
+                            Status: Planned
+                        </span>
+                        <span class="px-1.5 py-0.5 rounded bg-white/[0.04] text-gray-400">v1.2</span>
                     </div>
                 </div>
 
@@ -489,7 +513,7 @@
                             <div class="icon-box-locked">
                                 <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
                             </div>
-                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/25 text-amber-300 text-[11px] font-medium">
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/25 text-amber-300 text-[11px] font-medium">
                                 <svg class="w-3 h-3 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
                                 Available Soon
                             </span>
@@ -499,9 +523,12 @@
                             Interactive drag-and-drop course scheduler to create, compare, and simulate multiple routine combinations before advising.
                         </p>
                     </div>
-                    <div class="mt-4 pt-3 border-t border-white/[0.04] flex items-center justify-between text-[11px] text-gray-500 font-mono">
-                        <span>Status: In Design</span>
-                        <span>v1.2</span>
+                    <div class="mt-5 pt-3.5 border-t border-white/[0.06] flex items-center justify-between text-[11px] text-gray-500 font-mono">
+                        <span class="flex items-center gap-1.5">
+                            <span class="w-1.5 h-1.5 rounded-full bg-sky-400/60"></span>
+                            Status: In Design
+                        </span>
+                        <span class="px-1.5 py-0.5 rounded bg-white/[0.04] text-gray-400">v1.2</span>
                     </div>
                 </div>
 
@@ -512,7 +539,7 @@
                             <div class="icon-box-locked">
                                 <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"></rect><line x1="2" y1="10" x2="22" y2="10"></line></svg>
                             </div>
-                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/25 text-amber-300 text-[11px] font-medium">
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/25 text-amber-300 text-[11px] font-medium">
                                 <svg class="w-3 h-3 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
                                 Available Soon
                             </span>
@@ -522,9 +549,12 @@
                             Track semester tuition balances, payment histories, scholarship waivers, and installment due dates.
                         </p>
                     </div>
-                    <div class="mt-4 pt-3 border-t border-white/[0.04] flex items-center justify-between text-[11px] text-gray-500 font-mono">
-                        <span>Status: Planned</span>
-                        <span>v1.3</span>
+                    <div class="mt-5 pt-3.5 border-t border-white/[0.06] flex items-center justify-between text-[11px] text-gray-500 font-mono">
+                        <span class="flex items-center gap-1.5">
+                            <span class="w-1.5 h-1.5 rounded-full bg-amber-400/60"></span>
+                            Status: Planned
+                        </span>
+                        <span class="px-1.5 py-0.5 rounded bg-white/[0.04] text-gray-400">v1.3</span>
                     </div>
                 </div>
 
@@ -535,7 +565,7 @@
                             <div class="icon-box-locked">
                                 <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
                             </div>
-                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/25 text-amber-300 text-[11px] font-medium">
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/25 text-amber-300 text-[11px] font-medium">
                                 <svg class="w-3 h-3 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
                                 Available Soon
                             </span>
@@ -545,9 +575,12 @@
                             Comprehensive academic transcript viewer with term-by-term GPA history, completed credits, and grade statistics.
                         </p>
                     </div>
-                    <div class="mt-4 pt-3 border-t border-white/[0.04] flex items-center justify-between text-[11px] text-gray-500 font-mono">
-                        <span>Status: Planned</span>
-                        <span>v1.3</span>
+                    <div class="mt-5 pt-3.5 border-t border-white/[0.06] flex items-center justify-between text-[11px] text-gray-500 font-mono">
+                        <span class="flex items-center gap-1.5">
+                            <span class="w-1.5 h-1.5 rounded-full bg-amber-400/60"></span>
+                            Status: Planned
+                        </span>
+                        <span class="px-1.5 py-0.5 rounded bg-white/[0.04] text-gray-400">v1.3</span>
                     </div>
                 </div>
 
@@ -558,7 +591,7 @@
                             <div class="icon-box-locked">
                                 <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"></path><path d="M12 20V4"></path><path d="M6 20v-6"></path></svg>
                             </div>
-                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/25 text-amber-300 text-[11px] font-medium">
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/25 text-amber-300 text-[11px] font-medium">
                                 <svg class="w-3 h-3 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
                                 Available Soon
                             </span>
@@ -568,25 +601,30 @@
                             Target GPA projection simulator and credit forecaster to estimate required letter grades for graduation goals.
                         </p>
                     </div>
-                    <div class="mt-4 pt-3 border-t border-white/[0.04] flex items-center justify-between text-[11px] text-gray-500 font-mono">
-                        <span>Status: Planned</span>
-                        <span>v1.4</span>
+                    <div class="mt-5 pt-3.5 border-t border-white/[0.06] flex items-center justify-between text-[11px] text-gray-500 font-mono">
+                        <span class="flex items-center gap-1.5">
+                            <span class="w-1.5 h-1.5 rounded-full bg-amber-400/60"></span>
+                            Status: Planned
+                        </span>
+                        <span class="px-1.5 py-0.5 rounded bg-white/[0.04] text-gray-400">v1.4</span>
                     </div>
                 </div>
             </div>
-        </div>
+        </section>
     </main>
 
-    <!-- Footer -->
-    <footer class="mt-16 border-t border-white/[0.06] bg-black/40 py-8 text-center">
-        <div class="container mx-auto px-6 max-w-4xl">
-            <p class="text-xs text-gray-400 mb-3 leading-relaxed">
+    <!-- Footer (Properly pinned at bottom and 100% full width) -->
+    <footer class="mt-auto border-t border-white/[0.06] bg-black/50 backdrop-blur-md py-8 text-center w-full">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <p class="text-xs text-gray-400 mb-3 leading-relaxed max-w-2xl mx-auto">
                 This website is created for educational purposes only. It has no official connection with East West University (EWU).
             </p>
-            <div class="flex items-center justify-center gap-4 text-xs text-gray-500">
+            <div class="flex flex-wrap items-center justify-center gap-3 sm:gap-6 text-xs text-gray-500">
                 <span>&copy; <span id="dynamicYear">2026</span> EWU Course Fetching</span>
-                <span>•</span>
+                <span class="hidden sm:inline">•</span>
                 <a href="mailto:contact.aftabkabir@proton.me" class="text-gray-400 hover:text-[#D86C5A] transition-colors">Contact Support</a>
+                <span class="hidden sm:inline">•</span>
+                <a href="documentation.html" class="text-gray-400 hover:text-[#5a8fd8] transition-colors">Documentation</a>
             </div>
         </div>
     </footer>

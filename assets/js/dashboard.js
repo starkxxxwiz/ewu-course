@@ -1,30 +1,38 @@
 // ========================================
 // Student Dashboard Logic
-// Handles session verification, user state, and navigation
+// Handles session verification, student ID display, and navigation
 // ========================================
 
 const API_BASE_URL = 'https://api.aftabkabir.me';
 
-// Update Bangladesh Standard Time
-function updateBDTime() {
-    const now = new Date();
-    const options = {
-        timeZone: 'Asia/Dhaka',
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: true
-    };
-    const bdTime = now.toLocaleString('en-US', options);
+// Retrieve student ID from local/session storage
+function getStoredStudentId() {
+    try {
+        const id = localStorage.getItem('studentId')
+            || localStorage.getItem('ewu_student_id')
+            || sessionStorage.getItem('studentId')
+            || localStorage.getItem('userId');
+        if (id && id !== 'User' && id !== 'Student') {
+            return id;
+        }
+    } catch (e) {
+        console.warn('Storage read error:', e);
+    }
+    return null;
+}
 
-    const desktopEl = document.getElementById('currentTime');
-    const mobileEl = document.getElementById('currentTimeMobile');
+// Update student ID in UI badges
+function updateStudentIdDisplay(id) {
+    const studentId = id || getStoredStudentId() || 'Student ID';
+    const userBadge = document.getElementById('userId');
+    const userBadgeMobile = document.getElementById('userIdMobile');
 
-    if (desktopEl) desktopEl.textContent = bdTime;
-    if (mobileEl) mobileEl.textContent = bdTime;
+    if (userBadge) {
+        userBadge.textContent = studentId;
+    }
+    if (userBadgeMobile) {
+        userBadgeMobile.textContent = studentId;
+    }
 }
 
 // Check authentication state on page load
@@ -41,12 +49,21 @@ async function checkAuth() {
             return false;
         }
 
-        // Set User ID in badges
-        if (data.userId) {
-            const userBadge = document.getElementById('userId');
-            const userBadgeMobile = document.getElementById('userIdMobile');
-            if (userBadge) userBadge.textContent = data.userId;
-            if (userBadgeMobile) userBadgeMobile.textContent = data.userId;
+        // Set Student ID in badges
+        if (data.userId && data.userId !== 'User' && data.userId !== 'Student') {
+            try {
+                localStorage.setItem('studentId', data.userId);
+            } catch (e) {}
+            updateStudentIdDisplay(data.userId);
+        } else {
+            // Worker returns userId: 'User' on generic session check
+            // Use stored student ID from login if available
+            const saved = getStoredStudentId();
+            if (saved) {
+                updateStudentIdDisplay(saved);
+            } else {
+                updateStudentIdDisplay('Student ID');
+            }
         }
 
         return true;
@@ -70,6 +87,13 @@ async function handleLogout(event) {
         console.error('Logout error:', error);
     }
 
+    try {
+        localStorage.removeItem('studentId');
+        localStorage.removeItem('ewu_student_id');
+        localStorage.removeItem('userId');
+        sessionStorage.removeItem('studentId');
+    } catch (e) {}
+
     window.location.href = 'login.html';
 }
 
@@ -82,9 +106,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const yearEl = document.getElementById('dynamicYear');
     if (yearEl) yearEl.textContent = new Date().getFullYear();
 
-    // BD Time updates
-    updateBDTime();
-    setInterval(updateBDTime, 1000);
+    // Immediately display student ID if saved (avoids UI delay)
+    updateStudentIdDisplay();
 
     // Mobile menu toggle
     const mobileMenuBtn = document.getElementById('mobileMenuBtn');

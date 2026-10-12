@@ -5,6 +5,14 @@
 // Depends on assets/js/features.js (FEATURES registry + API_BASE_URL).
 // ========================================
 
+// Resolve API base defensively (features.js exposes window.API_BASE_URL).
+const API_BASE_URL = window.API_BASE_URL || 'https://api.aftabkabir.me';
+
+// Safe HTML escape fallback if features.js did not load.
+const esc = (typeof window.escapeHtml === 'function')
+    ? window.escapeHtml
+    : (s) => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+
 // Retrieve student ID from local/session storage
 function getStoredStudentId() {
     try {
@@ -99,6 +107,31 @@ const DASHBOARD_FEATURES = [
     'recommended', 'department', 'schedule', 'planner', 'ledger', 'grades', 'cgpa'
 ];
 
+// Local fallback registry so the dashboard still renders even if the shared
+// features.js fails to load (e.g. stale cache or blocked asset).
+const FALLBACK_FEATURES = {
+    recommended: { name: 'Recommended Courses', page: 'advise.html', color: 'coral', icon: '', description: 'Personalized course offerings from your advising routine.' },
+    department: { name: 'Department-Wise Courses', page: 'department-courses.html', color: 'blue', icon: '', description: 'Search and filter course offerings across all departments.' },
+    schedule: { name: 'Class Schedule', page: 'class-schedule.html', color: 'cyan', icon: '', description: 'Personalized weekly timetable grid and registered credits.' },
+    planner: { name: 'Course Planner', page: 'course-planner.html', color: 'violet', icon: '', description: 'Build and validate multiple course combinations.' },
+    ledger: { name: 'Account Ledger', page: 'account-ledger.html', color: 'emerald', icon: '', description: 'Track tuition balances, payments and scholarships.' },
+    grades: { name: 'Grade Report', page: 'grade-report.html', color: 'amber', icon: '', description: 'Academic transcript with term-by-term GPA history.' },
+    cgpa: { name: 'CGPA Planner', page: 'cgpa-planner.html', color: 'rose', icon: '', description: 'Project target GPA and required grades.' }
+};
+
+function getFeatureMeta(key) {
+    return (typeof window.FEATURES === 'object' && window.FEATURES[key]) || FALLBACK_FEATURES[key] || { name: key, page: '#', color: 'coral', icon: '', description: '' };
+}
+
+function getStatusMeta(status) {
+    const map = (typeof window.FEATURE_STATUS_META === 'object' && window.FEATURE_STATUS_META) || {
+        active: { label: 'Active', usable: true }, beta: { label: 'Beta', usable: true },
+        maintenance: { label: 'Maintenance', usable: false }, under_work: { label: 'Under Work', usable: false },
+        coming_soon: { label: 'Coming Soon', usable: false }, off: { label: 'Disabled', usable: false }
+    };
+    return map[status] || map.active;
+}
+
 function renderFeatureCards(statuses) {
     const activeGrid = document.getElementById('activeGrid');
     const comingGrid = document.getElementById('comingGrid');
@@ -106,12 +139,13 @@ function renderFeatureCards(statuses) {
     const comingSection = document.getElementById('comingSection');
     if (!activeGrid || !comingGrid) return;
 
+    statuses = statuses || {};
     const activeKeys = [];
     const unavailableKeys = [];
 
     DASHBOARD_FEATURES.forEach(key => {
         const status = statuses[key] || 'active';
-        const meta = FEATURE_STATUS_META[status] || FEATURE_STATUS_META.active;
+        const meta = getStatusMeta(status);
         if (meta.usable) activeKeys.push({ key, status });
         else unavailableKeys.push({ key, status });
     });
@@ -135,7 +169,7 @@ function renderFeatureCards(statuses) {
 }
 
 function activeCardHtml(key, status) {
-    const f = FEATURES[key];
+    const f = getFeatureMeta(key);
     const theme = CARD_THEME[f.color] || CARD_THEME.coral;
     const pill = STATUS_PILL[status] || STATUS_PILL.active;
     const isBeta = status === 'beta';
@@ -153,8 +187,8 @@ function activeCardHtml(key, status) {
                         ${pill.label}
                     </span>
                 </div>
-                <h3 class="text-lg sm:text-xl font-bold text-white mb-2">${escapeHtml(f.name)}</h3>
-                <p class="text-gray-300 text-xs sm:text-sm leading-relaxed mb-6">${escapeHtml(f.description)}</p>
+                <h3 class="text-lg sm:text-xl font-bold text-white mb-2">${esc(f.name)}</h3>
+                <p class="text-gray-300 text-xs sm:text-sm leading-relaxed mb-6">${esc(f.description)}</p>
             </div>
             <div class="px-6 sm:px-7 pb-6 sm:pb-7 pt-0">
                 <a href="${f.page}" class="no-underline" style="display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:13px 20px;font-size:0.925rem;font-weight:600;border-radius:12px;background:${theme.btn};color:#fff;box-shadow:0 4px 18px ${theme.glow};">
@@ -166,7 +200,7 @@ function activeCardHtml(key, status) {
 }
 
 function lockedCardHtml(key, status) {
-    const f = FEATURES[key];
+    const f = getFeatureMeta(key);
     const pill = STATUS_PILL[status] || STATUS_PILL.coming_soon;
     return `
         <div style="position:relative;background:linear-gradient(145deg, rgba(16,16,24,0.5) 0%, rgba(10,10,16,0.65) 100%);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,0.08);border-radius:18px;display:flex;flex-direction:column;justify-content:space-between;min-height:190px;overflow:hidden;">
@@ -180,8 +214,8 @@ function lockedCardHtml(key, status) {
                         ${pill.label}
                     </span>
                 </div>
-                <h3 class="text-base font-bold text-gray-200 mb-1.5">${escapeHtml(f.name)}</h3>
-                <p class="text-gray-400 text-xs leading-relaxed">${escapeHtml(f.description)}</p>
+                <h3 class="text-base font-bold text-gray-200 mb-1.5">${esc(f.name)}</h3>
+                <p class="text-gray-400 text-xs leading-relaxed">${esc(f.description)}</p>
             </div>
             <div class="mt-2 px-5 sm:px-6 pb-5 sm:pb-6 pt-3.5 border-t border-white/[0.06] flex items-center justify-between text-[11px] text-gray-500 font-mono">
                 <span class="flex items-center gap-1.5">
@@ -211,7 +245,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Render features based on admin-controlled statuses
     try {
-        const statuses = await fetchFeatureStatuses();
+        const statuses = (typeof window.fetchFeatureStatuses === 'function')
+            ? await window.fetchFeatureStatuses()
+            : {};
         renderFeatureCards(statuses);
     } catch (e) {
         renderFeatureCards({});

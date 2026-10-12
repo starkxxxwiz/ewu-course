@@ -396,6 +396,10 @@ function hydrateView(viewName, data) {
         setupSecurityViewListeners();
     }
 
+    if (viewName === 'features') {
+        renderFeatureControls(data.featureStatus || {});
+    }
+
     if (viewName === 'settings') {
         const sAnim = document.getElementById('setAnimations');
         if (sAnim) {
@@ -587,6 +591,134 @@ async function saveNoticeConfig(data) {
     } catch (err) {
         showAdminToast('Edge synchronization failed for Custom Notice.', false);
     }
+}
+
+// ================= FEATURE AVAILABILITY CONTROL =================
+const FEATURE_LABELS = {
+    recommended: 'Recommended Courses',
+    department: 'Department-Wise Courses',
+    schedule: 'Class Schedule',
+    planner: 'Course Planner',
+    ledger: 'Account Ledger',
+    grades: 'Grade Report',
+    cgpa: 'CGPA Planner'
+};
+
+const FEATURE_STATUS_OPTIONS = [
+    { value: 'active', label: 'Active', tone: 'emerald' },
+    { value: 'beta', label: 'Beta', tone: 'sky' },
+    { value: 'maintenance', label: 'Maintenance', tone: 'amber' },
+    { value: 'under_work', label: 'Under Work', tone: 'amber' },
+    { value: 'coming_soon', label: 'Coming Soon', tone: 'violet' },
+    { value: 'off', label: 'Off', tone: 'gray' }
+];
+
+function renderFeatureControls(features) {
+    const container = document.getElementById('featureControlList');
+    if (!container) return;
+
+    const keys = Object.keys(FEATURE_LABELS);
+    container.innerHTML = '';
+
+    keys.forEach(key => {
+        const current = (features && features[key]) || 'active';
+        const row = document.createElement('div');
+        row.className = 'p-4 rounded-xl border border-gray-800/80 bg-gray-900/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4';
+
+        const optionsHtml = FEATURE_STATUS_OPTIONS.map(opt =>
+            `<option value="${opt.value}" ${opt.value === current ? 'selected' : ''}>${opt.label}</option>`
+        ).join('');
+
+        row.innerHTML = `
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-lg bg-brand-500/10 flex items-center justify-center text-brand-400">
+                    <i class="ph ph-puzzle-piece text-lg"></i>
+                </div>
+                <div>
+                    <div class="text-sm font-semibold text-white">${FEATURE_LABELS[key]}</div>
+                    <div class="text-[11px] text-gray-400 font-mono">key: ${key}</div>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <span class="feature-status-pill" data-key="${key}"></span>
+                <select data-feature-key="${key}" class="glass-input rounded-lg p-2 text-xs bg-gray-950 w-40">
+                    ${optionsHtml}
+                </select>
+            </div>
+        `;
+        container.appendChild(row);
+    });
+
+    container.querySelectorAll('select[data-feature-key]').forEach(sel => {
+        sel.onchange = async (e) => {
+            const key = e.target.getAttribute('data-feature-key');
+            await updateFeatureStatus(key, e.target.value);
+            updateFeatureStatusPills();
+        };
+    });
+
+    updateFeatureStatusPills();
+}
+
+function updateFeatureStatusPills() {
+    document.querySelectorAll('.feature-status-pill').forEach(pill => {
+        const key = pill.getAttribute('data-key');
+        const sel = document.querySelector(`select[data-feature-key="${key}"]`);
+        const val = sel ? sel.value : 'active';
+        const opt = FEATURE_STATUS_OPTIONS.find(o => o.value === val) || FEATURE_STATUS_OPTIONS[0];
+        const toneMap = {
+            emerald: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
+            sky: 'bg-sky-500/15 text-sky-300 border-sky-500/30',
+            amber: 'bg-amber-500/15 text-amber-300 border-amber-500/30',
+            violet: 'bg-violet-500/15 text-violet-300 border-violet-500/30',
+            gray: 'bg-gray-500/15 text-gray-300 border-gray-500/30'
+        };
+        pill.className = `feature-status-pill text-[11px] font-semibold px-2.5 py-1 rounded-full border ${toneMap[opt.tone] || toneMap.gray}`;
+        pill.textContent = opt.label;
+    });
+}
+
+async function updateFeatureStatus(key, status) {
+    const token = localStorage.getItem('adminToken');
+    const toast = document.getElementById('featureStatusToast');
+    try {
+        const res = await fetch(`${API_URL}/admin/features`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ key, status })
+        });
+        if (res.status === 401 || res.status === 403) { handleLogout(true); return; }
+        if (!res.ok) throw new Error('Gateway rejected update');
+        const data = await res.json();
+        if (data.success) {
+            if (currentDataCache) currentDataCache.featureStatus = data.features;
+            showFeatureToast(`${FEATURE_LABELS[key]} set to ${status}`, true);
+        } else {
+            throw new Error(data.error || 'Update failed');
+        }
+    } catch (e) {
+        showFeatureToast(`Failed to update ${FEATURE_LABELS[key]}`, false);
+        if (currentDataCache) hydrateView('features', currentDataCache);
+    }
+}
+
+function showFeatureToast(message, isSuccess) {
+    const toast = document.getElementById('featureStatusToast');
+    const text = document.getElementById('featureStatusText');
+    const icon = document.getElementById('featureStatusIcon');
+    if (!toast || !text || !icon) { showAdminToast(message, isSuccess); return; }
+    text.textContent = message;
+    if (isSuccess) {
+        toast.className = 'text-sm px-4 py-2.5 rounded-xl border flex items-center gap-2 transition-all mb-5 bg-green-500/10 text-green-400 border-green-500/30';
+        icon.className = 'ph ph-check-circle text-lg text-green-400';
+        playAcousticPulse('success');
+    } else {
+        toast.className = 'text-sm px-4 py-2.5 rounded-xl border flex items-center gap-2 transition-all mb-5 bg-red-500/10 text-red-400 border-red-500/30';
+        icon.className = 'ph ph-warning-circle text-lg text-red-400';
+        playAcousticPulse('error');
+    }
+    toast.classList.remove('hidden');
+    setTimeout(() => toast.classList.add('hidden'), 4000);
 }
 
 // ================= NOTICE LIVE PREVIEW SIMULATOR =================
@@ -1758,6 +1890,7 @@ function initCommandPalette() {
         { label: 'Go to User Analytics', icon: 'ph-users', category: 'Navigation', action: () => window.location.hash = '#/user-analytics' },
         { label: 'Go to Site Analytics', icon: 'ph-chart-line-up', category: 'Navigation', action: () => window.location.hash = '#/site-analytics' },
         { label: 'Go to Control Panel', icon: 'ph-faders', category: 'Navigation', action: () => window.location.hash = '#/control' },
+        { label: 'Go to Feature Control', icon: 'ph-sliders-horizontal', category: 'Navigation', action: () => window.location.hash = '#/features' },
         { label: 'Go to Real-Time Logs', icon: 'ph-terminal-window', category: 'Navigation', action: () => window.location.hash = '#/logs' },
         { label: 'Go to Access & Security', icon: 'ph-shield-slash', category: 'Navigation', action: () => window.location.hash = '#/security' },
         { label: 'Go to Settings', icon: 'ph-gear', category: 'Navigation', action: () => window.location.hash = '#/settings' },
@@ -1877,9 +2010,10 @@ function initCommandPalette() {
             else if (e.key === '2') window.location.hash = '#/user-analytics';
             else if (e.key === '3') window.location.hash = '#/site-analytics';
             else if (e.key === '4') window.location.hash = '#/control';
-            else if (e.key === '5') window.location.hash = '#/logs';
-            else if (e.key === '6') window.location.hash = '#/security';
-            else if (e.key === '7') window.location.hash = '#/settings';
+            else if (e.key === '5') window.location.hash = '#/features';
+            else if (e.key === '6') window.location.hash = '#/logs';
+            else if (e.key === '7') window.location.hash = '#/security';
+            else if (e.key === '8') window.location.hash = '#/settings';
         }
     });
 }
@@ -1942,6 +2076,7 @@ function updatePageHeaders(path) {
         case 'user-analytics': t.textContent = 'User Analytics'; s.textContent = 'Deep dive into origin footprints & active sessions.'; break;
         case 'site-analytics': t.textContent = 'Site Analytics'; s.textContent = 'Performance, density ratios & route popularity.'; break;
         case 'control': t.textContent = 'Command & Control'; s.textContent = 'Emergency maintenance lock & live notice deployment.'; break;
+        case 'features': t.textContent = 'Feature Availability'; s.textContent = 'Toggle each feature between active, beta, maintenance & more.'; break;
         case 'logs': t.textContent = 'Real-Time Telemetry Logs'; s.textContent = 'Live user event streaming & packet inspection.'; break;
         case 'security': t.textContent = 'Access & Security'; s.textContent = 'Packet firewalls, student ID restrictions & session logs.'; break;
         case 'settings': t.textContent = 'Dashboard Preferences'; s.textContent = 'Interface tuning, refresh rates & shortcuts.'; break;

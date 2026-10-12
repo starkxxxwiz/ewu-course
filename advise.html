@@ -1038,8 +1038,14 @@
     </div>
 
     <script src="assets/js/system-metrics.js" defer></script>
+    <script src="assets/js/features.js"></script>
     <script src="assets/js/retry-handler.js"></script>
     <script src="assets/js/advise.js"></script>
     <script src="assets/js/main.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            if (window.gateFeaturePage) window.gateFeaturePage('recommended');
+        });
+    </script>
 </body>
 </html>

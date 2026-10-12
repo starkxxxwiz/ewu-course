@@ -12,6 +12,76 @@ const ALLOWED_ORIGINS = [
   'https://www.aftabkabir.me'
 ];
 
+// **CONFIGURATION**: Feature registry defaults (admin can override per-feature via KV)
+// Status values: 'active' | 'beta' | 'maintenance' | 'under_work' | 'coming_soon' | 'off'
+const FEATURE_DEFAULTS = {
+  recommended: 'active',
+  department: 'active',
+  schedule: 'active',
+  planner: 'active',
+  ledger: 'active',
+  grades: 'active',
+  cgpa: 'active'
+};
+
+const FEATURE_STATUSES = ['active', 'beta', 'maintenance', 'under_work', 'coming_soon', 'off'];
+
+// Helper: Read the feature status map from KV, merged over defaults
+async function getFeatureStatus(env) {
+  const result = { ...FEATURE_DEFAULTS };
+  if (env && env.ADMIN_KV) {
+    try {
+      const raw = await env.ADMIN_KV.get('feature_status');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        for (const key of Object.keys(FEATURE_DEFAULTS)) {
+          if (parsed && typeof parsed[key] === 'string' && FEATURE_STATUSES.includes(parsed[key])) {
+            result[key] = parsed[key];
+          }
+        }
+      }
+    } catch (e) {}
+  }
+  return result;
+}
+
+// Helper: Fetch from upstream with automatic retry + timeout
+async function fetchWithRetry(url, options = {}, retries = 2) {
+  let lastError;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 20000);
+      const response = await fetch(url, { ...options, signal: controller.signal });
+      clearTimeout(timer);
+
+      // Retry only on transient server errors; return client errors immediately
+      if (response.status >= 500 && attempt < retries) {
+        await new Promise(r => setTimeout(r, 400 * (attempt + 1)));
+        continue;
+      }
+      return response;
+    } catch (error) {
+      lastError = error;
+      if (attempt < retries) {
+        await new Promise(r => setTimeout(r, 400 * (attempt + 1)));
+      }
+    }
+  }
+  throw lastError || new Error('Upstream request failed');
+}
+
+// Helper: Build portal request headers for a given session + referer
+function buildPortalHeaders(sessionId, referer) {
+  return {
+    'accept': 'application/json, text/plain, */*',
+    'accept-language': 'en-US,en;q=0.9',
+    'referer': referer || 'https://portal.ewubd.edu/',
+    'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'cookie': `ASP.NET_SessionId=${sessionId}; perf_dv6Tr4n=1`
+  };
+}
+
 // Helper: Get CORS headers
 function getCorsHeaders(request) {
   const origin = request.headers.get('Origin');
@@ -555,6 +625,241 @@ async function handleGetDepartmentCourses(request) {
   }
 }
 
+// ===== ENDPOINT: GET /api/schedule/semesters =====
+async function handleGetSemesters(request) {
+  const cookieHeader = request.headers.get('Cookie');
+  const sessionId = getCookieValue(cookieHeader, 'ASP.NET_SessionId');
+
+  if (!sessionId) {
+    return jsonResponse({ status: 'error', message: 'Unauthorized. Please log in first.' }, 401, request);
+  }
+
+  try {
+    const response = await fetchWithRetry(
+      `${PORTAL_URL}/api/utility/GetSemesterForDropDown`,
+      { headers: buildPortalHeaders(sessionId, 'https://portal.ewubd.edu/Home/ClassSchedule') }
+    );
+
+    if (response.status === 401 || response.status === 403) {
+      return jsonResponse({ status: 'error', message: 'Session expired' }, 401, request);
+    }
+    if (!response.ok) throw new Error('Failed to fetch semesters from portal');
+
+    const semesters = await response.json();
+    const rawList = Array.isArray(semesters) ? semesters : [];
+
+    const formatted = rawList.map(sem => ({
+      SemesterId: sem.SemesterId,
+      SemesterName: sem.SemesterName || 'Unknown',
+      StartingDate: sem.StartingDate || null,
+      EndingDate: sem.EndingDate || null,
+      IsActive: sem.IsActive === true
+    })).filter(s => s.SemesterId !== undefined && s.SemesterId !== null);
+
+    return jsonResponse({ status: 'success', semesters: formatted }, 200, request);
+  } catch (error) {
+    console.error('handleGetSemesters error:', error);
+    return jsonResponse({ status: 'error', message: error.message || 'Failed to fetch semesters' }, 500, request);
+  }
+}
+
+// ===== ENDPOINT: GET /api/schedule?semesterId= =====
+async function handleGetClassSchedule(request) {
+  const cookieHeader = request.headers.get('Cookie');
+  const sessionId = getCookieValue(cookieHeader, 'ASP.NET_SessionId');
+
+  if (!sessionId) {
+    return jsonResponse({ status: 'error', message: 'Unauthorized. Please log in first.' }, 401, request);
+  }
+
+  const url = new URL(request.url);
+  const semesterId = url.searchParams.get('semesterId') || url.searchParams.get('semesterid');
+  if (!semesterId) {
+    return jsonResponse({ status: 'error', message: 'Semester ID is required' }, 400, request);
+  }
+
+  try {
+    const apiUrl = `${PORTAL_URL}/api/Advising/GetSemesterStudentWiseAdvisingCourseListStudent/${encodeURIComponent(semesterId)}`;
+    const response = await fetchWithRetry(
+      apiUrl,
+      { headers: buildPortalHeaders(sessionId, 'https://portal.ewubd.edu/Home/ClassSchedule') }
+    );
+
+    if (response.status === 401 || response.status === 403) {
+      return jsonResponse({ status: 'error', message: 'Session expired' }, 401, request);
+    }
+    if (!response.ok) throw new Error('Failed to fetch class schedule from portal');
+
+    const data = await response.json();
+    const rawList = Array.isArray(data) ? data : (data && Array.isArray(data.data) ? data.data : []);
+
+    const courses = rawList.map(c => ({
+      CourseCode: c.CourseCode || '',
+      SectionName: (c.SectionName !== undefined && c.SectionName !== null) ? c.SectionName : '',
+      RoomName: c.RoomName || '',
+      ShortName: c.ShortName || '',
+      FacultyName: c.FacultyName || '',
+      Email: c.Email || '',
+      TimeSlotName: c.TimeSlotName || '',
+      CreditHour: typeof c.CreditHour === 'number' ? c.CreditHour : (parseFloat(c.CreditHour) || 0),
+      SeatCapacity: typeof c.SeatCapacity === 'number' ? c.SeatCapacity : (parseInt(c.SeatCapacity) || 0),
+      SeatTaken: typeof c.SeatTaken === 'number' ? c.SeatTaken : (parseInt(c.SeatTaken) || 0),
+      DropStatus: c.DropStatus || 'No',
+      WithDrawStatus: c.WithDrawStatus || 'No',
+      IsDrop: c.IsDrop || false,
+      IsWithdraw: c.IsWithdraw || false
+    }));
+
+    return jsonResponse({ status: 'success', semesterId, courses }, 200, request);
+  } catch (error) {
+    console.error('handleGetClassSchedule error:', error);
+    return jsonResponse({ status: 'error', message: error.message || 'Failed to fetch class schedule' }, 500, request);
+  }
+}
+
+// ===== ENDPOINT: GET /api/routine =====  (Course Planner: all offered routine)
+async function handleGetRoutine(request) {
+  const cookieHeader = request.headers.get('Cookie');
+  const sessionId = getCookieValue(cookieHeader, 'ASP.NET_SessionId');
+
+  if (!sessionId) {
+    return jsonResponse({ status: 'error', message: 'Unauthorized. Please log in first.' }, 401, request);
+  }
+
+  try {
+    const response = await fetchWithRetry(
+      PORTAL_API_URL,
+      { headers: buildPortalHeaders(sessionId, 'https://portal.ewubd.edu/Home/AdvisingOffline') }
+    );
+
+    if (response.status === 401 || response.status === 403) {
+      return jsonResponse({ status: 'error', message: 'Session expired' }, 401, request);
+    }
+    if (!response.ok) throw new Error('Failed to fetch routine from portal');
+
+    const data = await response.json();
+    const rawList = Array.isArray(data) ? data : [];
+
+    const courses = rawList.map(c => ({
+      CourseCode: c.CourseCode || '',
+      SectionName: (c.SectionName !== undefined && c.SectionName !== null) ? c.SectionName : '',
+      RoomName: c.RoomName || '',
+      RoomCode: c.RoomCode || '',
+      ShortName: c.ShortName || '',
+      FacultyName: c.FacultyName || '',
+      TimeSlotName: c.TimeSlotName || '',
+      CreditHour: typeof c.CreditHour === 'number' ? c.CreditHour : (parseFloat(c.CreditHour) || 0),
+      SeatCapacity: typeof c.SeatCapacity === 'number' ? c.SeatCapacity : (parseInt(c.SeatCapacity) || 0),
+      SeatTaken: typeof c.SeatTaken === 'number' ? c.SeatTaken : (parseInt(c.SeatTaken) || 0),
+      IsLab: !!c.IsLab,
+      PrerequisiteCourseCodes: c.PrerequisiteCourseCodes || null,
+      RoutineId: c.RoutineId !== undefined ? c.RoutineId : null,
+      SectionId: c.SectionId !== undefined ? c.SectionId : null,
+      TimeSlotId: c.TimeSlotId !== undefined ? c.TimeSlotId : null
+    })).filter(c => c.CourseCode);
+
+    return jsonResponse({ status: 'success', courses }, 200, request);
+  } catch (error) {
+    console.error('handleGetRoutine error:', error);
+    return jsonResponse({ status: 'error', message: error.message || 'Failed to fetch routine' }, 500, request);
+  }
+}
+
+// ===== ENDPOINT: GET /api/ledger =====
+async function handleGetLedger(request) {
+  const cookieHeader = request.headers.get('Cookie');
+  const sessionId = getCookieValue(cookieHeader, 'ASP.NET_SessionId');
+
+  if (!sessionId) {
+    return jsonResponse({ status: 'error', message: 'Unauthorized. Please log in first.' }, 401, request);
+  }
+
+  const headers = buildPortalHeaders(sessionId, 'https://portal.ewubd.edu/Home/StudentLedger');
+
+  try {
+    const [txnRes, balRes] = await Promise.all([
+      fetchWithRetry(`${PORTAL_URL}/api/StudentLedger/GetStudentLedgerByStudentId`, { headers }),
+      fetchWithRetry(`${PORTAL_URL}/api/StudentLedger/GetStudentClosingBalance`, { headers })
+    ]);
+
+    if (txnRes.status === 401 || txnRes.status === 403 || balRes.status === 401 || balRes.status === 403) {
+      return jsonResponse({ status: 'error', message: 'Session expired' }, 401, request);
+    }
+
+    const transactions = txnRes.ok ? await txnRes.json() : [];
+    const balanceRaw = balRes.ok ? await balRes.json() : {};
+
+    const balance = balanceRaw && typeof balanceRaw === 'object' && !Array.isArray(balanceRaw) ? balanceRaw : {};
+
+    return jsonResponse({
+      status: 'success',
+      transactions: Array.isArray(transactions) ? transactions.map(t => ({
+        StudentLedgerId: t.StudentLedgerId,
+        SemesterName: t.SemesterName || '',
+        VoucherType: t.VoucherType || '',
+        AmountCr: typeof t.AmountCr === 'number' ? t.AmountCr : (parseFloat(t.AmountCr) || 0),
+        AmountDr: typeof t.AmountDr === 'number' ? t.AmountDr : (parseFloat(t.AmountDr) || 0),
+        Description: t.Description || '',
+        AccountsReferance: t.AccountsReferance || '',
+        AccTransferDate: t.AccTransferDate || null,
+        CreatedDate: t.CreatedDate || null
+      })) : [],
+      closingBalance: {
+        StudentName: balance.FirstName || '',
+        Balance: balance.Balance != null ? balance.Balance : null,
+        CurrentDue: balance.CurrentDue != null ? balance.CurrentDue : null,
+        MobileNo: balance.MobileNo || '',
+        FatherMobileNo: balance.FatherMobileNo || ''
+      }
+    }, 200, request);
+  } catch (error) {
+    console.error('handleGetLedger error:', error);
+    return jsonResponse({ status: 'error', message: error.message || 'Failed to fetch ledger' }, 500, request);
+  }
+}
+
+// ===== ENDPOINT: GET /api/grades =====  (Grade Report HTML)
+async function handleGetGradeReport(request) {
+  const cookieHeader = request.headers.get('Cookie');
+  const sessionId = getCookieValue(cookieHeader, 'ASP.NET_SessionId');
+
+  if (!sessionId) {
+    return jsonResponse({ status: 'error', message: 'Unauthorized. Please log in first.' }, 401, request);
+  }
+
+  try {
+    const headers = {
+      'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      'accept-language': 'en-US,en;q=0.9',
+      'referer': 'https://portal.ewubd.edu/Home/GradeReport',
+      'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      'cookie': `ASP.NET_SessionId=${sessionId}; perf_dv6Tr4n=1`
+    };
+
+    const response = await fetchWithRetry(
+      `${PORTAL_URL}/ReportForms/rptGradeSheetStudent.aspx`,
+      { headers }
+    );
+
+    if (response.status === 401 || response.status === 403) {
+      return jsonResponse({ status: 'error', message: 'Session expired' }, 401, request);
+    }
+    if (!response.ok) throw new Error('Failed to fetch grade report from portal');
+
+    const html = await response.text();
+
+    // Detect an expired / unauthenticated session that redirects to the login page
+    if (!html || html.length < 500) {
+      return jsonResponse({ status: 'error', message: 'Session expired or grade report unavailable' }, 401, request);
+    }
+
+    return jsonResponse({ status: 'success', html }, 200, request);
+  } catch (error) {
+    console.error('handleGetGradeReport error:', error);
+    return jsonResponse({ status: 'error', message: error.message || 'Failed to fetch grade report' }, 500, request);
+  }
+}
+
 // ===== ADMIN & STATUS ROUTES =====
 async function verifyAdminAuth(request, env) {
   const authHeader = request.headers.get('Authorization');
@@ -609,7 +914,8 @@ async function handleStatus(request, env) {
 
   const payload = {
     closed: isClosed,
-    blocked: isBlocked
+    blocked: isBlocked,
+    features: await getFeatureStatus(env)
   };
   if (customNotice) {
     payload.customNotice = customNotice;
@@ -907,6 +1213,7 @@ async function handleAdminDashboard(request, env) {
   let isClosed = false;
   let totalUniqueVisitors = 0;
   let customNotice = null;
+  let featureStatus = null;
 
   if (env.ADMIN_KV) {
     for(let i=0; i<7; i++) {
@@ -917,6 +1224,7 @@ async function handleAdminDashboard(request, env) {
       analytics[dateStr] = data || { visits: 0, actions: 0, unique_ips: [] };
     }
     isClosed = (await env.ADMIN_KV.get('site_closure_mode')) === 'true';
+    featureStatus = await getFeatureStatus(env);
     
     let totalUStr = await env.ADMIN_KV.get('total_unique_visitors');
     totalUniqueVisitors = totalUStr ? parseInt(totalUStr) : 0;
@@ -955,6 +1263,7 @@ async function handleAdminDashboard(request, env) {
   return jsonResponse({
     siteClosureMode: isClosed,
     customNotice: customNotice,
+    featureStatus: featureStatus || { ...FEATURE_DEFAULTS },
     totalUniqueVisitors: totalUniqueVisitors,
     analytics: analytics,
     recentLogs: recentLogs,
@@ -1073,6 +1382,36 @@ async function handleAdminConfig(request, env) {
   }
 }
 
+// ===== ENDPOINT: GET/POST /api/admin/features =====
+async function handleAdminFeatures(request, env) {
+  if (!(await verifyAdminAuth(request, env))) return jsonResponse({ error: 'Unauthorized' }, 401, request);
+
+  if (request.method === 'GET') {
+    return jsonResponse({ success: true, features: await getFeatureStatus(env), statuses: FEATURE_STATUSES }, 200, request);
+  }
+
+  // POST: update a single feature status (live/instant)
+  try {
+    const body = await request.json();
+    const { key, status } = body;
+    if (!key || !FEATURE_DEFAULTS.hasOwnProperty(key)) {
+      return jsonResponse({ error: 'Unknown feature key' }, 400, request);
+    }
+    if (!FEATURE_STATUSES.includes(status)) {
+      return jsonResponse({ error: 'Invalid status value' }, 400, request);
+    }
+
+    const current = await getFeatureStatus(env);
+    current[key] = status;
+    await env.ADMIN_KV.put('feature_status', JSON.stringify(current));
+    await recordAdminAudit(env, request, 'SET_FEATURE_STATUS', key, `Feature "${key}" status set to "${status}"`);
+
+    return jsonResponse({ success: true, features: current }, 200, request);
+  } catch (e) {
+    return jsonResponse({ error: 'Server error' }, 500, request);
+  }
+}
+
 // ===== MAIN HANDLER =====
 export default {
   async fetch(request, env, ctx) {
@@ -1131,6 +1470,27 @@ export default {
       return handleGetDepartmentCourses(request);
     }
 
+    // Class Schedule, Planner, Ledger & Grade Report proxied portal endpoints
+    if (url.pathname === '/api/schedule/semesters' && request.method === 'GET') {
+      return handleGetSemesters(request);
+    }
+
+    if ((url.pathname === '/api/schedule' || url.pathname === '/api/class-schedule') && request.method === 'GET') {
+      return handleGetClassSchedule(request);
+    }
+
+    if ((url.pathname === '/api/routine' || url.pathname === '/api/planner/routine') && request.method === 'GET') {
+      return handleGetRoutine(request);
+    }
+
+    if ((url.pathname === '/api/ledger' || url.pathname === '/api/account-ledger') && request.method === 'GET') {
+      return handleGetLedger(request);
+    }
+
+    if ((url.pathname === '/api/grades' || url.pathname === '/api/grade-report') && request.method === 'GET') {
+      return handleGetGradeReport(request);
+    }
+
     // Admin & Status routes
     if (url.pathname === '/api/status' && request.method === 'GET') {
       return handleStatus(request, env);
@@ -1146,6 +1506,9 @@ export default {
     }
     if (url.pathname === '/api/admin/config' && request.method === 'POST') {
       return handleAdminConfig(request, env);
+    }
+    if (url.pathname === '/api/admin/features' && (request.method === 'GET' || request.method === 'POST')) {
+      return handleAdminFeatures(request, env);
     }
     if (url.pathname === '/api/admin/ip' && request.method === 'POST') {
       return handleIpBlock(request, env);

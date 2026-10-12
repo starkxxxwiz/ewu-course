@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grade Report - EWU Course Portal</title>
+    <meta name="description" content="View your EWU academic grade report with term-by-term GPA history and cumulative CGPA.">
+    <meta name="author" content="Aftab Kabir">
+    <meta name="robots" content="noindex, follow">
+    <link rel="icon" href="assets/images/ewu.png" type="image/png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/styles.css">
+    <link rel="stylesheet" href="assets/css/features.css">
+</head>
+
+<body class="fp-body fp-scroll">
+    <div class="fp-bg"></div>
+
+    <nav class="fp-nav">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5">
+            <div class="flex justify-between items-center">
+                <a href="dashboard.html" class="flex items-center gap-3 hover:opacity-90 transition-opacity no-underline">
+                    <img src="assets/images/ewu.png" alt="EWU Logo" class="h-9 sm:h-10 w-auto object-contain">
+                    <div class="flex flex-col">
+                        <span class="text-base sm:text-lg font-bold text-white tracking-tight">Grade Report</span>
+                        <span class="text-[10px] text-gray-400 font-mono hidden sm:inline-block">Academic Transcript</span>
+                    </div>
+                </a>
+                <div class="hidden md:flex items-center gap-3.5">
+                    <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/[0.04] border border-white/[0.08] text-xs font-mono text-gray-200">
+                        <svg class="w-3.5 h-3.5 text-[#D86C5A]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                        <span id="userId">Student ID</span>
+                    </div>
+                    <a href="dashboard.html" class="px-3 py-1.5 text-xs text-gray-300 hover:text-white font-medium transition-colors no-underline">Dashboard</a>
+                    <button onclick="handleLogout(event)" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 text-xs font-medium transition-all cursor-pointer">
+                        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                        <span>Logout</span>
+                    </button>
+                </div>
+                <button id="mobileMenuBtn" class="md:hidden text-white p-2 rounded-lg hover:bg-white/10" aria-label="Toggle menu">
+                    <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+                </button>
+            </div>
+            <div id="mobileMenu" class="hidden md:hidden mt-3 pt-3 border-t border-white/[0.08] space-y-2">
+                <a href="dashboard.html" class="block py-2 px-3 rounded-lg bg-white/[0.04] text-xs text-gray-300 hover:text-white no-underline">Dashboard</a>
+                <button onclick="handleLogout(event)" class="block w-full text-center py-2 rounded-lg bg-red-500/10 text-xs text-red-400 hover:bg-red-500/20">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-7">
+        <div class="mb-6 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+            <div>
+                <div class="fp-eyebrow mb-1.5">Office of the Controller of Examinations</div>
+                <h1 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">Grade Report</h1>
+                <p class="text-gray-400 text-xs sm:text-sm mt-1">Your complete academic grade sheet with computed term GPAs and cumulative CGPA.</p>
+            </div>
+            <div class="flex items-center gap-2.5">
+                <button id="refreshBtn" class="fp-btn fp-btn-ghost">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 0 0 4.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 0 1-15.357-2m15.357 2H15"></path></svg>
+                    <span class="hidden sm:inline">Refresh</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- CGPA summary -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3.5 mb-6">
+            <div class="fp-stat">
+                <span class="fp-stat-label">Cumulative CGPA</span>
+                <span class="fp-stat-value text-[#7fb0ea]" id="sumCgpa">—</span>
+            </div>
+            <div class="fp-stat">
+                <span class="fp-stat-label">Total Credits</span>
+                <span class="fp-stat-value" id="sumCredits">—</span>
+            </div>
+            <div class="fp-stat">
+                <span class="fp-stat-label">Courses Graded</span>
+                <span class="fp-stat-value" id="sumCourses">—</span>
+            </div>
+            <div class="fp-stat">
+                <span class="fp-stat-label">Semesters</span>
+                <span class="fp-stat-value" id="sumSemesters">—</span>
+            </div>
+        </div>
+
+        <div id="gradeContent" class="fp-panel p-4 sm:p-6"></div>
+    </main>
+
+    <footer class="mt-auto border-t border-white/[0.06] bg-black/40 py-6 text-center w-full">
+        <p class="text-xs text-gray-500">Educational project — not officially affiliated with East West University.</p>
+    </footer>
+
+    <script src="assets/js/system-metrics.js" defer></script>
+    <script src="assets/js/features.js"></script>
+    <script src="assets/js/grade-report.js"></script>
+</body>
+
+</html>

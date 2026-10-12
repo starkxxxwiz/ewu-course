@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Class Schedule - EWU Course Portal</title>
+    <meta name="description" content="Personalized EWU class schedule with weekly routine generation, credit summary and export.">
+    <meta name="author" content="Aftab Kabir">
+    <meta name="robots" content="noindex, follow">
+    <link rel="icon" href="assets/images/ewu.png" type="image/png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/styles.css">
+    <link rel="stylesheet" href="assets/css/features.css">
+</head>
+
+<body class="fp-body fp-scroll">
+    <div class="fp-bg"></div>
+
+    <nav class="fp-nav">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5">
+            <div class="flex justify-between items-center">
+                <a href="dashboard.html" class="flex items-center gap-3 hover:opacity-90 transition-opacity no-underline">
+                    <img src="assets/images/ewu.png" alt="EWU Logo" class="h-9 sm:h-10 w-auto object-contain">
+                    <div class="flex flex-col">
+                        <span class="text-base sm:text-lg font-bold text-white tracking-tight">Class Schedule</span>
+                        <span class="text-[10px] text-gray-400 font-mono hidden sm:inline-block">Weekly Routine Builder</span>
+                    </div>
+                </a>
+                <div class="hidden md:flex items-center gap-3.5">
+                    <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/[0.04] border border-white/[0.08] text-xs font-mono text-gray-200">
+                        <svg class="w-3.5 h-3.5 text-[#D86C5A]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                        <span id="userId">Student ID</span>
+                    </div>
+                    <a href="dashboard.html" class="px-3 py-1.5 text-xs text-gray-300 hover:text-white font-medium transition-colors no-underline">Dashboard</a>
+                    <button onclick="handleLogout(event)" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 text-xs font-medium transition-all cursor-pointer">
+                        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                        <span>Logout</span>
+                    </button>
+                </div>
+                <button id="mobileMenuBtn" class="md:hidden text-white p-2 rounded-lg hover:bg-white/10" aria-label="Toggle menu">
+                    <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+                </button>
+            </div>
+            <div id="mobileMenu" class="hidden md:hidden mt-3 pt-3 border-t border-white/[0.08] space-y-2">
+                <a href="dashboard.html" class="block py-2 px-3 rounded-lg bg-white/[0.04] text-xs text-gray-300 hover:text-white no-underline">Dashboard</a>
+                <button onclick="handleLogout(event)" class="block w-full text-center py-2 rounded-lg bg-red-500/10 text-xs text-red-400 hover:bg-red-500/20">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="flex-grow w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-7">
+        <!-- Header -->
+        <div class="mb-6 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
+            <div>
+                <div class="fp-eyebrow mb-2">East West University Advising System</div>
+                <h1 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">Class Schedule</h1>
+                <p class="text-gray-400 text-xs sm:text-sm mt-1.5 max-w-2xl">Your registered courses for the selected semester with a generated weekly routine.</p>
+            </div>
+            <div class="flex flex-wrap items-center gap-2.5">
+                <select id="semesterSelect" class="fp-input" style="min-width:190px;max-width:240px;">
+                    <option value="">Loading semesters…</option>
+                </select>
+                <button id="refreshBtn" class="fp-btn fp-btn-ghost" title="Reload schedule">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 0 0 4.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 0 1-15.357-2m15.357 2H15"></path></svg>
+                    <span class="hidden sm:inline">Refresh</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Summary metrics -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3.5 mb-6">
+            <div class="fp-stat">
+                <span class="fp-stat-label">Registered Courses</span>
+                <span class="fp-stat-value" id="statCourses">—</span>
+            </div>
+            <div class="fp-stat">
+                <span class="fp-stat-label">Registered Credits</span>
+                <span class="fp-stat-value text-[#7fb0ea]" id="statCredits">—</span>
+            </div>
+            <div class="fp-stat">
+                <span class="fp-stat-label">Class Slots</span>
+                <span class="fp-stat-value" id="statSlots">—</span>
+            </div>
+            <div class="fp-stat">
+                <span class="fp-stat-label">Dropped / Withdrawn</span>
+                <span class="fp-stat-value text-amber-400" id="statDropped">—</span>
+            </div>
+        </div>
+
+        <!-- Table panel -->
+        <div class="fp-panel p-3.5 sm:p-5 mb-6">
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+                <div class="fp-section-title">
+                    <svg class="w-4 h-4 text-[#5a8fd8]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"></path><rect x="9" y="3" width="6" height="4" rx="1"></rect></svg>
+                    Registered Courses
+                </div>
+                <div class="flex flex-wrap items-center gap-2.5">
+                    <label class="flex items-center gap-2 text-xs text-gray-300 cursor-pointer select-none">
+                        <span class="fp-switch"><input type="checkbox" id="hideDropped"><span class="track"></span></span>
+                        Hide dropped
+                    </label>
+                    <button onclick="openRoutine()" class="fp-btn fp-btn-primary">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                        <span>Generate Routine</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="fp-table-wrap fp-scroll" id="tableWrap">
+                <table class="fp-table">
+                    <thead>
+                        <tr>
+                            <th style="width:48px;">#</th>
+                            <th>Course</th>
+                            <th style="width:70px;">Sec</th>
+                            <th>Faculty</th>
+                            <th>Schedule</th>
+                            <th>Room</th>
+                            <th style="width:70px;">Credit</th>
+                            <th style="width:110px;">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="scheduleBody">
+                        <tr><td colspan="8"><div class="fp-empty"><div class="fp-spinner"></div>Loading class schedule…</div></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <footer class="mt-auto border-t border-white/[0.06] bg-black/40 py-6 text-center w-full">
+        <p class="text-xs text-gray-500">Educational project — not officially affiliated with East West University.</p>
+    </footer>
+
+    <!-- Routine Modal -->
+    <div class="fp-modal" id="routineModal">
+        <div class="fp-modal-body">
+            <div class="flex items-center justify-between px-5 py-4 border-b border-white/[0.08] sticky top-0 bg-[#0b0b13] z-10">
+                <div>
+                    <div class="text-white font-bold text-sm" id="routineTitle">Class Routine</div>
+                    <div class="text-[11px] text-gray-400 font-mono" id="routineSubtitle"></div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="exportRoutinePng()" class="fp-btn fp-btn-ghost" title="Save as PNG">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                        <span class="hidden sm:inline">PNG</span>
+                    </button>
+                    <button onclick="exportRoutinePdf()" class="fp-btn fp-btn-ghost" title="Save as PDF">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                        <span class="hidden sm:inline">PDF</span>
+                    </button>
+                    <button onclick="exportRoutineIcs()" class="fp-btn fp-btn-ghost" title="Download .ics calendar">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                        <span class="hidden sm:inline">ICS</span>
+                    </button>
+                    <button onclick="closeRoutine()" class="fp-btn fp-btn-danger"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+                </div>
+            </div>
+            <div class="p-5" id="routinePreview"></div>
+        </div>
+    </div>
+
+    <script src="assets/js/system-metrics.js" defer></script>
+    <script src="assets/js/features.js"></script>
+    <script src="assets/js/class-schedule.js"></script>
+</body>
+
+</html>

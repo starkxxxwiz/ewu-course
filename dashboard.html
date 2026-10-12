@@ -30,6 +30,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="assets/css/styles.css">
+    <link rel="stylesheet" href="assets/css/features.css">
 
     <script>
         tailwind.config = {
@@ -391,225 +392,34 @@
         </div>
 
         <!-- Section 1: Active Features -->
-        <section class="mb-10 sm:mb-12">
+        <section class="mb-10 sm:mb-12" id="activeSection">
             <div class="flex items-center justify-between mb-5">
                 <div class="flex items-center gap-2.5">
                     <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.6)]"></span>
-                    <h2 class="text-lg sm:text-xl font-bold text-white tracking-tight">Active Features</h2>
+                    <h2 class="text-lg sm:text-xl font-bold text-white tracking-tight">Available Features</h2>
                 </div>
-                <span class="text-xs text-emerald-400/90 font-mono font-medium px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">2 Available</span>
+                <span id="activeCount" class="text-xs text-emerald-400/90 font-mono font-medium px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">—</span>
             </div>
-
-            <!-- Active Feature Cards Grid -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
-                <!-- Card 1: Recommended Courses -->
-                <div class="feature-card-active p-6 sm:p-7 fade-in">
-                    <div>
-                        <div class="flex items-start justify-between gap-3 mb-4">
-                            <div class="icon-box-active">
-                                <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
-                                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
-                                    <line x1="12" y1="6" x2="16" y2="6"></line>
-                                    <line x1="12" y1="10" x2="16" y2="10"></line>
-                                </svg>
-                            </div>
-                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-semibold">
-                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-                                Active
-                            </span>
-                        </div>
-
-                        <h3 class="text-lg sm:text-xl font-bold text-white mb-2">Recommended Courses</h3>
-                        <p class="text-gray-300 text-xs sm:text-sm leading-relaxed mb-6">
-                            View personalized course offerings from your advising routine with live seat availability, room codes, conflict checks, and PDF export.
-                        </p>
-                    </div>
-
-                    <div class="pt-2">
-                        <a href="advise.html" class="btn-card-action">
-                            <span>Open Recommended Routine</span>
-                            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                        </a>
-                    </div>
-                </div>
-
-                <!-- Card 2: Department-Wise Course Fetch -->
-                <div class="feature-card-active feature-card-active-blue p-6 sm:p-7 fade-in">
-                    <div>
-                        <div class="flex items-start justify-between gap-3 mb-4">
-                            <div class="icon-box-active icon-box-active-blue">
-                                <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <rect x="3" y="3" width="7" height="7"></rect>
-                                    <rect x="14" y="3" width="7" height="7"></rect>
-                                    <rect x="14" y="14" width="7" height="7"></rect>
-                                    <rect x="3" y="14" width="7" height="7"></rect>
-                                </svg>
-                            </div>
-                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-semibold">
-                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-                                Active
-                            </span>
-                        </div>
-
-                        <h3 class="text-lg sm:text-xl font-bold text-white mb-2">Department-Wise Courses</h3>
-                        <p class="text-gray-300 text-xs sm:text-sm leading-relaxed mb-6">
-                            Search and filter course offerings across all academic departments and semesters with multi-tag search, faculty info, and seat filters.
-                        </p>
-                    </div>
-
-                    <div class="pt-2">
-                        <a href="department-courses.html" class="btn-card-action btn-card-action-blue">
-                            <span>Explore Department Courses</span>
-                            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                        </a>
+            <div id="activeGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
+                <div class="glass-card p-6 sm:p-7 fade-in" style="grid-column:1/-1;">
+                    <div class="flex items-center justify-center py-10 text-gray-400 text-sm">
+                        <svg class="w-5 h-5 animate-spin mr-3 text-[#D86C5A]" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" opacity="0.25"></circle><path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
+                        Loading features…
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- Section 2: Coming Soon Features -->
-        <section class="mb-12">
+        <!-- Section 2: Coming Soon / Unavailable Features -->
+        <section class="mb-12 hidden" id="comingSection">
             <div class="flex items-center justify-between mb-5">
                 <div class="flex items-center gap-2.5">
                     <span class="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.5)]"></span>
-                    <h2 class="text-lg sm:text-xl font-bold text-white tracking-tight">Coming Soon Features</h2>
+                    <h2 class="text-lg sm:text-xl font-bold text-white tracking-tight">Unavailable Features</h2>
                 </div>
-                <span class="text-xs text-amber-400/90 font-mono font-medium px-2.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20">5 Planned</span>
+                <span id="comingCount" class="text-xs text-amber-400/90 font-mono font-medium px-2.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20">0</span>
             </div>
-
-            <!-- Locked Cards Grid -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
-                <!-- Locked Card 1: Class Schedule -->
-                <div class="feature-card-locked p-5 sm:p-6">
-                    <div>
-                        <div class="flex items-start justify-between gap-3 mb-4">
-                            <div class="icon-box-locked">
-                                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-                            </div>
-                            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/25 text-amber-300 text-[11px] font-medium">
-                                <svg class="w-3 h-3 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                                Available Soon
-                            </span>
-                        </div>
-                        <h3 class="text-base font-bold text-gray-200 mb-1.5">Class Schedule</h3>
-                        <p class="text-gray-400 text-xs leading-relaxed">
-                            Personalized weekly timetable grid with conflict detection and automated classroom directions.
-                        </p>
-                    </div>
-                    <div class="mt-5 pt-3.5 border-t border-white/[0.06] flex items-center justify-between text-[11px] text-gray-500 font-mono">
-                        <span class="flex items-center gap-1.5">
-                            <span class="w-1.5 h-1.5 rounded-full bg-amber-400/60"></span>
-                            Status: Planned
-                        </span>
-                        <span class="px-1.5 py-0.5 rounded bg-white/[0.04] text-gray-400">v1.2</span>
-                    </div>
-                </div>
-
-                <!-- Locked Card 2: Course Planner -->
-                <div class="feature-card-locked p-5 sm:p-6">
-                    <div>
-                        <div class="flex items-start justify-between gap-3 mb-4">
-                            <div class="icon-box-locked">
-                                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
-                            </div>
-                            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/25 text-amber-300 text-[11px] font-medium">
-                                <svg class="w-3 h-3 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                                Available Soon
-                            </span>
-                        </div>
-                        <h3 class="text-base font-bold text-gray-200 mb-1.5">Course Planner</h3>
-                        <p class="text-gray-400 text-xs leading-relaxed">
-                            Interactive drag-and-drop course scheduler to create, compare, and simulate multiple routine combinations before advising.
-                        </p>
-                    </div>
-                    <div class="mt-5 pt-3.5 border-t border-white/[0.06] flex items-center justify-between text-[11px] text-gray-500 font-mono">
-                        <span class="flex items-center gap-1.5">
-                            <span class="w-1.5 h-1.5 rounded-full bg-sky-400/60"></span>
-                            Status: In Design
-                        </span>
-                        <span class="px-1.5 py-0.5 rounded bg-white/[0.04] text-gray-400">v1.2</span>
-                    </div>
-                </div>
-
-                <!-- Locked Card 3: Account Ledger -->
-                <div class="feature-card-locked p-5 sm:p-6">
-                    <div>
-                        <div class="flex items-start justify-between gap-3 mb-4">
-                            <div class="icon-box-locked">
-                                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"></rect><line x1="2" y1="10" x2="22" y2="10"></line></svg>
-                            </div>
-                            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/25 text-amber-300 text-[11px] font-medium">
-                                <svg class="w-3 h-3 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                                Available Soon
-                            </span>
-                        </div>
-                        <h3 class="text-base font-bold text-gray-200 mb-1.5">Account Ledger</h3>
-                        <p class="text-gray-400 text-xs leading-relaxed">
-                            Track semester tuition balances, payment histories, scholarship waivers, and installment due dates.
-                        </p>
-                    </div>
-                    <div class="mt-5 pt-3.5 border-t border-white/[0.06] flex items-center justify-between text-[11px] text-gray-500 font-mono">
-                        <span class="flex items-center gap-1.5">
-                            <span class="w-1.5 h-1.5 rounded-full bg-amber-400/60"></span>
-                            Status: Planned
-                        </span>
-                        <span class="px-1.5 py-0.5 rounded bg-white/[0.04] text-gray-400">v1.3</span>
-                    </div>
-                </div>
-
-                <!-- Locked Card 4: Grade Report -->
-                <div class="feature-card-locked p-5 sm:p-6">
-                    <div>
-                        <div class="flex items-start justify-between gap-3 mb-4">
-                            <div class="icon-box-locked">
-                                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-                            </div>
-                            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/25 text-amber-300 text-[11px] font-medium">
-                                <svg class="w-3 h-3 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                                Available Soon
-                            </span>
-                        </div>
-                        <h3 class="text-base font-bold text-gray-200 mb-1.5">Grade Report</h3>
-                        <p class="text-gray-400 text-xs leading-relaxed">
-                            Comprehensive academic transcript viewer with term-by-term GPA history, completed credits, and grade statistics.
-                        </p>
-                    </div>
-                    <div class="mt-5 pt-3.5 border-t border-white/[0.06] flex items-center justify-between text-[11px] text-gray-500 font-mono">
-                        <span class="flex items-center gap-1.5">
-                            <span class="w-1.5 h-1.5 rounded-full bg-amber-400/60"></span>
-                            Status: Planned
-                        </span>
-                        <span class="px-1.5 py-0.5 rounded bg-white/[0.04] text-gray-400">v1.3</span>
-                    </div>
-                </div>
-
-                <!-- Locked Card 5: CGPA Planner -->
-                <div class="feature-card-locked p-5 sm:p-6">
-                    <div>
-                        <div class="flex items-start justify-between gap-3 mb-4">
-                            <div class="icon-box-locked">
-                                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"></path><path d="M12 20V4"></path><path d="M6 20v-6"></path></svg>
-                            </div>
-                            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/25 text-amber-300 text-[11px] font-medium">
-                                <svg class="w-3 h-3 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                                Available Soon
-                            </span>
-                        </div>
-                        <h3 class="text-base font-bold text-gray-200 mb-1.5">CGPA Planner</h3>
-                        <p class="text-gray-400 text-xs leading-relaxed">
-                            Target GPA projection simulator and credit forecaster to estimate required letter grades for graduation goals.
-                        </p>
-                    </div>
-                    <div class="mt-5 pt-3.5 border-t border-white/[0.06] flex items-center justify-between text-[11px] text-gray-500 font-mono">
-                        <span class="flex items-center gap-1.5">
-                            <span class="w-1.5 h-1.5 rounded-full bg-amber-400/60"></span>
-                            Status: Planned
-                        </span>
-                        <span class="px-1.5 py-0.5 rounded bg-white/[0.04] text-gray-400">v1.4</span>
-                    </div>
-                </div>
-            </div>
+            <div id="comingGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6"></div>
         </section>
     </main>
 
@@ -631,6 +441,7 @@
 
     <!-- Scripts -->
     <script src="assets/js/system-metrics.js" defer></script>
+    <script src="assets/js/features.js"></script>
     <script src="assets/js/dashboard.js"></script>
 </body>
 </html>

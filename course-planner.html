@@ -14,7 +14,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="assets/css/styles.css">
-    <link rel="stylesheet" href="assets/css/features.css?v=2">
+    <link rel="stylesheet" href="assets/css/features.css?v=3">
     <style>
         .planner-grid { display: grid; grid-template-columns: 1fr; gap: 20px; }
         @media (min-width: 1024px) { .planner-grid { grid-template-columns: 1.15fr 0.85fr; } }
@@ -33,20 +33,13 @@
     <nav class="fp-nav">
         <div class="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-3.5">
             <div class="flex justify-between items-center">
-                <div class="flex items-center gap-3">
-                    <a href="dashboard.html" class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/[0.05] hover:bg-white/[0.1] border border-white/[0.1] text-xs font-medium text-gray-300 hover:text-white transition-all no-underline" title="Back to Dashboard">
-                        <svg class="w-4 h-4 text-[#D86C5A]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-                        <span class="hidden sm:inline">Dashboard</span>
-                    </a>
-                    <div class="h-5 w-[1px] bg-white/[0.1] hidden sm:block"></div>
-                    <a href="dashboard.html" class="flex items-center gap-3 hover:opacity-90 transition-opacity no-underline">
-                        <img src="assets/images/ewu.png" alt="EWU Logo" class="h-9 sm:h-10 w-auto object-contain">
-                        <div class="flex flex-col">
-                            <span class="text-base sm:text-lg font-bold text-white tracking-tight">Course Planner</span>
-                            <span class="text-[10px] text-gray-400 font-mono hidden sm:inline-block">Combination Simulator</span>
-                        </div>
-                    </a>
-                </div>
+                <a href="dashboard.html" class="flex items-center gap-3 hover:opacity-90 transition-opacity no-underline">
+                    <img src="assets/images/ewu.png" alt="EWU Logo" class="h-9 sm:h-10 w-auto object-contain">
+                    <div class="flex flex-col">
+                        <span class="text-base sm:text-lg font-bold text-white tracking-tight">Course Planner</span>
+                        <span class="text-[10px] text-gray-400 font-mono hidden sm:inline-block">Combination Simulator</span>
+                    </div>
+                </a>
                 <div class="hidden md:flex items-center gap-3.5">
                     <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/[0.04] border border-white/[0.08] text-xs font-mono text-gray-200">
                         <svg class="w-3.5 h-3.5 text-[#D86C5A]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
@@ -72,6 +65,13 @@
     </nav>
 
     <main class="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <!-- Top-Left Back Button in Page Body -->
+        <div class="mb-5">
+            <a href="dashboard.html" class="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] hover:border-white/[0.16] text-xs font-medium text-gray-300 hover:text-white transition-all group no-underline shadow-sm" title="Return to Dashboard">
+                <svg class="w-3.5 h-3.5 text-[#D86C5A] group-hover:-translate-x-0.5 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                <span>Back to Dashboard</span>
+            </a>
+        </div>
         <div class="mb-5">
             <div class="fp-eyebrow mb-1.5">Advising Simulator</div>
             <h1 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">Course Planner</h1>
@@ -164,8 +164,8 @@
     </div>
 
     <script src="assets/js/system-metrics.js" defer></script>
-    <script src="assets/js/features.js?v=2"></script>
-    <script src="assets/js/course-planner.js"></script>
+    <script src="assets/js/features.js?v=3"></script>
+    <script src="assets/js/course-planner.js?v=3"></script>
 </body>
 
 </html>

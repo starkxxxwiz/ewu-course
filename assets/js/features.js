@@ -365,6 +365,192 @@
         } catch (e) {}
     }
 
+    // ========================================
+    // Grade Report parsing (shared between Grade Report & CGPA Planner)
+    // ========================================
+    // Official EWU grade -> grade point mapping
+    const GRADE_POINTS = {
+        'A+': 4.00, 'A': 3.75, 'A-': 3.50,
+        'B+': 3.25, 'B': 3.00, 'B-': 2.75,
+        'C+': 2.50, 'C': 2.25, 'D': 2.00, 'F': 0.00
+    };
+    const COURSE_CODE_RE = /^[A-Z]{2,6}\d{3,4}[A-Z]?$/i;
+
+    function isNumber(v) { return /^-?\d+(\.\d+)?$/.test(String(v).trim()); }
+    function isYear(v) { return /^(19|20)\d{2}$/.test(String(v).trim()); }
+    function capitalize(s) { s = String(s || ''); return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase(); }
+    function termIndex(t) { t = String(t).toLowerCase(); return t === 'spring' ? 1 : t === 'summer' ? 2 : (t === 'fall' || t === 'autumn') ? 3 : t === 'winter' ? 4 : 5; }
+
+    function isGradeToken(s) {
+        const t = String(s || '').trim().toUpperCase();
+        return GRADE_POINTS[t] !== undefined || /^(F\*?|W|I|P|S|R|U)$/.test(t);
+    }
+
+    // The Worker returns the ReportViewer's ASP.NET AJAX delta stream. This
+    // extracts the actual report HTML block (length-prefixed "updatePanel").
+    function extractReportHtml(raw) {
+        if (!raw) return '';
+        if (raw.indexOf('|updatePanel|') === -1) return raw;
+        let best = '';
+        const re = /(\d+)\|updatePanel\|([^|]+)\|/g;
+        let m;
+        while ((m = re.exec(raw)) !== null) {
+            const len = parseInt(m[1], 10);
+            const start = m.index + m[0].length;
+            const content = raw.substr(start, len);
+            if (content && /oReportDiv|ReportArea|<TABLE/i.test(content) && content.length > best.length) {
+                best = content;
+            }
+        }
+        return best || raw;
+    }
+
+    function matchSemester(text) {
+        let m = String(text).match(/\b(20\d{2})\s*[-\s]\s*(Spring|Summer|Fall|Winter|Autumn)\b/i);
+        if (m) return { name: capitalize(m[2]) + '-' + m[1], order: parseInt(m[1], 10) * 10 + termIndex(m[2]) };
+        m = String(text).match(/\b(Spring|Summer|Fall|Winter|Autumn)\s*[-\s]\s*(20\d{2})\b/i);
+        if (m) return { name: capitalize(m[1]) + '-' + m[2], order: parseInt(m[2], 10) * 10 + termIndex(m[1]) };
+        return null;
+    }
+
+    /**
+     * Parse the portal grade-sheet HTML (delta stream or plain HTML) into a
+     * structured transcript: { semesters, cgpa, totalCredits, totalCourses, summary }
+     */
+    function parseGradeReportHtml(rawHtml) {
+        const empty = { semesters: [], cgpa: null, totalCredits: 0, totalCourses: 0, summary: null };
+        if (!rawHtml) return empty;
+
+        const cleanHtml = extractReportHtml(rawHtml);
+        let doc;
+        try {
+            doc = new DOMParser().parseFromString(cleanHtml, 'text/html');
+        } catch (e) {
+            return empty;
+        }
+
+        const semesters = [];
+        let current = null;
+        let summary = null;
+
+        doc.querySelectorAll('tr').forEach(tr => {
+            const cells = [];
+            tr.querySelectorAll('td').forEach(td => cells.push((td.textContent || '').replace(/\s+/g, ' ').trim()));
+            const nonEmpty = cells.filter(Boolean);
+            if (!nonEmpty.length) return;
+            const joined = nonEmpty.join(' ');
+
+            // Skip document/header/legend rows outright
+            if (/EAST\s*WEST\s*UNIVERSITY|Grade\s*Report\s*:|Degree\s*Objective|Unique\s*ID|Not valid for|Title of the Course/i.test(joined)) return;
+
+            // Semester header: a short single-cell row like "2025 Summer"
+            if (nonEmpty.length === 1 && nonEmpty[0].length <= 24 &&
+                /^(20\d{2}\s*[-\s]\s*)?(Spring|Summer|Fall|Winter|Autumn)(\s*[-\s]\s*20\d{2})?$/i.test(nonEmpty[0])) {
+                const sem = matchSemester(nonEmpty[0]);
+                if (sem) {
+                    current = { name: sem.name, order: sem.order, courses: [], termGpa: null, cgpa: null, credits: 0 };
+                    semesters.push(current);
+                    return;
+                }
+            }
+
+            // Term GPA / CGPA row (may also be the final Summary row)
+            if (joined.length < 200 && (/Term\s*GPA\s*:/i.test(joined) || /CGPA\s*:/i.test(joined))) {
+                if (current) {
+                    const tg = joined.match(/Term\s*GPA\s*:\s*([\d.]+)/i);
+                    const cg = joined.match(/CGPA\s*:\s*([\d.]+)/i);
+                    if (tg) current.termGpa = parseFloat(tg[1]);
+                    if (cg) current.cgpa = parseFloat(cg[1]);
+                }
+                if (/Credit\s*Earned/i.test(joined) || /Minimum\s*Credits/i.test(joined)) {
+                    const cg = joined.match(/CGPA\s*:\s*([\d.]+)/i);
+                    const earned = joined.match(/Credit\s*Earned\s*:\s*([\d.]+)/i);
+                    const min = joined.match(/Minimum\s*Credits\s*Required\s*:\s*([\d.]+)/i);
+                    summary = {
+                        cgpa: cg ? parseFloat(cg[1]) : null,
+                        creditEarned: earned ? parseFloat(earned[1]) : null,
+                        minCredits: min ? parseFloat(min[1]) : null
+                    };
+                }
+                return;
+            }
+
+            // Course row (a genuine row has a handful of cells)
+            if (cells.length > 10) return;
+            const codeIdx = cells.findIndex(c => COURSE_CODE_RE.test(String(c).replace(/\s+/g, '')));
+            if (codeIdx === -1) return;
+
+            const code = String(cells[codeIdx]).replace(/\s+/g, '').toUpperCase();
+            let grade = '', gradeIdx = -1;
+            for (let i = codeIdx + 1; i < cells.length; i++) {
+                if (isGradeToken(cells[i])) { grade = String(cells[i]).toUpperCase(); gradeIdx = i; break; }
+            }
+            if (!grade) return;
+
+            const title = (cells[codeIdx + 1] && !isGradeToken(cells[codeIdx + 1]) && !isNumber(cells[codeIdx + 1])) ? cells[codeIdx + 1] : '';
+
+            let credit = null;
+            for (let i = codeIdx + 1; i < gradeIdx; i++) {
+                if (cells[i] === title) continue;
+                const n = parseFloat(cells[i]);
+                if (!isNaN(n) && n > 0 && n <= 12 && !isYear(cells[i])) { credit = n; break; }
+            }
+
+            if (!current) {
+                current = { name: 'Grade History', order: 0, courses: [], termGpa: null, cgpa: null, credits: 0 };
+                semesters.push(current);
+            }
+            current.courses.push({
+                code, title, credit,
+                grade,
+                point: GRADE_POINTS[grade] !== undefined ? GRADE_POINTS[grade] : null
+            });
+        });
+
+        // Dedupe semesters by name (the report viewer can emit blocks more than once)
+        const seen = new Set();
+        const unique = [];
+        semesters.forEach(s => {
+            if (!s.courses.length || seen.has(s.name)) return;
+            seen.add(s.name);
+            let credits = 0, pts = 0;
+            s.courses.forEach(c => {
+                if (c.credit != null) {
+                    credits += c.credit;
+                    if (GRADE_POINTS[c.grade] !== undefined) pts += GRADE_POINTS[c.grade] * c.credit;
+                }
+            });
+            s.credits = credits;
+            s.computedGpa = credits > 0 ? pts / credits : null;
+            s.gpa = (s.termGpa != null && !isNaN(s.termGpa)) ? s.termGpa : s.computedGpa;
+            unique.push(s);
+        });
+        unique.sort((a, b) => a.order - b.order);
+
+        let totalCourses = 0, computedCredits = 0, totalPoints = 0;
+        unique.forEach(s => {
+            totalCourses += s.courses.length;
+            computedCredits += s.credits;
+            s.courses.forEach(c => {
+                if (c.credit != null && GRADE_POINTS[c.grade] !== undefined) totalPoints += GRADE_POINTS[c.grade] * c.credit;
+            });
+        });
+
+        let cgpa = null;
+        if (summary && summary.cgpa != null) {
+            cgpa = summary.cgpa;
+        } else {
+            for (let i = unique.length - 1; i >= 0; i--) {
+                if (unique[i].cgpa != null) { cgpa = unique[i].cgpa; break; }
+            }
+        }
+        if (cgpa == null && computedCredits > 0) cgpa = totalPoints / computedCredits;
+
+        const totalCredits = (summary && summary.creditEarned != null) ? summary.creditEarned : computedCredits;
+
+        return { semesters: unique, cgpa, totalCredits, totalCourses, summary };
+    }
+
     // Expose everything on window for cross-script access
     window.API_BASE_URL = API_BASE_URL;
     window.FEATURES = FEATURES;
@@ -382,5 +568,8 @@
     window.performLogout = performLogout;
     window.fetchJsonWithRetry = fetchJsonWithRetry;
     window.trackEvent = trackEvent;
+    window.GRADE_POINTS = GRADE_POINTS;
+    window.parseGradeReportHtml = parseGradeReportHtml;
+    window.extractReportHtml = extractReportHtml;
     window.handleLogout = performLogout;
 })();

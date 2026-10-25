@@ -1,19 +1,12 @@
 // ========================================
 // Grade Report Page Logic
-// Parses the portal grade-sheet HTML into a
-// structured transcript with computed GPA/CGPA.
+// Parses the portal grade-sheet (ASP.NET AJAX delta stream) into a structured
+// transcript with per-semester GPA/CGPA, and exports it as PDF / CSV.
 // ========================================
 
 (function () {
-    // EWU grade -> grade point mapping (official policy)
-    const GRADE_POINTS = {
-        'A+': 4.00, 'A': 3.75, 'A-': 3.50,
-        'B+': 3.25, 'B': 3.00, 'B-': 2.75,
-        'C+': 2.50, 'C': 2.25, 'D': 2.00, 'F': 0.00
-    };
-    const NON_GPA_GRADES = ['W', 'I', 'P', 'S', 'R', 'U', 'F*'];
-    const COURSE_CODE_RE = /^[A-Z]{2,6}[\s-]?\d{3,4}[A-Z]?$/i;
-    const GRADE_RE = /^(A\+|A-|A|B\+|B-|B|C\+|C|D|F\*?|W|I|P|S|R|U)$/i;
+    let parsedResult = null;
+    let currentUserId = 'Student';
 
     document.addEventListener('DOMContentLoaded', init);
 
@@ -22,13 +15,22 @@
         if (!gate.allowed) return;
         const auth = await requireAuth();
         if (!auth) return;
+        currentUserId = auth.userId || 'Student';
         const uidEl = document.getElementById('userId');
-        if (uidEl) uidEl.textContent = auth.userId || 'Student ID';
+        if (uidEl) uidEl.textContent = currentUserId;
 
         document.getElementById('mobileMenuBtn')?.addEventListener('click', () => {
             document.getElementById('mobileMenu')?.classList.toggle('hidden');
         });
-        document.getElementById('refreshBtn')?.addEventListener('click', () => load( true));
+        document.getElementById('refreshBtn')?.addEventListener('click', () => load(true));
+        document.getElementById('exportBtn')?.addEventListener('click', toggleExportMenu);
+
+        document.addEventListener('click', (e) => {
+            const menu = document.getElementById('exportMenu');
+            if (menu && !menu.classList.contains('hidden') && !e.target.closest('#exportBtn') && !e.target.closest('#exportMenu')) {
+                menu.classList.add('hidden');
+            }
+        });
 
         await load(false);
     }
@@ -42,156 +44,17 @@
             const data = result.data || {};
             if (data.status === 'error') throw new Error(data.message || 'Failed to load grade report');
 
-            const parsed = parseGradeHtml(data.html || '');
-            render(parsed, data.html || '');
+            window.__rawReportHtml = window.extractReportHtml ? window.extractReportHtml(data.html || '') : (data.html || '');
+            parsedResult = window.parseGradeReportHtml(data.html || '');
+            render(parsedResult);
             if (manual) showFeatureToast('Grade report refreshed', 'success');
         } catch (e) {
-            content.innerHTML = `<div class="fp-empty">Failed to load grade report.<br><span class="text-gray-500">${escapeHtml(e.message || '')}</span></div>`;
+            content.innerHTML = `<div class="fp-empty">Failed to load grade report.<br><span class="text-gray-500">${esc(e.message || '')}</span></div>`;
             showFeatureToast(e.message || 'Failed to load grade report', 'error');
         }
     }
 
-    // -----------------------------------------
-    // -----------------------------------------
-    // HTML parsing
-    // -----------------------------------------
-    function parseGradeHtml(html) {
-        const semesters = [];
-        if (!html) return { semesters, raw: html };
-
-        let cleanHtml = html;
-        // Unpack ASP.NET AJAX delta stream if present
-        if (html.includes('|updatePanel|')) {
-            const parts = html.split('|');
-            let combined = '';
-            for (let i = 0; i < parts.length; i++) {
-                if (parts[i] === 'updatePanel') {
-                    const content = parts[i + 2];
-                    if (content) combined += '\n' + content;
-                    i += 2;
-                }
-            }
-            if (combined) cleanHtml = combined;
-        }
-
-        let doc;
-        try {
-            doc = new DOMParser().parseFromString(cleanHtml, 'text/html');
-        } catch (e) {
-            return { semesters, raw: html };
-        }
-
-        const tables = doc.querySelectorAll('table');
-        let currentSemester = null;
-
-        tables.forEach(table => {
-            const rows = table.querySelectorAll('tr');
-            rows.forEach(row => {
-                const cells = [...row.querySelectorAll('td, th')].map(c => clean(c.textContent));
-                if (!cells.length) return;
-
-                const joined = cells.join(' ');
-
-                // Ignore grading scale footnote headers (e.g. "Up to Summer-2023", "From Fall-2023")
-                if (!joined.includes('Up to') && !joined.includes('From')) {
-                    // Detect semester header rows (e.g. "2025 Summer", "Fall 2024", "Semester: Spring-2025")
-                    const semMatchYearFirst = joined.match(/\b(20\d{2})[\s-]+(Spring|Summer|Fall|Winter)\b/i);
-                    const semMatchTermFirst = joined.match(/\b(Spring|Summer|Fall|Winter)[\s-]+(20\d{2})\b/i);
-
-                    const hasCourseCode = cells.some(c => COURSE_CODE_RE.test(c.replace(/\s+/g, '')));
-
-                    if ((semMatchYearFirst || semMatchTermFirst) && (!hasCourseCode || cells.length <= 2)) {
-                        let semName = '';
-                        if (semMatchYearFirst) {
-                            semName = `${capitalize(semMatchYearFirst[2])}-${semMatchYearFirst[1]}`;
-                        } else {
-                            semName = `${capitalize(semMatchTermFirst[1])}-${semMatchTermFirst[2]}`;
-                        }
-                        currentSemester = { name: semName, courses: [], gpa: null, credits: 0 };
-                        semesters.push(currentSemester);
-                        return;
-                    }
-                }
-
-                // Capture official Portal Term GPA & CGPA if present in summary row
-                if (currentSemester && (joined.includes('Term GPA') || joined.includes('CGPA'))) {
-                    const gpaMatch = joined.match(/Term\s*GPA\s*:\s*([\d.]+)/i);
-                    const cgpaMatch = joined.match(/CGPA\s*:\s*([\d.]+)/i);
-                    if (gpaMatch) currentSemester.portalTermGpa = parseFloat(gpaMatch[1]);
-                    if (cgpaMatch) currentSemester.portalCgpa = parseFloat(cgpaMatch[1]);
-                    return;
-                }
-
-                const codeIdx = cells.findIndex(c => COURSE_CODE_RE.test(c.replace(/\s+/g, '')));
-                if (codeIdx === -1) return;
-
-                const code = cells[codeIdx].replace(/\s+/g, '').toUpperCase();
-                const title = cells[codeIdx + 1] && !isNumber(cells[codeIdx + 1]) && !GRADE_RE.test(cells[codeIdx + 1]) ? cells[codeIdx + 1] : '';
-
-                // Find grade cell (exact grade token)
-                let grade = '';
-                let gradeIdx = -1;
-                for (let i = codeIdx + 1; i < cells.length; i++) {
-                    if (GRADE_RE.test(cells[i])) { grade = cells[i].toUpperCase(); gradeIdx = i; break; }
-                }
-                if (!grade) return;
-
-                // Credit appears in the row
-                let credit = null;
-                for (let i = codeIdx + 1; i < cells.length; i++) {
-                    if (i === gradeIdx) continue;
-                    const n = parseFloat(cells[i]);
-                    if (!isNaN(n) && n > 0 && n <= 12 && !isNumberYear(cells[i])) { credit = n; break; }
-                }
-
-                if (!currentSemester) {
-                    currentSemester = { name: 'Grade History', courses: [], gpa: null, credits: 0 };
-                    semesters.push(currentSemester);
-                }
-
-                currentSemester.courses.push({
-                    code, title, credit: credit != null ? credit : 3.0, grade,
-                    point: GRADE_POINTS[grade] !== undefined ? GRADE_POINTS[grade] : null
-                });
-            });
-        });
-
-        // Compute per-semester GPA and cumulative CGPA (prioritizing portal-provided metrics if present)
-        let totalPoints = 0, totalCredits = 0, totalCourses = 0;
-        let latestPortalCgpa = null;
-
-        semesters.forEach(sem => {
-            let pts = 0, credits = 0;
-            sem.courses.forEach(c => {
-                const isGpaGrade = GRADE_POINTS[c.grade] !== undefined;
-                if (isGpaGrade && c.credit != null) {
-                    pts += GRADE_POINTS[c.grade] * c.credit;
-                    credits += c.credit;
-                }
-            });
-            sem.computedGpa = credits > 0 ? pts / credits : null;
-            sem.gpa = sem.portalTermGpa !== undefined && !isNaN(sem.portalTermGpa) ? sem.portalTermGpa : sem.computedGpa;
-            sem.credits = credits;
-            totalPoints += pts;
-            totalCredits += credits;
-            totalCourses += sem.courses.length;
-            if (sem.portalCgpa !== undefined && !isNaN(sem.portalCgpa)) {
-                latestPortalCgpa = sem.portalCgpa;
-            }
-        });
-
-        const cumulativeCgpa = latestPortalCgpa !== null ? latestPortalCgpa : (totalCredits > 0 ? totalPoints / totalCredits : null);
-
-        return {
-            semesters: semesters.filter(s => s.courses.length),
-            cgpa: cumulativeCgpa,
-            totalCredits,
-            totalCourses,
-            raw: html
-        };
-    }
-
-    function render(parsed, rawHtml) {
+    function render(parsed) {
         const content = document.getElementById('gradeContent');
 
         document.getElementById('sumCgpa').textContent = parsed.cgpa != null ? parsed.cgpa.toFixed(2) : '—';
@@ -204,32 +67,35 @@
                 <div class="fp-empty" style="padding:40px 20px;">
                     <svg class="w-10 h-10 mx-auto mb-3 opacity-40" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="1.6"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
                     <p class="text-gray-300 font-medium mb-1">Grade data could not be extracted</p>
-                    <p class="text-gray-500 text-xs max-w-md mx-auto">The portal renders the grade sheet through an interactive report viewer that loads asynchronously. If your grades are not shown, open the original report below.</p>
+                    <p class="text-gray-500 text-xs max-w-md mx-auto">The portal renders the grade sheet through an interactive report viewer. If your grades are not shown, open the original report below.</p>
                     <button onclick="openRawReport()" class="fp-btn fp-btn-ghost" style="margin-top:16px;">
                         <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
                         Open Original Report
                     </button>
                 </div>`;
-            window.__rawGradeHtml = rawHtml;
             return;
         }
 
         let html = '';
-        // Cumulative banner
-        if (parsed.cgpa != null) {
-            html += `<div class="flex flex-wrap items-center gap-4 p-4 rounded-xl mb-5" style="background:rgba(90,143,216,0.08);border:1px solid rgba(90,143,216,0.2);">
-                <div><div class="fp-stat-label">Computed CGPA</div><div style="font-size:28px;font-weight:800;color:#7fb0ea;">${parsed.cgpa.toFixed(2)}</div></div>
-                <div style="border-left:1px solid rgba(255,255,255,0.1);padding-left:18px;">
-                    <div class="fp-stat-label">Total Credits Attempted (GPA courses)</div>
-                    <div class="text-white font-bold text-lg">${parsed.totalCredits.toFixed(1)}</div>
+
+        // Progress toward minimum credits
+        if (parsed.summary && parsed.summary.minCredits) {
+            const pct = Math.min(100, Math.round((parsed.totalCredits / parsed.summary.minCredits) * 100));
+            html += `<div class="mb-5 p-4 rounded-xl" style="background:rgba(90,143,216,0.07);border:1px solid rgba(90,143,216,0.2);">
+                <div class="flex items-center justify-between mb-2 text-xs">
+                    <span class="fp-eyebrow">Graduation Credits Progress</span>
+                    <span class="font-mono text-white">${parsed.totalCredits.toFixed(1)} / ${parsed.summary.minCredits.toFixed(1)}</span>
+                </div>
+                <div style="height:8px;border-radius:999px;background:rgba(255,255,255,0.07);overflow:hidden;">
+                    <div style="height:100%;width:${pct}%;background:linear-gradient(135deg,#5a8fd8,#06b6d4);"></div>
                 </div>
             </div>`;
         }
 
         parsed.semesters.forEach(sem => {
             html += `<div class="mb-5">
-                <div class="flex items-center justify-between mb-2">
-                    <div class="fp-section-title"><svg class="w-4 h-4 text-[#D86C5A]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>${escapeHtml(sem.name)}</div>
+                <div class="flex items-center justify-between mb-2 flex-wrap gap-2">
+                    <div class="fp-section-title"><svg class="w-4 h-4 text-[#D86C5A]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>${esc(sem.name)}</div>
                     <div class="flex items-center gap-3 text-xs">
                         <span class="text-gray-400">Credits: <strong class="text-white">${sem.credits.toFixed(1)}</strong></span>
                         <span class="fp-status fp-status-sky">GPA: ${sem.gpa != null ? sem.gpa.toFixed(2) : '—'}</span>
@@ -241,10 +107,10 @@
                         <tbody>
                             ${sem.courses.map(c => `
                                 <tr>
-                                    <td><span class="fp-badge fp-badge-code">${escapeHtml(c.code)}</span></td>
-                                    <td class="text-gray-300">${escapeHtml(c.title || '—')}</td>
+                                    <td><span class="fp-badge fp-badge-code">${esc(c.code)}</span></td>
+                                    <td class="text-gray-300">${esc(c.title || '—')}</td>
                                     <td class="text-center font-mono">${c.credit != null ? c.credit.toFixed(2) : '—'}</td>
-                                    <td class="text-center"><span style="${gradeStyle(c.grade)}" class="fp-badge">${escapeHtml(c.grade)}</span></td>
+                                    <td class="text-center"><span style="${gradeStyle(c.grade)}" class="fp-badge">${esc(c.grade)}</span></td>
                                     <td class="text-center font-mono">${c.point != null ? c.point.toFixed(2) : '—'}</td>
                                 </tr>`).join('')}
                         </tbody>
@@ -258,11 +124,115 @@
         </div>`;
 
         content.innerHTML = html;
-        window.__rawGradeHtml = rawHtml;
+    }
+
+    // ---- Exports ----
+    function toggleExportMenu(e) {
+        if (e) e.preventDefault();
+        if (!parsedResult || !parsedResult.semesters.length) { showFeatureToast('Nothing to export yet', 'warning'); return; }
+        document.getElementById('exportMenu')?.classList.toggle('hidden');
+    }
+
+    function exportGradePdf() {
+        if (!parsedResult || !parsedResult.semesters.length) { showFeatureToast('Nothing to export', 'warning'); return; }
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('portrait', 'mm', 'a4');
+        const pageW = doc.internal.pageSize.width;
+        const pageH = doc.internal.pageSize.height;
+        const margin = 12;
+
+        doc.setFillColor(15, 15, 20);
+        doc.rect(0, 0, pageW, 20, 'F');
+        doc.setFillColor(90, 143, 216);
+        doc.rect(0, 20, pageW, 1, 'F');
+
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(14); doc.setTextColor(255, 255, 255);
+        doc.text('EWU GRADE REPORT', margin, 12);
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(150, 150, 160);
+        doc.text('Generated from portal grade sheet', margin, 17);
+
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5); doc.setTextColor(90, 143, 216);
+        doc.text('Student ID:', pageW - margin - 52, 10);
+        doc.setTextColor(255, 255, 255);
+        doc.text(String(currentUserId), pageW - margin - 22, 10);
+        doc.setTextColor(90, 143, 216);
+        doc.text('CGPA:', pageW - margin - 52, 16);
+        doc.setTextColor(255, 255, 255);
+        doc.text(parsedResult.cgpa != null ? parsedResult.cgpa.toFixed(2) : '—', pageW - margin - 22, 16);
+
+        let y = 26;
+        parsedResult.semesters.forEach((sem) => {
+            doc.autoTable({
+                head: [[`${sem.name}`, `Credits: ${sem.credits.toFixed(1)}`, `GPA: ${sem.gpa != null ? sem.gpa.toFixed(2) : '—'}`, '', '']],
+                body: [
+                    ['Course', 'Title', 'Credit', 'Grade', 'Point'],
+                    ...sem.courses.map(c => [c.code, c.title || '', c.credit != null ? c.credit.toFixed(2) : '', c.grade, c.point != null ? c.point.toFixed(2) : ''])
+                ],
+                startY: y,
+                margin: { left: margin, right: margin },
+                theme: 'grid',
+                styles: { fontSize: 8, cellPadding: 2.2, valign: 'middle' },
+                headStyles: { fillColor: [26, 115, 232], textColor: [255, 255, 255], fontStyle: 'bold' },
+                columnStyles: {
+                    0: { cellWidth: 30, fontStyle: 'bold', textColor: [29, 78, 216] },
+                    1: { cellWidth: 'auto' },
+                    2: { cellWidth: 20, halign: 'center' },
+                    3: { cellWidth: 20, halign: 'center' },
+                    4: { cellWidth: 20, halign: 'center' }
+                },
+                didParseCell: (d) => {
+                    if (d.section === 'head') return;
+                    if (d.row.index === 0) {
+                        // column-label sub-header
+                        d.cell.styles.fillColor = [238, 242, 255];
+                        d.cell.styles.textColor = [71, 85, 105];
+                        d.cell.styles.fontStyle = 'bold';
+                    }
+                }
+            });
+            y = doc.lastAutoTable.finalY + 6;
+            if (y > pageH - 30) { doc.addPage(); y = 18; }
+        });
+
+        doc.setFontSize(9); doc.setTextColor(60, 60, 70);
+        doc.text(`Total Credits: ${parsedResult.totalCredits.toFixed(1)}    Courses: ${parsedResult.totalCourses}    CGPA: ${parsedResult.cgpa != null ? parsedResult.cgpa.toFixed(2) : '—'}`, margin, y + 2);
+
+        const pageCount = doc.internal.getNumberOfPages();
+        for (let i = 1; i <= pageCount; i++) {
+            doc.setPage(i); doc.setFontSize(7.5); doc.setTextColor(150, 150, 160);
+            doc.text(`Page ${i} of ${pageCount}`, pageW - margin, pageH - 6, { align: 'right' });
+        }
+
+        doc.save(`EWU_Grade_Report_${new Date().toISOString().slice(0, 10)}.pdf`);
+        trackEvent('export_grade_pdf', { count: parsedResult.totalCourses });
+        showFeatureToast('Grade report PDF exported', 'success');
+    }
+
+    function exportGradeCsv() {
+        if (!parsedResult || !parsedResult.semesters.length) { showFeatureToast('Nothing to export', 'warning'); return; }
+        const rows = [['Semester', 'Course', 'Title', 'Credit', 'Grade', 'Point']];
+        parsedResult.semesters.forEach(sem => {
+            sem.courses.forEach(c => {
+                rows.push([sem.name, c.code, c.title || '', c.credit != null ? c.credit : '', c.grade, c.point != null ? c.point : '']);
+            });
+        });
+        rows.push([]);
+        rows.push(['Summary', 'CGPA', parsedResult.cgpa != null ? parsedResult.cgpa.toFixed(2) : '', 'Total Credits', parsedResult.totalCredits.toFixed(1), 'Courses ' + parsedResult.totalCourses]);
+
+        const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `EWU_Grade_Report_${new Date().toISOString().slice(0, 10)}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+        trackEvent('export_grade_csv', { count: parsedResult.totalCourses });
+        showFeatureToast('Grade report CSV exported', 'success');
     }
 
     function openRawReport() {
-        const html = window.__rawGradeHtml;
+        const html = window.__rawReportHtml;
         if (!html) { showFeatureToast('No raw report available', 'warning'); return; }
         const w = window.open('', '_blank');
         if (w) { w.document.open(); w.document.write(html); w.document.close(); }
@@ -278,11 +248,9 @@
         return 'background:rgba(156,163,175,0.1);border-color:rgba(156,163,175,0.25);color:#9ca3af;';
     }
 
-    // Helpers
-    function clean(t) { return String(t || '').replace(/\s+/g, ' ').replace(/\u00a0/g, ' ').trim(); }
-    function isNumber(s) { return /^-?\d+(\.\d+)?$/.test(String(s).trim()); }
-    function isNumberYear(s) { const n = String(s).trim(); return /^(19|20)\d{2}$/.test(n); }
-    function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase(); }
+    function esc(s) { return (typeof window.escapeHtml === 'function') ? window.escapeHtml(s) : String(s == null ? '' : s); }
 
     window.openRawReport = openRawReport;
+    window.exportGradePdf = exportGradePdf;
+    window.exportGradeCsv = exportGradeCsv;
 })();

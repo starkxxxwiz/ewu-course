@@ -10,8 +10,9 @@
     let rawCourses = [];
     let routineCourses = []; // sorted course columns for the generated routine
 
-    const DOW = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    const DOW_INDEX = { 'Sat': 0, 'Sun': 1, 'Mon': 2, 'Tue': 3, 'Wed': 4, 'Thu': 5, 'Fri': 6 };
+    const DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const DOW_INDEX = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+    const DOW_FULL = { Sun: 'Sunday', Mon: 'Monday', Tue: 'Tuesday', Wed: 'Wednesday', Thu: 'Thursday', Fri: 'Friday', Sat: 'Saturday' };
     const LOGO_URL = 'assets/images/ewu.png';
 
     document.addEventListener('DOMContentLoaded', init);
@@ -303,7 +304,7 @@
         h += '</tr></thead><tbody>';
 
         daysToShow.forEach(day => {
-            h += `<tr><td class="tt-day">${escapeHtml(day)}</td>`;
+            h += `<tr><td class="tt-day">${escapeHtml(DOW_FULL[day] || day)}</td>`;
             courses.forEach(course => {
                 const slots = findDaySlots(course, day);
                 if (!slots.length) {
@@ -402,7 +403,7 @@
             ctx.fillStyle = '#334155';
             ctx.font = '700 12px Inter, sans-serif';
             ctx.textAlign = 'center';
-            ctx.fillText(day, startX + dayColWidth / 2, y + rowH / 2 + 4);
+            ctx.fillText(DOW_FULL[day] || day, startX + dayColWidth / 2, y + rowH / 2 + 4);
 
             courses.forEach((course, ci) => {
                 const x = startX + dayColWidth + ci * colWidth;
@@ -451,7 +452,7 @@
 
         const head = [['Day', ...courses.map(c => `${c.courseCode}\nSec ${c.section}`)]];
         const body = daysToShow.map(day => {
-            const row = [day];
+            const row = [DOW_FULL[day] || day];
             courses.forEach(course => {
                 const slots = findDaySlots(course, day);
                 row.push(slots.map(s => `${s.startLabel}-${s.endLabel}\n${s.room}`).join('\n'));
@@ -487,7 +488,7 @@
             endDate = new Date(Date.now() + 16 * 7 * 24 * 3600 * 1000);
         }
 
-        const icsDayCode = { Sunday: 'SU', Monday: 'MO', Tuesday: 'TU', Wednesday: 'WE', Thursday: 'TH', Friday: 'FR', Saturday: 'SA' };
+        const icsDayCode = { Sun: 'SU', Mon: 'MO', Tue: 'TU', Wed: 'WE', Thu: 'TH', Fri: 'FR', Sat: 'SA' };
         const pad = n => String(n).padStart(2, '0');
         const fmt = d => `${d.getUTCFullYear()}${pad(d.getUTCMonth() + 1)}${pad(d.getUTCDate())}T${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}00Z`;
 

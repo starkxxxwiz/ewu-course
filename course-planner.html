@@ -14,7 +14,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="assets/css/styles.css">
-    <link rel="stylesheet" href="assets/css/features.css?v=3">
+    <link rel="stylesheet" href="assets/css/features.css?v=4">
     <style>
         .planner-grid { display: grid; grid-template-columns: 1fr; gap: 20px; }
         @media (min-width: 1024px) { .planner-grid { grid-template-columns: 1.15fr 0.85fr; } }
@@ -111,7 +111,7 @@
             </section>
 
             <!-- RIGHT: Plan -->
-            <section class="fp-panel p-4 sm:p-5">
+            <section class="fp-panel p-4 sm:p-5" id="planDropZone">
                 <div class="flex items-center justify-between mb-3">
                     <div class="fp-section-title">
                         <svg class="w-4 h-4 text-[#D86C5A]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
@@ -121,6 +121,11 @@
                         <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"></path></svg>
                         Clear
                     </button>
+                </div>
+
+                <div class="mb-3 px-3 py-2 rounded-lg text-[11px] text-gray-500 flex items-center gap-2" style="background:rgba(90,143,216,0.06);border:1px dashed rgba(90,143,216,0.25);">
+                    <svg class="w-3.5 h-3.5 text-[#5a8fd8] flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 9l-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3M2 12h20M12 2v20"></path></svg>
+                    <span>Tip: drag a course card here to add it, or use the <strong class="text-gray-400">Add</strong> button.</span>
                 </div>
 
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-4">
@@ -165,7 +170,7 @@
 
     <script src="assets/js/system-metrics.js" defer></script>
     <script src="assets/js/features.js?v=3"></script>
-    <script src="assets/js/course-planner.js?v=3"></script>
+    <script src="assets/js/course-planner.js?v=4"></script>
 </body>
 
 </html>

@@ -38,8 +38,57 @@
         document.getElementById('previewModal')?.addEventListener('click', (e) => {
             if (e.target.id === 'previewModal') closePreview();
         });
+        initDragAndDrop();
 
         await loadCatalog(false);
+    }
+
+    // -----------------------------------------
+    // Drag & drop: drag a catalog card into the plan panel to add it
+    // -----------------------------------------
+    function initDragAndDrop() {
+        const catalogList = document.getElementById('catalogList');
+        const dropZone = document.getElementById('planDropZone') || document.getElementById('planList');
+        if (!catalogList || !dropZone) return;
+
+        let dragKey = null;
+
+        catalogList.addEventListener('dragstart', (e) => {
+            const cardEl = e.target.closest('[data-key]');
+            if (!cardEl) { e.preventDefault(); return; }
+            dragKey = cardEl.getAttribute('data-key');
+            cardEl.classList.add('dragging');
+            try {
+                e.dataTransfer.setData('text/plain', dragKey);
+                e.dataTransfer.effectAllowed = 'copy';
+            } catch (_) {}
+        });
+
+        catalogList.addEventListener('dragend', (e) => {
+            const cardEl = e.target.closest('[data-key]');
+            if (cardEl) cardEl.classList.remove('dragging');
+        });
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'copy';
+            dropZone.classList.add('fp-drop-active');
+        });
+        dropZone.addEventListener('dragenter', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('fp-drop-active');
+        });
+        dropZone.addEventListener('dragleave', (e) => {
+            if (!dropZone.contains(e.relatedTarget)) dropZone.classList.remove('fp-drop-active');
+        });
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('fp-drop-active');
+            let key = dragKey;
+            try { key = e.dataTransfer.getData('text/plain') || key; } catch (_) {}
+            if (key) addCourse(key);
+            dragKey = null;
+        });
     }
 
     function activeCombo() {
@@ -136,7 +185,8 @@
         return out;
     }
 
-    const DOW = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const DOW_FULL = { Sun: 'Sunday', Mon: 'Monday', Tue: 'Tuesday', Wed: 'Wednesday', Thu: 'Thursday', Fri: 'Friday', Sat: 'Saturday' };
 
     // -----------------------------------------
     // Catalog rendering & search
@@ -173,7 +223,7 @@
         const theory = card.theorySlots.map(slotRow).join('');
         const lab = card.labSlots.map(labRow).join('');
         return `
-            <div class="fp-catalog-card ${extraClass}">
+            <div class="fp-catalog-card ${extraClass}" draggable="true" data-key="${escapeHtml(card.key)}">
                 <div class="flex items-start justify-between gap-3 mb-2.5">
                     <div class="flex flex-wrap items-center gap-2">
                         <span class="fp-badge fp-badge-code">${escapeHtml(card.courseCode)}</span>
@@ -199,7 +249,6 @@
         return `<div class="sched-row">
             <svg class="sched-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#7fb0ea;"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
             <span>${escapeHtml(days)} • ${escapeHtml(s.startLabel)} – ${escapeHtml(s.endLabel)}</span>
-            ${s.room ? `<span class="text-gray-500">• ${escapeHtml(s.room)}</span>` : ''}
         </div>`;
     }
 
@@ -208,7 +257,6 @@
         return `<div class="sched-row">
             <svg class="sched-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#fbbf24;"><path d="M10 2v7.31L3.39 17c-.77.87-.29 2.23.87 2.23h15.48c1.15 0 1.63-1.36.87-2.23L14 9.31V2"></path><line x1="8.5" y1="2" x2="15.5" y2="2"></line><line x1="6.5" y1="13.5" x2="17.5" y2="13.5"></line></svg>
             <span>${escapeHtml(days)} • ${escapeHtml(s.startLabel)} – ${escapeHtml(s.endLabel)}</span>
-            ${s.room ? `<span class="text-gray-500">• ${escapeHtml(s.room)}</span>` : ''}
         </div>`;
     }
 
@@ -427,7 +475,7 @@
         html += '</tr></thead><tbody>';
 
         daysToShow.forEach(day => {
-            html += `<tr><td class="tt-day">${escapeHtml(day)}</td>`;
+            html += `<tr><td class="tt-day">${escapeHtml(DOW_FULL[day] || day)}</td>`;
             cards.forEach(card => {
                 const slots = cardSlots(card).filter(s => s.days.includes(day)).sort((a, b) => a.startMin - b.startMin);
                 if (!slots.length) { html += '<td class="tt-cell"></td>'; return; }

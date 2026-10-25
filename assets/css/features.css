@@ -377,6 +377,17 @@ select.fp-input option { background: #12121a; color: #f3f4f6; }
 }
 .fp-catalog-card.added { border-color: rgba(16, 185, 129, 0.5); background: rgba(16, 185, 129, 0.05); }
 
+/* Drag & drop */
+.fp-catalog-card[draggable="true"] { cursor: grab; }
+.fp-catalog-card[draggable="true"]:active { cursor: grabbing; }
+.fp-catalog-card.dragging { opacity: 0.45; border-color: rgba(90, 143, 216, 0.6); }
+.fp-drop-active {
+    outline: 2px dashed rgba(90, 143, 216, 0.65);
+    outline-offset: 5px;
+    border-radius: 18px;
+    background: rgba(90, 143, 216, 0.06) !important;
+}
+
 /* Scrollbars */
 .fp-scroll::-webkit-scrollbar { width: 7px; height: 7px; }
 .fp-scroll::-webkit-scrollbar-track { background: rgba(255,255,255,0.02); }

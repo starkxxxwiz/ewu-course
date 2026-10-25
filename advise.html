@@ -758,11 +758,17 @@
     <!-- Navigation -->
     <nav class="glass-premium sticky top-0 z-50 mb-6" style="border-bottom: 1px solid rgba(90, 143, 216, 0.08);">
         <div class="container mx-auto px-4 sm:px-6 py-4">
-            <div class="flex justify-between items-center">
-                <a href="index.html" class="flex items-center gap-3 hover:opacity-80 transition-opacity" style="text-decoration: none;">
-                    <img src="assets/images/ewu.png" alt="EWU Logo" class="h-9 w-auto object-contain" style="animation: none; transition: none;">
-                    <span class="text-lg font-bold text-white" style="animation: none; transition: none;">EWU Courses</span>
-                </a>
+                <div class="flex items-center gap-3">
+                    <a href="dashboard.html" class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/[0.05] hover:bg-white/[0.1] border border-white/[0.1] text-xs font-medium text-gray-300 hover:text-white transition-all no-underline" title="Back to Dashboard">
+                        <svg class="w-4 h-4 text-[#D86C5A]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                        <span>Dashboard</span>
+                    </a>
+                    <div class="h-5 w-[1px] bg-white/[0.1] hidden sm:block"></div>
+                    <a href="dashboard.html" class="flex items-center gap-3 hover:opacity-80 transition-opacity" style="text-decoration: none;">
+                        <img src="assets/images/ewu.png" alt="EWU Logo" class="h-9 w-auto object-contain" style="animation: none; transition: none;">
+                        <span class="text-lg font-bold text-white" style="animation: none; transition: none;">EWU Courses</span>
+                    </a>
+                </div>
                 <!-- Desktop Navigation -->
                 <div class="hidden md:flex gap-4 items-center">
                     <a href="index.html" class="text-gray-400 hover:text-white transition-colors text-sm font-medium">Home</a>

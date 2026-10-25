@@ -828,32 +828,117 @@ async function handleGetGradeReport(request) {
   }
 
   try {
-    const headers = {
-      'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    const userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+    const cookie = `ASP.NET_SessionId=${sessionId}; perf_dv6Tr4n=1`;
+    const reportUrl = `${PORTAL_URL}/ReportForms/rptGradeSheetStudent.aspx`;
+
+    // 1st Request: GET initial ReportViewer page to extract ASP.NET state (__VIEWSTATE, __EVENTVALIDATION, etc.)
+    const getHeaders = {
+      'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
       'accept-language': 'en-US,en;q=0.9',
-      'referer': 'https://portal.ewubd.edu/Home/GradeReport',
-      'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-      'cookie': `ASP.NET_SessionId=${sessionId}; perf_dv6Tr4n=1`
+      'referer': `${PORTAL_URL}/Home/Index`,
+      'user-agent': userAgent,
+      'cookie': cookie
     };
 
-    const response = await fetchWithRetry(
-      `${PORTAL_URL}/ReportForms/rptGradeSheetStudent.aspx`,
-      { headers }
-    );
+    const firstResponse = await fetchWithRetry(reportUrl, { headers: getHeaders });
 
-    if (response.status === 401 || response.status === 403) {
+    if (firstResponse.status === 401 || firstResponse.status === 403) {
       return jsonResponse({ status: 'error', message: 'Session expired' }, 401, request);
     }
-    if (!response.ok) throw new Error('Failed to fetch grade report from portal');
+    if (!firstResponse.ok) throw new Error('Failed to fetch grade report page from portal');
 
-    const html = await response.text();
+    const firstHtml = await firstResponse.text();
 
-    // Detect an expired / unauthenticated session that redirects to the login page
-    if (!html || html.length < 500) {
+    // Detect unauthenticated / redirected login page
+    if (!firstHtml || firstHtml.length < 500 || firstHtml.includes('login') && !firstHtml.includes('ReportViewer1')) {
       return jsonResponse({ status: 'error', message: 'Session expired or grade report unavailable' }, 401, request);
     }
 
-    return jsonResponse({ status: 'success', html }, 200, request);
+    // Extract ASP.NET form inputs
+    const formFields = {};
+    const inputRegex = /<input\b[^>]*>/gi;
+    let inputMatch;
+    while ((inputMatch = inputRegex.exec(firstHtml)) !== null) {
+      const tag = inputMatch[0];
+      const nameMatch = tag.match(/name=["']([^"']+)["']/i);
+      const valMatch = tag.match(/value=["']([^"']*)["']/i);
+      if (nameMatch) {
+        formFields[nameMatch[1]] = valMatch ? valMatch[1] : '';
+      }
+    }
+
+    const viewState = formFields['__VIEWSTATE'] || '';
+    const viewStateGenerator = formFields['__VIEWSTATEGENERATOR'] || '43268499';
+    const eventValidation = formFields['__EVENTVALIDATION'] || '';
+
+    // If initial page has no viewstate, fallback to returning 1st HTML
+    if (!viewState) {
+      return jsonResponse({ status: 'success', html: firstHtml }, 200, request);
+    }
+
+    // 2nd Request: AJAX POST triggering ReportViewer1$ctl13$Reserved_AsyncLoadTarget
+    const postParams = new URLSearchParams();
+    postParams.append('ctl02', 'ctl02|ReportViewer1$ctl13$Reserved_AsyncLoadTarget');
+    postParams.append('__EVENTTARGET', 'ReportViewer1$ctl13$Reserved_AsyncLoadTarget');
+    postParams.append('__EVENTARGUMENT', '');
+    postParams.append('__VIEWSTATE', viewState);
+    postParams.append('__VIEWSTATEGENERATOR', viewStateGenerator);
+    postParams.append('__EVENTVALIDATION', eventValidation);
+    postParams.append('ReportViewer1$ctl03$ctl00', '');
+    postParams.append('ReportViewer1$ctl03$ctl01', '');
+    postParams.append('ReportViewer1$isReportViewerInVs', '');
+    postParams.append('ReportViewer1$ctl14', '');
+    postParams.append('ReportViewer1$ctl15', 'standards');
+    postParams.append('ReportViewer1$AsyncWait$HiddenCancelField', 'False');
+    postParams.append('ReportViewer1$ToggleParam$store', '');
+    postParams.append('ReportViewer1$ToggleParam$collapse', 'false');
+    postParams.append('ReportViewer1$ctl09$ctl00$CurrentPage', '');
+    postParams.append('null', '100');
+    postParams.append('ReportViewer1$ctl09$ctl03$ctl00', '');
+    postParams.append('ReportViewer1$ctl12$ClientClickedId', '');
+    postParams.append('ReportViewer1$ctl11$store', '');
+    postParams.append('ReportViewer1$ctl11$collapse', 'false');
+    postParams.append('ReportViewer1$ctl13$VisibilityState$ctl00', 'None');
+    postParams.append('ReportViewer1$ctl13$ScrollPosition', '');
+    postParams.append('ReportViewer1$ctl13$ReportControl$ctl02', '');
+    postParams.append('ReportViewer1$ctl13$ReportControl$ctl03', '');
+    postParams.append('ReportViewer1$ctl13$ReportControl$ctl04', '100');
+    postParams.append('__ASYNCPOST', 'true');
+
+    const postHeaders = {
+      'accept': '*/*',
+      'accept-language': 'en-US,en;q=0.9',
+      'cache-control': 'no-cache',
+      'content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
+      'origin': PORTAL_URL,
+      'referer': reportUrl,
+      'user-agent': userAgent,
+      'cookie': cookie,
+      'x-microsoftajax': 'Delta=true',
+      'x-requested-with': 'XMLHttpRequest'
+    };
+
+    const secondResponse = await fetchWithRetry(reportUrl, {
+      method: 'POST',
+      headers: postHeaders,
+      body: postParams.toString()
+    });
+
+    if (secondResponse.status === 401 || secondResponse.status === 403) {
+      return jsonResponse({ status: 'error', message: 'Session expired' }, 401, request);
+    }
+
+    if (secondResponse.ok) {
+      const secondRaw = await secondResponse.text();
+      // If delta response contains updatePanel content with tables, return it
+      if (secondRaw && (secondRaw.includes('updatePanel') || secondRaw.includes('oReportDiv') || secondRaw.includes('Term GPA'))) {
+        return jsonResponse({ status: 'success', html: secondRaw }, 200, request);
+      }
+    }
+
+    // Fallback: return 1st response if second post didn't return report content
+    return jsonResponse({ status: 'success', html: firstHtml }, 200, request);
   } catch (error) {
     console.error('handleGetGradeReport error:', error);
     return jsonResponse({ status: 'error', message: error.message || 'Failed to fetch grade report' }, 500, request);

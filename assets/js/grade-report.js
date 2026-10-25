@@ -52,15 +52,31 @@
     }
 
     // -----------------------------------------
+    // -----------------------------------------
     // HTML parsing
     // -----------------------------------------
     function parseGradeHtml(html) {
         const semesters = [];
         if (!html) return { semesters, raw: html };
 
+        let cleanHtml = html;
+        // Unpack ASP.NET AJAX delta stream if present
+        if (html.includes('|updatePanel|')) {
+            const parts = html.split('|');
+            let combined = '';
+            for (let i = 0; i < parts.length; i++) {
+                if (parts[i] === 'updatePanel') {
+                    const content = parts[i + 2];
+                    if (content) combined += '\n' + content;
+                    i += 2;
+                }
+            }
+            if (combined) cleanHtml = combined;
+        }
+
         let doc;
         try {
-            doc = new DOMParser().parseFromString(html, 'text/html');
+            doc = new DOMParser().parseFromString(cleanHtml, 'text/html');
         } catch (e) {
             return { semesters, raw: html };
         }
@@ -76,16 +92,37 @@
 
                 const joined = cells.join(' ');
 
-                // Detect semester header rows (e.g. "Fall 2024" / "Semester: Spring-2025")
-                const semMatch = joined.match(/(Spring|Summer|Fall|Winter)[\s-]*(\d{4})/i);
-                const codeIdx = cells.findIndex(c => COURSE_CODE_RE.test(c.replace(/\s+/g, '')));
+                // Ignore grading scale footnote headers (e.g. "Up to Summer-2023", "From Fall-2023")
+                if (!joined.includes('Up to') && !joined.includes('From')) {
+                    // Detect semester header rows (e.g. "2025 Summer", "Fall 2024", "Semester: Spring-2025")
+                    const semMatchYearFirst = joined.match(/\b(20\d{2})[\s-]+(Spring|Summer|Fall|Winter)\b/i);
+                    const semMatchTermFirst = joined.match(/\b(Spring|Summer|Fall|Winter)[\s-]+(20\d{2})\b/i);
 
-                if (semMatch && (codeIdx === -1 || cells.length <= 2)) {
-                    currentSemester = { name: `${capitalize(semMatch[1])}-${semMatch[2]}`, courses: [], gpa: null, credits: 0 };
-                    semesters.push(currentSemester);
+                    const hasCourseCode = cells.some(c => COURSE_CODE_RE.test(c.replace(/\s+/g, '')));
+
+                    if ((semMatchYearFirst || semMatchTermFirst) && (!hasCourseCode || cells.length <= 2)) {
+                        let semName = '';
+                        if (semMatchYearFirst) {
+                            semName = `${capitalize(semMatchYearFirst[2])}-${semMatchYearFirst[1]}`;
+                        } else {
+                            semName = `${capitalize(semMatchTermFirst[1])}-${semMatchTermFirst[2]}`;
+                        }
+                        currentSemester = { name: semName, courses: [], gpa: null, credits: 0 };
+                        semesters.push(currentSemester);
+                        return;
+                    }
+                }
+
+                // Capture official Portal Term GPA & CGPA if present in summary row
+                if (currentSemester && (joined.includes('Term GPA') || joined.includes('CGPA'))) {
+                    const gpaMatch = joined.match(/Term\s*GPA\s*:\s*([\d.]+)/i);
+                    const cgpaMatch = joined.match(/CGPA\s*:\s*([\d.]+)/i);
+                    if (gpaMatch) currentSemester.portalTermGpa = parseFloat(gpaMatch[1]);
+                    if (cgpaMatch) currentSemester.portalCgpa = parseFloat(cgpaMatch[1]);
                     return;
                 }
 
+                const codeIdx = cells.findIndex(c => COURSE_CODE_RE.test(c.replace(/\s+/g, '')));
                 if (codeIdx === -1) return;
 
                 const code = cells[codeIdx].replace(/\s+/g, '').toUpperCase();
@@ -99,11 +136,12 @@
                 }
                 if (!grade) return;
 
-                // Credit normally appears before the grade
+                // Credit appears in the row
                 let credit = null;
-                for (let i = codeIdx + 1; i < (gradeIdx === -1 ? cells.length : gradeIdx); i++) {
+                for (let i = codeIdx + 1; i < cells.length; i++) {
+                    if (i === gradeIdx) continue;
                     const n = parseFloat(cells[i]);
-                    if (!isNaN(n) && n >= 0 && n <= 12 && !isNumberYear(cells[i])) { credit = n; break; }
+                    if (!isNaN(n) && n > 0 && n <= 12 && !isNumberYear(cells[i])) { credit = n; break; }
                 }
 
                 if (!currentSemester) {
@@ -112,14 +150,16 @@
                 }
 
                 currentSemester.courses.push({
-                    code, title, credit: credit != null ? credit : null, grade,
+                    code, title, credit: credit != null ? credit : 3.0, grade,
                     point: GRADE_POINTS[grade] !== undefined ? GRADE_POINTS[grade] : null
                 });
             });
         });
 
-        // Compute per-semester GPA and cumulative CGPA
+        // Compute per-semester GPA and cumulative CGPA (prioritizing portal-provided metrics if present)
         let totalPoints = 0, totalCredits = 0, totalCourses = 0;
+        let latestPortalCgpa = null;
+
         semesters.forEach(sem => {
             let pts = 0, credits = 0;
             sem.courses.forEach(c => {
@@ -129,16 +169,22 @@
                     credits += c.credit;
                 }
             });
-            sem.gpa = credits > 0 ? pts / credits : null;
+            sem.computedGpa = credits > 0 ? pts / credits : null;
+            sem.gpa = sem.portalTermGpa !== undefined && !isNaN(sem.portalTermGpa) ? sem.portalTermGpa : sem.computedGpa;
             sem.credits = credits;
             totalPoints += pts;
             totalCredits += credits;
             totalCourses += sem.courses.length;
+            if (sem.portalCgpa !== undefined && !isNaN(sem.portalCgpa)) {
+                latestPortalCgpa = sem.portalCgpa;
+            }
         });
+
+        const cumulativeCgpa = latestPortalCgpa !== null ? latestPortalCgpa : (totalCredits > 0 ? totalPoints / totalCredits : null);
 
         return {
             semesters: semesters.filter(s => s.courses.length),
-            cgpa: totalCredits > 0 ? totalPoints / totalCredits : null,
+            cgpa: cumulativeCgpa,
             totalCredits,
             totalCourses,
             raw: html

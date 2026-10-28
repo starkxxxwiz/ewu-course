@@ -85,8 +85,12 @@ function buildPortalHeaders(sessionId, referer) {
 // Helper: Get CORS headers
 function getCorsHeaders(request) {
   const origin = request.headers.get('Origin');
+  const isAllowed = origin && (
+    ALLOWED_ORIGINS.includes(origin) || 
+    /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)
+  );
   
-  if (ALLOWED_ORIGINS.includes(origin)) {
+  if (isAllowed) {
     return {
       'Access-Control-Allow-Origin': origin,
       'Access-Control-Allow-Credentials': 'true',

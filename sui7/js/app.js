@@ -204,22 +204,31 @@ async function refreshDashboardData() {
 function updateLatencyUI(ms) {
     const latBadge = document.getElementById('latencyBadge');
     const latText = document.getElementById('headerLatency');
-    if (!latBadge || !latText) return;
+    const mobBadge = document.getElementById('mobileLatencyBadge');
+    const mobText = document.getElementById('mobileLatencyText');
 
+    const txt = ms < 0 ? 'Degraded' : `${ms} ms`;
+    if (latText) latText.textContent = txt;
+    if (mobText) mobText.textContent = txt;
+
+    let cls = 'flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-mono backdrop-blur transition-all ';
+    let mobCls = 'flex items-center gap-1 px-2.5 py-1 rounded-full border text-[10px] font-mono ';
     if (ms < 0) {
-        latText.textContent = 'Degraded';
-        latBadge.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-mono backdrop-blur';
-        return;
+        cls += 'bg-red-500/10 border-red-500/20 text-red-400';
+        mobCls += 'bg-red-500/10 border-red-500/20 text-red-400';
+    } else if (ms < 150) {
+        cls += 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400';
+        mobCls += 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400';
+    } else if (ms < 350) {
+        cls += 'bg-amber-500/10 border-amber-500/20 text-amber-400';
+        mobCls += 'bg-amber-500/10 border-amber-500/20 text-amber-400';
+    } else {
+        cls += 'bg-red-500/10 border-red-500/20 text-red-400';
+        mobCls += 'bg-red-500/10 border-red-500/20 text-red-400';
     }
 
-    latText.textContent = `${ms} ms`;
-    if (ms < 150) {
-        latBadge.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono backdrop-blur transition-all';
-    } else if (ms < 350) {
-        latBadge.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-mono backdrop-blur transition-all';
-    } else {
-        latBadge.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-mono backdrop-blur transition-all';
-    }
+    if (latBadge) latBadge.className = cls;
+    if (mobBadge) mobBadge.className = mobCls;
 }
 
 function updateNavigationBadges(data) {
@@ -604,6 +613,16 @@ const FEATURE_LABELS = {
     cgpa: 'CGPA Planner'
 };
 
+const FEATURE_META_ICONS = {
+    recommended: { icon: 'ph-book-bookmark', color: 'text-rose-400 bg-rose-500/10 border-rose-500/20' },
+    department: { icon: 'ph-buildings', color: 'text-blue-400 bg-blue-500/10 border-blue-500/20' },
+    schedule: { icon: 'ph-calendar-check', color: 'text-cyan-400 bg-cyan-500/10 border-cyan-500/20' },
+    planner: { icon: 'ph-compass', color: 'text-purple-400 bg-purple-500/10 border-purple-500/20' },
+    ledger: { icon: 'ph-receipt', color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' },
+    grades: { icon: 'ph-graduation-cap', color: 'text-amber-400 bg-amber-500/10 border-amber-500/20' },
+    cgpa: { icon: 'ph-calculator', color: 'text-pink-400 bg-pink-500/10 border-pink-500/20' }
+};
+
 const FEATURE_STATUS_OPTIONS = [
     { value: 'active', label: 'Active', tone: 'emerald' },
     { value: 'beta', label: 'Beta', tone: 'sky' },
@@ -622,26 +641,27 @@ function renderFeatureControls(features) {
 
     keys.forEach(key => {
         const current = (features && features[key]) || 'active';
+        const metaIcon = FEATURE_META_ICONS[key] || { icon: 'ph-puzzle-piece', color: 'text-brand-400 bg-brand-500/10 border-brand-500/20' };
         const row = document.createElement('div');
-        row.className = 'p-4 rounded-xl border border-gray-800/80 bg-gray-900/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4';
+        row.className = 'p-4 rounded-xl border border-gray-800/80 bg-gray-900/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all hover:border-gray-700/80 hover:bg-gray-900/50';
 
         const optionsHtml = FEATURE_STATUS_OPTIONS.map(opt =>
             `<option value="${opt.value}" ${opt.value === current ? 'selected' : ''}>${opt.label}</option>`
         ).join('');
 
         row.innerHTML = `
-            <div class="flex items-center gap-3">
-                <div class="w-9 h-9 rounded-lg bg-brand-500/10 flex items-center justify-center text-brand-400">
-                    <i class="ph ph-puzzle-piece text-lg"></i>
+            <div class="flex items-center gap-3.5">
+                <div class="w-10 h-10 rounded-xl ${metaIcon.color} border flex items-center justify-center flex-shrink-0">
+                    <i class="ph ${metaIcon.icon} text-xl"></i>
                 </div>
                 <div>
-                    <div class="text-sm font-semibold text-white">${FEATURE_LABELS[key]}</div>
+                    <div class="text-sm font-semibold text-white tracking-wide">${FEATURE_LABELS[key]}</div>
                     <div class="text-[11px] text-gray-400 font-mono">key: ${key}</div>
                 </div>
             </div>
             <div class="flex items-center gap-3">
                 <span class="feature-status-pill" data-key="${key}"></span>
-                <select data-feature-key="${key}" class="glass-input rounded-lg p-2 text-xs bg-gray-950 w-40">
+                <select data-feature-key="${key}" class="glass-input rounded-xl p-2.5 text-xs bg-gray-950 font-medium w-40 cursor-pointer">
                     ${optionsHtml}
                 </select>
             </div>
@@ -1950,6 +1970,9 @@ function initCommandPalette() {
 
     if (searchBtn) searchBtn.onclick = openPalette;
     if (quickTrigger) quickTrigger.onclick = openPalette;
+    const mobileCmdBtn = document.getElementById('mobileCmdPaletteBtn');
+    if (mobileCmdBtn) mobileCmdBtn.onclick = openPalette;
+    window.openCommandPalette = openPalette;
 
     input.oninput = (e) => {
         selectedIndex = 0;
@@ -2053,9 +2076,33 @@ function playAcousticPulse(type = 'success') {
 function bindLayoutEvents() {
     document.getElementById('logoutBtn')?.addEventListener('click', () => handleLogout(false));
     document.getElementById('refreshBtn')?.addEventListener('click', refreshDashboardData);
+
+    const toggleSidebar = (force) => {
+        const isOpen = force !== undefined ? force : !document.body.classList.contains('sidebar-open');
+        if (isOpen) {
+            document.body.classList.add('sidebar-open');
+        } else {
+            document.body.classList.remove('sidebar-open');
+        }
+    };
+
+    document.getElementById('mobileMenuToggleBtn')?.addEventListener('click', () => toggleSidebar());
+    document.getElementById('closeSidebarBtn')?.addEventListener('click', () => toggleSidebar(false));
+    document.getElementById('mobileBackdrop')?.addEventListener('click', () => toggleSidebar(false));
+
+    document.querySelectorAll('#mainNav .nav-link').forEach(link => {
+        link.addEventListener('click', () => toggleSidebar(false));
+    });
+
+    window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && document.body.classList.contains('sidebar-open')) {
+            toggleSidebar(false);
+        }
+    });
 }
 
 function updateNavActive(path) {
+    document.body.classList.remove('sidebar-open');
     document.querySelectorAll('.nav-link').forEach(link => {
         link.classList.remove('active', 'border-brand-500/20', 'bg-brand-500/10', 'text-brand-500');
         link.classList.add('text-gray-400', 'border-transparent');

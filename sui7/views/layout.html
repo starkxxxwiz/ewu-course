@@ -1,80 +1,121 @@
-<div class="min-h-screen flex flex-col md:flex-row fade-in">
+<div class="min-h-screen flex flex-col md:flex-row fade-in relative">
+    <!-- MOBILE TOP BAR (Visible only on mobile / small screens) -->
+    <div class="md:hidden glass border-b border-gray-800/80 px-4 py-3 flex items-center justify-between sticky top-0 z-30">
+        <div class="flex items-center gap-2.5">
+            <button id="mobileMenuToggleBtn" class="p-2 rounded-lg bg-gray-800/80 hover:bg-gray-700 text-gray-300 hover:text-white border border-gray-700 focus:outline-none transition-colors" aria-label="Toggle navigation menu">
+                <i id="mobileMenuIcon" class="ph ph-list text-xl"></i>
+            </button>
+            <div class="flex items-center gap-2">
+                <div class="w-7 h-7 bg-brand-500 rounded-lg flex items-center justify-center shadow-[0_0_12px_rgba(59,130,246,0.5)]">
+                    <i class="ph ph-shield-check text-white text-base"></i>
+                </div>
+                <div>
+                    <span class="font-bold text-sm text-white tracking-wide block leading-none">SUI7 Admin</span>
+                    <span class="text-[9px] text-gray-400 font-mono">Edge Control</span>
+                </div>
+            </div>
+        </div>
+        <div class="flex items-center gap-2">
+            <div id="mobileLatencyBadge" class="flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-mono">
+                <i class="ph ph-lightning text-xs"></i>
+                <span id="mobileLatencyText">-- ms</span>
+            </div>
+            <button id="mobileCmdPaletteBtn" class="p-2 rounded-lg bg-gray-800/80 hover:bg-gray-700 text-gray-300 border border-gray-700 text-xs flex items-center transition-colors" title="Command Palette">
+                <i class="ph ph-magnifying-glass text-sm"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- BACKDROP FOR MOBILE DRAWER -->
+    <div id="mobileBackdrop" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 hidden transition-opacity duration-300 opacity-0 md:hidden" aria-hidden="true"></div>
+
     <!-- SIDEBAR -->
-    <aside class="glass w-full md:w-64 md:min-h-screen flex-shrink-0 flex flex-col md:border-r border-gray-800 relative z-20">
-        <div class="p-6 border-b border-gray-800 flex items-center justify-between">
+    <aside id="adminSidebar" class="glass fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] transform -translate-x-full md:translate-x-0 md:static md:w-64 md:min-h-screen flex-shrink-0 flex flex-col md:border-r border-gray-800/80 transition-transform duration-300 ease-in-out shadow-2xl md:shadow-none">
+        <div class="p-5 border-b border-gray-800 flex items-center justify-between">
             <div class="flex items-center gap-3">
-                <div class="w-8 h-8 bg-brand-500 rounded flex items-center justify-center shadow-[0_0_15px_rgba(59,130,246,0.5)]">
+                <div class="w-8 h-8 bg-brand-500 rounded-xl flex items-center justify-center shadow-[0_0_15px_rgba(59,130,246,0.5)]">
                     <i class="ph ph-shield-check text-white text-xl"></i>
                 </div>
                 <div>
-                    <span class="font-bold text-lg text-white tracking-wide block leading-none">SUI7 Admin</span>
-                    <span class="text-[10px] text-gray-400 font-mono">Edge Control v2.4</span>
+                    <span class="font-bold text-base text-white tracking-wide block leading-tight">SUI7 Admin</span>
+                    <span class="text-[10px] text-gray-400 font-mono">Edge Control v2.5</span>
                 </div>
             </div>
-            <button id="quickCmdTriggerBtn" class="hidden md:flex p-1.5 rounded-md bg-gray-800/80 hover:bg-gray-700 text-gray-400 hover:text-white border border-gray-700 text-xs items-center gap-1" title="Command Palette (Ctrl+K)">
-                <span class="text-[10px] font-mono">⌘K</span>
-            </button>
+            <div class="flex items-center gap-1">
+                <button id="quickCmdTriggerBtn" class="hidden md:flex p-1.5 rounded-md bg-gray-800/80 hover:bg-gray-700 text-gray-400 hover:text-white border border-gray-700 text-xs items-center gap-1 transition-colors" title="Command Palette (Ctrl+K)">
+                    <span class="text-[10px] font-mono">⌘K</span>
+                </button>
+                <button id="closeSidebarBtn" class="md:hidden p-1.5 rounded-lg bg-gray-800/80 text-gray-400 hover:text-white border border-gray-700 hover:bg-gray-700 transition-colors" aria-label="Close menu">
+                    <i class="ph ph-x text-lg"></i>
+                </button>
+            </div>
         </div>
         
-        <nav class="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto" id="mainNav">
-            <a href="#/overview" class="nav-link flex items-center justify-between px-4 py-2.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-all border border-transparent border-brand-500/20 active">
+        <nav class="flex-1 px-3.5 py-5 space-y-1 overflow-y-auto scrollbar-thin" id="mainNav">
+            <a href="#/overview" class="nav-link flex items-center justify-between px-3.5 py-2.5 rounded-xl text-gray-400 hover:text-white hover:bg-white/5 transition-all border border-transparent active">
                 <span class="flex items-center gap-3"><i class="ph ph-squares-four text-lg"></i> Overview</span>
-                <span class="text-[10px] text-gray-500 font-mono">1</span>
+                <span class="text-[10px] text-gray-500 font-mono bg-gray-900/60 px-1.5 py-0.5 rounded border border-gray-800">1</span>
             </a>
-            <a href="#/user-analytics" class="nav-link flex items-center justify-between px-4 py-2.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-all border border-transparent">
+            <a href="#/user-analytics" class="nav-link flex items-center justify-between px-3.5 py-2.5 rounded-xl text-gray-400 hover:text-white hover:bg-white/5 transition-all border border-transparent">
                 <span class="flex items-center gap-3"><i class="ph ph-users text-lg"></i> User Analytics</span>
-                <span class="text-[10px] text-gray-500 font-mono">2</span>
+                <span class="text-[10px] text-gray-500 font-mono bg-gray-900/60 px-1.5 py-0.5 rounded border border-gray-800">2</span>
             </a>
-            <a href="#/site-analytics" class="nav-link flex items-center justify-between px-4 py-2.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-all border border-transparent">
+            <a href="#/site-analytics" class="nav-link flex items-center justify-between px-3.5 py-2.5 rounded-xl text-gray-400 hover:text-white hover:bg-white/5 transition-all border border-transparent">
                 <span class="flex items-center gap-3"><i class="ph ph-chart-line-up text-lg"></i> Site Analytics</span>
-                <span class="text-[10px] text-gray-500 font-mono">3</span>
+                <span class="text-[10px] text-gray-500 font-mono bg-gray-900/60 px-1.5 py-0.5 rounded border border-gray-800">3</span>
             </a>
-            <a href="#/control" class="nav-link flex items-center justify-between px-4 py-2.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-all border border-transparent">
+            <a href="#/control" class="nav-link flex items-center justify-between px-3.5 py-2.5 rounded-xl text-gray-400 hover:text-white hover:bg-white/5 transition-all border border-transparent">
                 <span class="flex items-center gap-3"><i class="ph ph-faders text-lg"></i> Control Panel</span>
-                <span class="text-[10px] text-gray-500 font-mono">4</span>
+                <span class="text-[10px] text-gray-500 font-mono bg-gray-900/60 px-1.5 py-0.5 rounded border border-gray-800">4</span>
             </a>
-            <a href="#/features" class="nav-link flex items-center justify-between px-4 py-2.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-all border border-transparent">
+            <a href="#/features" class="nav-link flex items-center justify-between px-3.5 py-2.5 rounded-xl text-gray-400 hover:text-white hover:bg-white/5 transition-all border border-transparent">
                 <span class="flex items-center gap-3"><i class="ph ph-sliders-horizontal text-lg"></i> Features</span>
-                <span class="text-[10px] text-gray-500 font-mono">5</span>
+                <span class="text-[10px] text-gray-500 font-mono bg-gray-900/60 px-1.5 py-0.5 rounded border border-gray-800">5</span>
             </a>
-            <a href="#/logs" class="nav-link flex items-center justify-between px-4 py-2.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-all border border-transparent">
+            <a href="#/logs" class="nav-link flex items-center justify-between px-3.5 py-2.5 rounded-xl text-gray-400 hover:text-white hover:bg-white/5 transition-all border border-transparent">
                 <span class="flex items-center gap-3"><i class="ph ph-terminal-window text-lg"></i> Real-Time Logs</span>
-                <span id="navLogsBadge" class="hidden text-[10px] bg-blue-500/20 text-blue-300 px-1.5 py-0.5 rounded font-mono font-semibold">0</span>
-                <span class="text-[10px] text-gray-500 font-mono">6</span>
+                <div class="flex items-center gap-1.5">
+                    <span id="navLogsBadge" class="hidden text-[10px] bg-blue-500/20 text-blue-300 px-1.5 py-0.5 rounded font-mono font-semibold">0</span>
+                    <span class="text-[10px] text-gray-500 font-mono bg-gray-900/60 px-1.5 py-0.5 rounded border border-gray-800">6</span>
+                </div>
             </a>
-            <a href="#/security" class="nav-link flex items-center justify-between px-4 py-2.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-all border border-transparent">
+            <a href="#/security" class="nav-link flex items-center justify-between px-3.5 py-2.5 rounded-xl text-gray-400 hover:text-white hover:bg-white/5 transition-all border border-transparent">
                 <span class="flex items-center gap-3"><i class="ph ph-shield-slash text-lg"></i> Access & Security</span>
-                <span id="navSecurityBadge" class="hidden text-[10px] bg-red-500/20 text-red-300 px-1.5 py-0.5 rounded font-mono font-semibold">0</span>
-                <span class="text-[10px] text-gray-500 font-mono">7</span>
+                <div class="flex items-center gap-1.5">
+                    <span id="navSecurityBadge" class="hidden text-[10px] bg-red-500/20 text-red-300 px-1.5 py-0.5 rounded font-mono font-semibold">0</span>
+                    <span class="text-[10px] text-gray-500 font-mono bg-gray-900/60 px-1.5 py-0.5 rounded border border-gray-800">7</span>
+                </div>
             </a>
-            <a href="#/settings" class="nav-link flex items-center justify-between px-4 py-2.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-all border border-transparent">
+            <a href="#/settings" class="nav-link flex items-center justify-between px-3.5 py-2.5 rounded-xl text-gray-400 hover:text-white hover:bg-white/5 transition-all border border-transparent">
                 <span class="flex items-center gap-3"><i class="ph ph-gear text-lg"></i> Settings</span>
-                <span class="text-[10px] text-gray-500 font-mono">8</span>
+                <span class="text-[10px] text-gray-500 font-mono bg-gray-900/60 px-1.5 py-0.5 rounded border border-gray-800">8</span>
             </a>
         </nav>
         
-        <div class="p-4 border-t border-gray-800 space-y-2">
-            <div class="px-3 py-2 rounded-lg bg-gray-900/40 border border-gray-800/80 text-[11px] text-gray-400 flex items-center justify-between">
-                <span class="flex items-center gap-1.5"><i class="ph ph-cpu"></i> Edge Edge/KV</span>
-                <span id="edgeHealthStatus" class="text-emerald-400 font-medium">Synchronized</span>
+        <div class="p-4 border-t border-gray-800/80 space-y-2.5">
+            <div class="px-3 py-2 rounded-xl bg-gray-900/60 border border-gray-800/80 text-[11px] text-gray-400 flex items-center justify-between">
+                <span class="flex items-center gap-1.5"><i class="ph ph-cpu text-brand-400"></i> Edge KV</span>
+                <span id="edgeHealthStatus" class="text-emerald-400 font-medium flex items-center gap-1">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Synchronized
+                </span>
             </div>
-            <button id="logoutBtn" class="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-gray-400 hover:text-red-400 hover:bg-red-500/10 transition-all border border-transparent hover:border-red-500/20 text-xs">
+            <button id="logoutBtn" class="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-gray-400 hover:text-red-400 hover:bg-red-500/10 transition-all border border-transparent hover:border-red-500/20 text-xs font-medium">
                 <i class="ph ph-sign-out text-base"></i> Sign Out
             </button>
         </div>
     </aside>
 
     <!-- MAIN CONTENT -->
-    <main class="flex-1 p-4 md:p-8 lg:p-10 overflow-y-auto max-h-screen relative">
+    <main class="flex-1 p-4 sm:p-6 md:p-8 lg:p-10 overflow-y-auto max-h-screen relative w-full">
         <div class="absolute -top-40 -right-40 w-96 h-96 bg-brand-500/10 rounded-full mix-blend-screen filter blur-[100px] pointer-events-none"></div>
         <div class="absolute top-40 -left-40 w-96 h-96 bg-purple-500/10 rounded-full mix-blend-screen filter blur-[100px] pointer-events-none"></div>
 
-        <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4 relative z-10">
+        <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 sm:mb-8 gap-4 relative z-10">
             <div>
-                <h2 id="pageTitle" class="text-2xl font-bold text-white tracking-tight">Overview</h2>
-                <p id="pageSubtitle" class="text-gray-400 mt-1">Live metrics and global controls.</p>
+                <h2 id="pageTitle" class="text-2xl sm:text-3xl font-bold text-white tracking-tight">Overview</h2>
+                <p id="pageSubtitle" class="text-gray-400 mt-1 text-xs sm:text-sm">Live metrics and global controls.</p>
             </div>
-            <div class="flex items-center flex-wrap gap-3">
+            <div class="flex items-center flex-wrap gap-2.5">
                 <!-- Latency Gauge -->
                 <div id="latencyBadge" class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono backdrop-blur transition-all" title="Round-trip latency to edge gateway">
                     <i class="ph ph-lightning text-sm"></i>
@@ -88,13 +129,13 @@
                 </span>
 
                 <!-- Quick Command Search Trigger -->
-                <button id="headerSearchBtn" class="p-2 rounded-lg bg-gray-800/50 hover:bg-gray-700/50 text-gray-300 hover:text-white border border-gray-700/50 hover:border-gray-500 transition-all backdrop-blur flex items-center gap-1.5 text-xs" title="Command Palette (Ctrl+K)">
+                <button id="headerSearchBtn" class="p-2 rounded-lg bg-gray-800/60 hover:bg-gray-700/60 text-gray-300 hover:text-white border border-gray-700/60 hover:border-gray-500 transition-all backdrop-blur flex items-center gap-1.5 text-xs" title="Command Palette (Ctrl+K)">
                     <i class="ph ph-magnifying-glass text-sm"></i>
                     <span class="hidden sm:inline font-mono text-[10px] text-gray-400">Ctrl+K</span>
                 </button>
 
                 <!-- Refresh Button -->
-                <button id="refreshBtn" class="p-2 rounded-lg bg-gray-800/50 text-gray-300 hover:text-white border border-gray-700/50 hover:border-gray-500 transition-all backdrop-blur flex items-center justify-center" title="Refresh Telemetry (R)">
+                <button id="refreshBtn" class="p-2 rounded-lg bg-gray-800/60 text-gray-300 hover:text-white border border-gray-700/60 hover:border-gray-500 transition-all backdrop-blur flex items-center justify-center" title="Refresh Telemetry (R)">
                     <i class="ph ph-arrows-clockwise text-lg"></i>
                 </button>
             </div>
@@ -106,9 +147,9 @@
     </main>
 
     <!-- GLOBAL COMMAND PALETTE MODAL (Ctrl+K) -->
-    <div id="commandPaletteModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-start justify-center pt-20 p-4 transition-all">
+    <div id="commandPaletteModal" class="fixed inset-0 bg-black/75 backdrop-blur-md z-50 hidden flex items-start justify-center pt-16 sm:pt-20 p-4 transition-all">
         <div class="glass-card w-full max-w-xl p-0 overflow-hidden shadow-2xl border border-gray-700/60 rounded-2xl animate-popIn">
-            <div class="p-4 border-b border-gray-800 flex items-center gap-3 bg-gray-900/60">
+            <div class="p-4 border-b border-gray-800 flex items-center gap-3 bg-gray-900/70">
                 <i class="ph ph-magnifying-glass text-xl text-brand-400"></i>
                 <input type="text" id="cmdPaletteInput" class="w-full bg-transparent border-none text-white text-sm focus:outline-none placeholder-gray-500" placeholder="Type a command or jump to view (Overview, Logs, Security, Control...)" autocomplete="off">
                 <kbd class="text-[10px] bg-gray-800 text-gray-400 px-2 py-0.5 rounded border border-gray-700 font-mono">ESC</kbd>
@@ -116,7 +157,7 @@
             <div class="p-2 max-h-80 overflow-y-auto space-y-1" id="cmdPaletteResults">
                 <!-- Injected via JavaScript -->
             </div>
-            <div class="p-3 bg-gray-950/60 border-t border-gray-800/80 text-[11px] text-gray-500 flex justify-between items-center">
+            <div class="p-3 bg-gray-950/70 border-t border-gray-800/80 text-[11px] text-gray-500 flex justify-between items-center">
                 <span>Navigate with <strong class="text-gray-400">↑ ↓</strong> and <strong class="text-gray-400">Enter</strong></span>
                 <span>Press <strong class="text-gray-400">1-8</strong> for direct tabs</span>
             </div>

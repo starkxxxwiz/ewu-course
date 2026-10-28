@@ -115,9 +115,11 @@ async function attemptLogin(username, password) {
 document.getElementById('loginForm')?.addEventListener('submit', async function(e) {
     e.preventDefault();
 
+    const loginBtn = document.getElementById('loginBtn');
+    if (loginBtn && loginBtn.disabled) return;
+
     const username = document.getElementById('username').value.trim();
     const password = document.getElementById('password').value;
-    const loginBtn = document.getElementById('loginBtn');
     const btnText = document.getElementById('btnText');
 
     // Validation
@@ -188,7 +190,11 @@ document.getElementById('username')?.focus();
 // Enter key support
 document.getElementById('password')?.addEventListener('keypress', function(e) {
     if (e.key === 'Enter') {
-        document.getElementById('loginForm').dispatchEvent(new Event('submit'));
+        const loginBtn = document.getElementById('loginBtn');
+        if (loginBtn && loginBtn.disabled) {
+            e.preventDefault();
+            return;
+        }
     }
 });
 
